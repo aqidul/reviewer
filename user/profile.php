@@ -1,156 +1,271 @@
 <?php
-require_once '../includes/config.php';
+session_start();
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
 
-if (!isLoggedIn() || isAdmin()) {
-    redirect('../index.php');
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ' . APP_URL . '/index.php');
+    exit;
 }
 
-$user_id = $_SESSION['user_id'];
-$message = '';
-$message_type = '';
+$user_id = (int)$_SESSION['user_id'];
+$errors = [];
+$success = '';
+$active_tab = $_GET['tab'] ?? 'profile';
 
-// Get user details
+// Get user data
 try {
-    $query = "SELECT * FROM users WHERE id = :user_id";
-    $stmt = $db->prepare($query);
-    $stmt->execute([':user_id' => $user_id]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+    $stmt->execute([$user_id]);
+    $user = $stmt->fetch();
     
     if (!$user) {
         session_destroy();
-        redirect('../index.php');
+        header('Location: ' . APP_URL . '/index.php');
+        exit;
     }
-} catch(PDOException $e) {
+    
+    // Get user stats
+    $user_stats = getUserStats($user_id);
+    
+    // Get login history
+    $stmt = $pdo->prepare("SELECT * FROM login_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
+    $stmt->execute([$user_id]);
+    $login_history = $stmt->fetchAll();
+    
+} catch (PDOException $e) {
+    error_log("Profile Error: " . $e->getMessage());
     $user = [];
+    $user_stats = [];
+    $login_history = [];
 }
 
 // Handle profile update
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_POST['update_profile'])) {
-        $name = trim($_POST['name']);
-        $email = trim($_POST['email']);
-        $mobile = trim($_POST['mobile']);
-        
-        if (empty($name) || empty($email) || empty($mobile)) {
-            $message = 'All fields are required!';
-            $message_type = 'error';
-        } else {
-            try {
-                // Check if email exists for another user
-                $checkQuery = "SELECT id FROM users WHERE email = :email AND id != :user_id";
-                $checkStmt = $db->prepare($checkQuery);
-                $checkStmt->execute([':email' => $email, ':user_id' => $user_id]);
-                
-                if ($checkStmt->rowCount() > 0) {
-                    $message = 'Email already exists for another user!';
-                    $message_type = 'error';
-                } else {
-                    // Update profile
-                    $updateQuery = "UPDATE users SET name = :name, email = :email, mobile = :mobile, updated_at = NOW() WHERE id = :id";
-                    $updateStmt = $db->prepare($updateQuery);
-                    $updateStmt->execute([
-                        ':name' => $name,
-                        ':email' => $email,
-                        ':mobile' => $mobile,
-                        ':id' => $user_id
-                    ]);
-                    
-                    // Update session
-                    $_SESSION['user_name'] = $name;
-                    
-                    $message = 'Profile updated successfully!';
-                    $message_type = 'success';
-                    
-                    // Refresh user data
-                    $stmt->execute([':user_id' => $user_id]);
-                    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                }
-            } catch(PDOException $e) {
-                $message = 'Error: ' . $e->getMessage();
-                $message_type = 'error';
-            }
-        }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
+    $name = sanitizeInput($_POST['name'] ?? '');
+    $mobile = sanitizeInput($_POST['mobile'] ?? '');
+    $address = sanitizeInput($_POST['address'] ?? '');
+    $city = sanitizeInput($_POST['city'] ?? '');
+    $state = sanitizeInput($_POST['state'] ?? '');
+    $pincode = sanitizeInput($_POST['pincode'] ?? '');
+    
+    // Validation
+    if (empty($name) || strlen($name) < 3) {
+        $errors[] = "Name must be at least 3 characters";
+    }
+    if (empty($mobile) || !preg_match('/^[6-9]\d{9}$/', $mobile)) {
+        $errors[] = "Invalid mobile number";
+    }
+    if (!empty($pincode) && !preg_match('/^\d{6}$/', $pincode)) {
+        $errors[] = "Invalid pincode";
     }
     
-    // Handle password change
-    if (isset($_POST['change_password'])) {
-        $current_password = $_POST['current_password'];
-        $new_password = $_POST['new_password'];
-        $confirm_password = $_POST['confirm_password'];
-        
-        if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
-            $message = 'All password fields are required!';
-            $message_type = 'error';
-        } elseif ($new_password !== $confirm_password) {
-            $message = 'New passwords do not match!';
-            $message_type = 'error';
-        } elseif (strlen($new_password) < 6) {
-            $message = 'New password must be at least 6 characters!';
-            $message_type = 'error';
-        } else {
-            try {
-                // Verify current password
-                $checkQuery = "SELECT password FROM users WHERE id = :user_id";
-                $checkStmt = $db->prepare($checkQuery);
-                $checkStmt->execute([':user_id' => $user_id]);
-                $db_user = $checkStmt->fetch(PDO::FETCH_ASSOC);
-                
-                if ($db_user && password_verify($current_password, $db_user['password'])) {
-                    // Update password
-                    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                    $updateQuery = "UPDATE users SET password = :password, updated_at = NOW() WHERE id = :id";
-                    $updateStmt = $db->prepare($updateQuery);
-                    $updateStmt->execute([
-                        ':password' => $hashed_password,
-                        ':id' => $user_id
-                    ]);
-                    
-                    $message = 'Password changed successfully!';
-                    $message_type = 'success';
-                } else {
-                    $message = 'Current password is incorrect!';
-                    $message_type = 'error';
-                }
-            } catch(PDOException $e) {
-                $message = 'Error: ' . $e->getMessage();
-                $message_type = 'error';
+    // Check if mobile exists for another user
+    if (empty($errors)) {
+        try {
+            $stmt = $pdo->prepare("SELECT id FROM users WHERE mobile = ? AND id != ?");
+            $stmt->execute([$mobile, $user_id]);
+            if ($stmt->fetch()) {
+                $errors[] = "Mobile number already registered with another account";
             }
+        } catch (PDOException $e) {}
+    }
+    
+    if (empty($errors)) {
+        try {
+            $stmt = $pdo->prepare("
+                UPDATE users SET 
+                    name = ?, mobile = ?, address = ?, city = ?, state = ?, pincode = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$name, $mobile, $address, $city, $state, $pincode, $user_id]);
+            
+            $_SESSION['user_name'] = $name;
+            $_SESSION['user_mobile'] = $mobile;
+            
+            $success = "Profile updated successfully!";
+            $user['name'] = $name;
+            $user['mobile'] = $mobile;
+            $user['address'] = $address;
+            $user['city'] = $city;
+            $user['state'] = $state;
+            $user['pincode'] = $pincode;
+            $active_tab = 'profile';
+            
+        } catch (PDOException $e) {
+            $errors[] = "Failed to update profile";
+            error_log("Profile Update Error: " . $e->getMessage());
         }
     }
 }
 
-// Get user statistics
-try {
-    $statsQuery = "
-        SELECT 
-            COUNT(DISTINCT t.id) as total_tasks,
-            COUNT(DISTINCT o.id) as total_orders,
-            SUM(CASE WHEN o.step4_status = 'approved' THEN 1 ELSE 0 END) as completed_orders,
-            COUNT(DISTINCT CASE WHEN t.status = 'pending' OR t.status = 'in_progress' THEN t.id END) as pending_tasks
-        FROM tasks t
-        LEFT JOIN orders o ON t.id = o.task_id
-        WHERE t.user_id = :user_id
-    ";
+// Handle payment details update
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_payment'])) {
+    $upi_id = sanitizeInput($_POST['upi_id'] ?? '');
+    $bank_name = sanitizeInput($_POST['bank_name'] ?? '');
+    $bank_account = sanitizeInput($_POST['bank_account'] ?? '');
+    $bank_ifsc = strtoupper(sanitizeInput($_POST['bank_ifsc'] ?? ''));
     
-    $statsStmt = $db->prepare($statsQuery);
-    $statsStmt->execute([':user_id' => $user_id]);
-    $user_stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$user_stats) {
-        $user_stats = [
-            'total_tasks' => 0,
-            'total_orders' => 0,
-            'completed_orders' => 0,
-            'pending_tasks' => 0
-        ];
+    // Validation
+    if (!empty($upi_id) && !preg_match('/^[\w.-]+@[\w.-]+$/', $upi_id)) {
+        $errors[] = "Invalid UPI ID format";
     }
-} catch(PDOException $e) {
-    $user_stats = [
-        'total_tasks' => 0,
-        'total_orders' => 0,
-        'completed_orders' => 0,
-        'pending_tasks' => 0
-    ];
+    if (!empty($bank_ifsc) && !preg_match('/^[A-Z]{4}0[A-Z0-9]{6}$/', $bank_ifsc)) {
+        $errors[] = "Invalid IFSC code format";
+    }
+    
+    if (empty($errors)) {
+        try {
+            $stmt = $pdo->prepare("
+                UPDATE users SET 
+                    upi_id = ?, bank_name = ?, bank_account = ?, bank_ifsc = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$upi_id, $bank_name, $bank_account, $bank_ifsc, $user_id]);
+            
+            $success = "Payment details updated successfully!";
+            $user['upi_id'] = $upi_id;
+            $user['bank_name'] = $bank_name;
+            $user['bank_account'] = $bank_account;
+            $user['bank_ifsc'] = $bank_ifsc;
+            $active_tab = 'payment';
+            
+        } catch (PDOException $e) {
+            $errors[] = "Failed to update payment details";
+            error_log("Payment Update Error: " . $e->getMessage());
+        }
+    }
+}
+
+// Handle password change
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
+    $current_password = $_POST['current_password'] ?? '';
+    $new_password = $_POST['new_password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
+    
+    // Validation
+    if (empty($current_password)) {
+        $errors[] = "Current password is required";
+    }
+    if (empty($new_password) || strlen($new_password) < 8) {
+        $errors[] = "New password must be at least 8 characters";
+    }
+    if ($new_password !== $confirm_password) {
+        $errors[] = "New passwords do not match";
+    }
+    
+    // Verify current password
+    if (empty($errors)) {
+        if (!password_verify($current_password, $user['password'])) {
+            $errors[] = "Current password is incorrect";
+        }
+    }
+    
+    if (empty($errors)) {
+        try {
+            $hashed_password = password_hash($new_password, PASSWORD_BCRYPT, ['cost' => 12]);
+            $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $stmt->execute([$hashed_password, $user_id]);
+            
+            $success = "Password changed successfully!";
+            $active_tab = 'security';
+            
+            // Create notification
+            createNotification($user_id, 'warning', '🔒 Password Changed', 'Your account password was changed. If this wasn\'t you, please contact support immediately.');
+            
+        } catch (PDOException $e) {
+            $errors[] = "Failed to change password";
+            error_log("Password Change Error: " . $e->getMessage());
+        }
+    }
+}
+
+// Handle profile picture upload
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_picture'])) {
+    if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['profile_picture'];
+        
+        // Validation
+        $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $max_size = 2 * 1024 * 1024; // 2MB
+        
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        
+        if (!in_array($mime, $allowed_types)) {
+            $errors[] = "Invalid file type. Allowed: JPG, PNG, GIF, WebP";
+        } elseif ($file['size'] > $max_size) {
+            $errors[] = "File size must be less than 2MB";
+        } else {
+            // Upload
+            $upload_dir = UPLOAD_DIR . 'profiles/';
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0755, true);
+            }
+            
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'profile_' . $user_id . '_' . time() . '.' . $ext;
+            $filepath = $upload_dir . $filename;
+            
+            if (move_uploaded_file($file['tmp_name'], $filepath)) {
+                // Delete old profile picture
+                if (!empty($user['profile_picture'])) {
+                    $old_file = UPLOAD_DIR . 'profiles/' . basename($user['profile_picture']);
+                    if (file_exists($old_file)) {
+                        @unlink($old_file);
+                    }
+                }
+                
+                // Update database
+                $picture_url = APP_URL . '/uploads/profiles/' . $filename;
+                try {
+                    $stmt = $pdo->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
+                    $stmt->execute([$picture_url, $user_id]);
+                    
+                    $user['profile_picture'] = $picture_url;
+                    $success = "Profile picture updated!";
+                    $active_tab = 'profile';
+                    
+                } catch (PDOException $e) {
+                    $errors[] = "Failed to save profile picture";
+                }
+            } else {
+                $errors[] = "Failed to upload file";
+            }
+        }
+    } else {
+        $errors[] = "Please select an image to upload";
+    }
+}
+
+// Handle account deletion request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_account'])) {
+    $confirm_email = sanitizeInput($_POST['confirm_email'] ?? '');
+    $delete_password = $_POST['delete_password'] ?? '';
+    
+    if ($confirm_email !== $user['email']) {
+        $errors[] = "Email confirmation does not match";
+    }
+    if (!password_verify($delete_password, $user['password'])) {
+        $errors[] = "Incorrect password";
+    }
+    
+    if (empty($errors)) {
+        // For now, just mark as inactive instead of deleting
+        try {
+            $stmt = $pdo->prepare("UPDATE users SET status = 'deleted' WHERE id = ?");
+            $stmt->execute([$user_id]);
+            
+            session_destroy();
+            header('Location: ' . APP_URL . '/index.php?deleted=1');
+            exit;
+            
+        } catch (PDOException $e) {
+            $errors[] = "Failed to delete account";
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -158,550 +273,416 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile - ReviewFlow</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Profile - <?php echo APP_NAME; ?></title>
     <style>
-        .profile-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px}
         
-        .header {
-            background: linear-gradient(135deg, #4361ee, #3a0ca3);
-            color: white;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+        .container{max-width:900px;margin:0 auto}
         
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+        .back-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:#fff;color:#333;text-decoration:none;border-radius:10px;margin-bottom:20px;font-weight:600;font-size:14px;transition:transform 0.2s;box-shadow:0 3px 10px rgba(0,0,0,0.1)}
+        .back-btn:hover{transform:translateY(-2px)}
         
-        .logout-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-        }
+        /* Profile Header */
+        .profile-header{background:#fff;border-radius:20px;padding:30px;margin-bottom:25px;display:flex;align-items:center;gap:25px;box-shadow:0 5px 20px rgba(0,0,0,0.1)}
+        .avatar-section{position:relative}
+        .avatar{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:48px;font-weight:700;overflow:hidden;border:4px solid #fff;box-shadow:0 5px 20px rgba(0,0,0,0.2)}
+        .avatar img{width:100%;height:100%;object-fit:cover}
+        .avatar-edit{position:absolute;bottom:5px;right:5px;width:35px;height:35px;background:#667eea;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:3px solid #fff;font-size:14px}
+        .avatar-edit:hover{background:#764ba2}
+        .profile-info h1{font-size:26px;color:#333;margin-bottom:5px}
+        .profile-info p{color:#666;font-size:14px;margin-bottom:3px}
+        .profile-badges{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+        .badge{padding:5px 12px;border-radius:15px;font-size:11px;font-weight:600}
+        .badge-level{background:linear-gradient(135deg,#f39c12,#e67e22);color:#fff}
+        .badge-verified{background:#d4edda;color:#155724}
+        .badge-member{background:#e3f2fd;color:#1565c0}
         
-        .logout-btn:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
-        }
+        /* Stats Mini */
+        .stats-mini{margin-left:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:15px;text-align:center}
+        .stat-mini{padding:10px 20px}
+        .stat-mini .value{font-size:22px;font-weight:700;color:#667eea}
+        .stat-mini .label{font-size:11px;color:#888}
         
-        .container {
-            display: flex;
-            min-height: calc(100vh - 70px);
-        }
+        /* Alerts */
+        .alert{padding:15px 20px;border-radius:10px;margin-bottom:20px;font-size:14px;display:flex;align-items:center;gap:10px}
+        .alert-success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+        .alert-danger{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
         
-        .sidebar {
-            width: 250px;
-            background: white;
-            border-right: 1px solid #e0e0e0;
-            padding: 20px 0;
-        }
+        /* Tab Navigation */
+        .tabs{display:flex;gap:5px;background:#fff;padding:8px;border-radius:12px;margin-bottom:20px;box-shadow:0 3px 15px rgba(0,0,0,0.08);overflow-x:auto}
+        .tab{padding:12px 20px;background:transparent;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;color:#666;transition:all 0.2s;white-space:nowrap}
+        .tab:hover{background:#f5f5f5}
+        .tab.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
         
-        .sidebar-menu {
-            list-style: none;
-        }
+        /* Cards */
+        .card{background:#fff;border-radius:15px;padding:25px;box-shadow:0 5px 20px rgba(0,0,0,0.1);margin-bottom:20px;display:none}
+        .card.active{display:block}
+        .card-title{font-size:18px;font-weight:600;color:#333;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:10px}
         
-        .sidebar-menu li {
-            margin-bottom: 5px;
-        }
+        /* Form Elements */
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+        .form-group{margin-bottom:20px}
+        .form-group label{display:block;font-weight:600;margin-bottom:8px;color:#333;font-size:14px}
+        .form-group label span{color:#e74c3c}
+        .form-control{width:100%;padding:12px 15px;border:2px solid #eee;border-radius:10px;font-size:14px;transition:border-color 0.2s}
+        .form-control:focus{border-color:#667eea;outline:none}
+        .form-control:disabled{background:#f5f5f5;cursor:not-allowed}
+        .form-hint{font-size:12px;color:#888;margin-top:5px}
         
-        .sidebar-menu a {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 25px;
-            color: #555;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
+        /* Buttons */
+        .btn{padding:12px 25px;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+        .btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 5px 20px rgba(102,126,234,0.4)}
+        .btn-success{background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff}
+        .btn-danger{background:#e74c3c;color:#fff}
+        .btn-secondary{background:#f5f5f5;color:#666}
+        .btn-block{width:100%}
         
-        .sidebar-menu a:hover {
-            background: #f0f4ff;
-            color: #4361ee;
-        }
+        /* Login History */
+        .login-item{display:flex;align-items:center;padding:15px 0;border-bottom:1px solid #f5f5f5}
+        .login-item:last-child{border-bottom:none}
+        .login-icon{width:45px;height:45px;background:#f5f5f5;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-right:15px}
+        .login-icon.success{background:#d4edda;color:#27ae60}
+        .login-icon.failed{background:#f8d7da;color:#e74c3c}
+        .login-info{flex:1}
+        .login-device{font-weight:600;color:#333;font-size:14px}
+        .login-details{font-size:12px;color:#888;margin-top:2px}
+        .login-time{font-size:12px;color:#888;text-align:right}
         
-        .sidebar-menu a.active {
-            background: #4361ee;
-            color: white;
-        }
+        /* Danger Zone */
+        .danger-zone{background:#fff5f5;border:2px solid #fee;border-radius:12px;padding:20px;margin-top:20px}
+        .danger-zone h4{color:#e74c3c;margin-bottom:10px;font-size:16px}
+        .danger-zone p{font-size:13px;color:#666;margin-bottom:15px}
         
-        .main-content {
-            flex: 1;
-            padding: 25px;
-            background: #f5f5f5;
-        }
+        /* Modal */
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;padding:20px}
+        .modal.show{display:flex}
+        .modal-content{background:#fff;border-radius:15px;padding:30px;max-width:450px;width:100%;max-height:90vh;overflow-y:auto}
+        .modal-title{font-size:20px;font-weight:600;margin-bottom:20px;color:#333}
+        .modal-close{float:right;font-size:24px;cursor:pointer;color:#999;line-height:1}
+        .modal-close:hover{color:#333}
         
-        .card {
-            background: white;
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 25px;
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .card-header h2 {
-            font-size: 1.3rem;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .btn {
-            background: #4361ee;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .btn:hover {
-            background: #3a0ca3;
-            transform: translateY(-2px);
-        }
-        
-        .btn.green { background: #2ecc71; }
-        .btn.green:hover { background: #27ae60; }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #555;
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: #4361ee;
-            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-        
-        .message {
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
-        
-        .message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .profile-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #4361ee, #3a0ca3);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            font-weight: bold;
-        }
-        
-        .profile-info h2 {
-            margin: 0 0 5px 0;
-            color: #333;
-        }
-        
-        .profile-info p {
-            margin: 0 0 10px 0;
-            color: #666;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            text-align: center;
-            border-top: 5px solid #4361ee;
-        }
-        
-        .stat-card:nth-child(2) { border-top-color: #f39c12; }
-        .stat-card:nth-child(3) { border-top-color: #2ecc71; }
-        .stat-card:nth-child(4) { border-top-color: #e74c3c; }
-        
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: #4361ee;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 15px;
-            font-size: 20px;
-        }
-        
-        .stat-card:nth-child(2) .stat-icon { background: #f39c12; }
-        .stat-card:nth-child(3) .stat-icon { background: #2ecc71; }
-        .stat-card:nth-child(4) .stat-icon { background: #e74c3c; }
-        
-        .stat-info h3 {
-            font-size: 28px;
-            color: #333;
-            margin-bottom: 5px;
-        }
-        
-        .stat-info p {
-            color: #666;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-        }
-        
-        @media (max-width: 768px) {
-            .mobile-menu-btn {
-                display: block;
-            }
-            
-            .sidebar {
-                position: fixed;
-                left: -250px;
-                top: 70px;
-                height: calc(100vh - 70px);
-                transition: left 0.3s;
-                z-index: 1000;
-            }
-            
-            .sidebar.open {
-                left: 0;
-            }
-            
-            .main-content {
-                margin-left: 0;
-                padding: 15px;
-            }
-            
-            .profile-header {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .form-row {
-                grid-template-columns: 1fr;
-            }
+        /* Responsive */
+        @media(max-width:768px){
+            .profile-header{flex-direction:column;text-align:center}
+            .stats-mini{margin-left:0;margin-top:20px;width:100%}
+            .form-row{grid-template-columns:1fr}
+            .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+            .tab{flex-shrink:0}
         }
     </style>
 </head>
-<body class="light-mode">
-    <!-- Header -->
-    <div class="header">
-        <button class="mobile-menu-btn" id="mobileMenuBtn">
-            <i class="fas fa-bars"></i>
-        </button>
-        <h1>
-            <i class="fas fa-user-circle"></i>
-            ReviewFlow - User Panel
-        </h1>
-        <div class="user-info">
-            <span>
-                <i class="fas fa-user"></i>
-                <?php echo htmlspecialchars($_SESSION['user_name']); ?>
-            </span>
-            <a href="logout.php" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                Logout
-            </a>
-        </div>
-    </div>
+<body>
+<div class="container">
+    <a href="<?php echo APP_URL; ?>/user/" class="back-btn">← Back to Dashboard</a>
     
-    <div class="container">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <ul class="sidebar-menu">
-                <li><a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                <li><a href="tasks.php"><i class="fas fa-tasks"></i> My Tasks</a></li>
-                <li><a href="submit_order.php"><i class="fas fa-shopping-cart"></i> Submit Order</a></li>
-                <li><a href="profile.php" class="active"><i class="fas fa-user"></i> Profile</a></li>
-                <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-            </ul>
-        </div>
-        
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Messages -->
-            <?php if ($message): ?>
-                <div class="message <?php echo $message_type; ?>">
-                    <i class="fas <?php echo $message_type == 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
-                    <?php echo htmlspecialchars($message); ?>
-                </div>
-            <?php endif; ?>
-            
-            <!-- Profile Header -->
-            <div class="profile-header">
-                <div class="profile-avatar">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="avatar-section">
+            <div class="avatar">
+                <?php if (!empty($user['profile_picture'])): ?>
+                    <img src="<?php echo escape($user['profile_picture']); ?>" alt="Profile">
+                <?php else: ?>
                     <?php echo strtoupper(substr($user['name'], 0, 1)); ?>
-                </div>
-                <div class="profile-info">
-                    <h2><?php echo htmlspecialchars($user['name']); ?></h2>
-                    <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($user['email']); ?></p>
-                    <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($user['mobile']); ?></p>
-                    <p><i class="fas fa-calendar"></i> Member since: <?php echo date('d M Y', strtotime($user['created_at'])); ?></p>
-                </div>
+                <?php endif; ?>
             </div>
-            
-            <!-- Statistics -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-tasks"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3><?php echo $user_stats['total_tasks']; ?></h3>
-                        <p>Total Tasks</p>
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3><?php echo $user_stats['pending_tasks']; ?></h3>
-                        <p>Pending Tasks</p>
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3><?php echo $user_stats['completed_orders']; ?></h3>
-                        <p>Completed Orders</p>
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-shopping-cart"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3><?php echo $user_stats['total_orders']; ?></h3>
-                        <p>Total Orders</p>
-                    </div>
-                </div>
+            <label for="avatarInput" class="avatar-edit" title="Change Photo">📷</label>
+            <form method="POST" enctype="multipart/form-data" id="avatarForm" style="display:none">
+                <input type="file" name="profile_picture" id="avatarInput" accept="image/*" onchange="document.getElementById('avatarForm').submit()">
+                <input type="hidden" name="upload_picture" value="1">
+            </form>
+        </div>
+        <div class="profile-info">
+            <h1><?php echo escape($user['name']); ?></h1>
+            <p>📧 <?php echo escape($user['email']); ?></p>
+            <p>📱 <?php echo escape($user['mobile']); ?></p>
+            <div class="profile-badges">
+                <span class="badge badge-level">⭐ Level <?php echo $user_stats['level'] ?? 1; ?></span>
+                <?php if ($user['status'] === 'active'): ?>
+                    <span class="badge badge-verified">✓ Verified</span>
+                <?php endif; ?>
+                <span class="badge badge-member">Member since <?php echo date('M Y', strtotime($user['created_at'])); ?></span>
             </div>
-            
-            <!-- Update Profile Form -->
-            <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-edit"></i> Update Profile</h2>
-                </div>
-                <form method="POST" action="">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="name"><i class="fas fa-user"></i> Full Name</label>
-                            <input type="text" id="name" name="name" class="form-control" required 
-                                   value="<?php echo htmlspecialchars($user['name']); ?>">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="email"><i class="fas fa-envelope"></i> Email Address</label>
-                            <input type="email" id="email" name="email" class="form-control" required 
-                                   value="<?php echo htmlspecialchars($user['email']); ?>">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="mobile"><i class="fas fa-phone"></i> Mobile Number</label>
-                            <input type="text" id="mobile" name="mobile" class="form-control" required 
-                                   value="<?php echo htmlspecialchars($user['mobile']); ?>"
-                                   pattern="[0-9]{10}" maxlength="10">
-                        </div>
-                    </div>
-                    
-                    <button type="submit" name="update_profile" class="btn green">
-                        <i class="fas fa-save"></i> Update Profile
-                    </button>
-                </form>
+        </div>
+        <div class="stats-mini">
+            <div class="stat-mini">
+                <div class="value"><?php echo $user_stats['tasks_completed'] ?? 0; ?></div>
+                <div class="label">Tasks</div>
             </div>
-            
-            <!-- Change Password Form -->
-            <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-key"></i> Change Password</h2>
-                </div>
-                <form method="POST" action="">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="current_password"><i class="fas fa-lock"></i> Current Password</label>
-                            <input type="password" id="current_password" name="current_password" class="form-control" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="new_password"><i class="fas fa-lock"></i> New Password</label>
-                            <input type="password" id="new_password" name="new_password" class="form-control" required minlength="6">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="confirm_password"><i class="fas fa-lock"></i> Confirm New Password</label>
-                            <input type="password" id="confirm_password" name="confirm_password" class="form-control" required minlength="6">
-                        </div>
-                    </div>
-                    
-                    <button type="submit" name="change_password" class="btn">
-                        <i class="fas fa-key"></i> Change Password
-                    </button>
-                </form>
+            <div class="stat-mini">
+                <div class="value">⭐<?php echo number_format($user_stats['rating'] ?? 5, 1); ?></div>
+                <div class="label">Rating</div>
             </div>
-            
-            <!-- Account Information -->
-            <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-info-circle"></i> Account Information</h2>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label><i class="fas fa-id-card"></i> User ID</label>
-                        <input type="text" class="form-control" value="#<?php echo $user['id']; ?>" readonly>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-user-tag"></i> Account Type</label>
-                        <input type="text" class="form-control" value="<?php echo ucfirst($user['user_type']); ?>" readonly>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-calendar-plus"></i> Registration Date</label>
-                        <input type="text" class="form-control" value="<?php echo date('d M Y, h:i A', strtotime($user['created_at'])); ?>" readonly>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-calendar-check"></i> Last Updated</label>
-                        <input type="text" class="form-control" value="<?php echo $user['updated_at'] ? date('d M Y, h:i A', strtotime($user['updated_at'])) : 'Never'; ?>" readonly>
-                    </div>
-                </div>
+            <div class="stat-mini">
+                <div class="value"><?php echo $user['login_count'] ?? 0; ?></div>
+                <div class="label">Logins</div>
             </div>
         </div>
     </div>
     
-    <script>
-        // Mobile menu toggle
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const sidebar = document.getElementById('sidebar');
+    <!-- Alerts -->
+    <?php if ($success): ?>
+        <div class="alert alert-success">✅ <?php echo $success; ?></div>
+    <?php endif; ?>
+    <?php foreach ($errors as $error): ?>
+        <div class="alert alert-danger">❌ <?php echo escape($error); ?></div>
+    <?php endforeach; ?>
+    
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab <?php echo $active_tab === 'profile' ? 'active' : ''; ?>" onclick="showTab('profile')">👤 Profile</button>
+        <button class="tab <?php echo $active_tab === 'payment' ? 'active' : ''; ?>" onclick="showTab('payment')">💳 Payment</button>
+        <button class="tab <?php echo $active_tab === 'security' ? 'active' : ''; ?>" onclick="showTab('security')">🔒 Security</button>
+        <button class="tab <?php echo $active_tab === 'activity' ? 'active' : ''; ?>" onclick="showTab('activity')">📊 Activity</button>
+    </div>
+    
+    <!-- Profile Tab -->
+    <div class="card <?php echo $active_tab === 'profile' ? 'active' : ''; ?>" id="profileTab">
+        <div class="card-title">👤 Personal Information</div>
+        <form method="POST">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Full Name <span>*</span></label>
+                    <input type="text" name="name" class="form-control" value="<?php echo escape($user['name']); ?>" required minlength="3">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" class="form-control" value="<?php echo escape($user['email']); ?>" disabled>
+                    <div class="form-hint">Email cannot be changed</div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Mobile Number <span>*</span></label>
+                    <input type="text" name="mobile" class="form-control" value="<?php echo escape($user['mobile']); ?>" required pattern="[6-9]\d{9}" maxlength="10">
+                    <div class="form-hint">10-digit mobile number</div>
+                </div>
+                <div class="form-group">
+                    <label>Referral Code</label>
+                    <input type="text" class="form-control" value="<?php echo escape($user['referral_code'] ?? getReferralCode($user_id)); ?>" disabled>
+                </div>
+            </div>
+            
+            <div class="card-title" style="margin-top:30px">📍 Address Details</div>
+            <div class="form-group">
+                <label>Address</label>
+                <input type="text" name="address" class="form-control" value="<?php echo escape($user['address'] ?? ''); ?>" placeholder="Street address, building, apartment">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" name="city" class="form-control" value="<?php echo escape($user['city'] ?? ''); ?>" placeholder="City">
+                </div>
+                <div class="form-group">
+                    <label>State</label>
+                    <select name="state" class="form-control">
+                        <option value="">Select State</option>
+                        <?php
+                        $states = ['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu and Kashmir', 'Ladakh'];
+                        foreach ($states as $state): ?>
+                            <option value="<?php echo $state; ?>" <?php echo ($user['state'] ?? '') === $state ? 'selected' : ''; ?>><?php echo $state; ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Pincode</label>
+                    <input type="text" name="pincode" class="form-control" value="<?php echo escape($user['pincode'] ?? ''); ?>" placeholder="6-digit pincode" maxlength="6" pattern="\d{6}">
+                </div>
+                <div class="form-group"></div>
+            </div>
+            
+            <button type="submit" name="update_profile" class="btn btn-primary">💾 Save Changes</button>
+        </form>
+    </div>
+    
+    <!-- Payment Tab -->
+    <div class="card <?php echo $active_tab === 'payment' ? 'active' : ''; ?>" id="paymentTab">
+        <div class="card-title">💳 Payment Details</div>
+        <p style="color:#666;font-size:13px;margin-bottom:20px">Save your payment details for faster withdrawals. This information is encrypted and secure.</p>
         
-        if (mobileMenuBtn && sidebar) {
-            mobileMenuBtn.addEventListener('click', function() {
-                sidebar.classList.toggle('open');
-            });
+        <form method="POST">
+            <div class="card-title" style="font-size:16px;border:none;padding:0;margin-bottom:15px">📱 UPI Details</div>
+            <div class="form-group">
+                <label>UPI ID</label>
+                <input type="text" name="upi_id" class="form-control" value="<?php echo escape($user['upi_id'] ?? ''); ?>" placeholder="example@paytm, example@upi">
+                <div class="form-hint">Enter your UPI ID for instant payments</div>
+            </div>
+            
+            <div class="card-title" style="font-size:16px;border:none;padding:0;margin:30px 0 15px">🏦 Bank Details</div>
+            <div class="form-group">
+                <label>Bank Name</label>
+                <input type="text" name="bank_name" class="form-control" value="<?php echo escape($user['bank_name'] ?? ''); ?>" placeholder="e.g., State Bank of India">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Account Number</label>
+                    <input type="text" name="bank_account" class="form-control" value="<?php echo escape($user['bank_account'] ?? ''); ?>" placeholder="Enter account number">
+                </div>
+                <div class="form-group">
+                    <label>IFSC Code</label>
+                    <input type="text" name="bank_ifsc" class="form-control" value="<?php echo escape($user['bank_ifsc'] ?? ''); ?>" placeholder="e.g., SBIN0001234" style="text-transform:uppercase" maxlength="11">
+                    <div class="form-hint">11-character IFSC code</div>
+                </div>
+            </div>
+            
+            <button type="submit" name="update_payment" class="btn btn-success">💾 Save Payment Details</button>
+        </form>
+    </div>
+    
+    <!-- Security Tab -->
+    <div class="card <?php echo $active_tab === 'security' ? 'active' : ''; ?>" id="securityTab">
+        <div class="card-title">🔒 Security Settings</div>
+        
+        <!-- Change Password -->
+        <form method="POST">
+            <h4 style="font-size:16px;color:#333;margin-bottom:15px">Change Password</h4>
+            <div class="form-group">
+                <label>Current Password <span>*</span></label>
+                <input type="password" name="current_password" class="form-control" required placeholder="Enter current password">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>New Password <span>*</span></label>
+                    <input type="password" name="new_password" class="form-control" required minlength="8" placeholder="Enter new password">
+                    <div class="form-hint">Minimum 8 characters</div>
+                </div>
+                <div class="form-group">
+                    <label>Confirm New Password <span>*</span></label>
+                    <input type="password" name="confirm_password" class="form-control" required minlength="8" placeholder="Confirm new password">
+                </div>
+            </div>
+            <button type="submit" name="change_password" class="btn btn-primary">🔐 Change Password</button>
+        </form>
+        
+        <!-- Login History -->
+        <div class="card-title" style="margin-top:40px">📜 Recent Login Activity</div>
+        <?php if (empty($login_history)): ?>
+            <p style="color:#888;text-align:center;padding:20px">No login history available</p>
+        <?php else: ?>
+            <?php foreach ($login_history as $login): ?>
+                <div class="login-item">
+                    <div class="login-icon <?php echo $login['status']; ?>">
+                        <?php echo $login['device_type'] === 'mobile' ? '📱' : ($login['device_type'] === 'tablet' ? '📱' : '💻'); ?>
+                    </div>
+                    <div class="login-info">
+                        <div class="login-device"><?php echo ucfirst($login['device_type']); ?> - <?php echo $login['status'] === 'success' ? 'Successful Login' : 'Failed Attempt'; ?></div>
+                        <div class="login-details">IP: <?php echo escape($login['ip_address']); ?></div>
+                    </div>
+                    <div class="login-time"><?php echo date('d M Y, H:i', strtotime($login['created_at'])); ?></div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+        
+        <!-- Danger Zone -->
+        <div class="danger-zone">
+            <h4>⚠️ Danger Zone</h4>
+            <p>Once you delete your account, there is no going back. Please be certain.</p>
+            <button class="btn btn-danger" onclick="showDeleteModal()">🗑️ Delete Account</button>
+        </div>
+    </div>
+    
+    <!-- Activity Tab -->
+    <div class="card <?php echo $active_tab === 'activity' ? 'active' : ''; ?>" id="activityTab">
+        <div class="card-title">📊 Account Activity</div>
+        
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin-bottom:25px">
+            <div style="background:#f8f9fa;padding:20px;border-radius:12px;text-align:center">
+                <div style="font-size:32px;font-weight:700;color:#667eea"><?php echo $user_stats['tasks_completed'] ?? 0; ?></div>
+                <div style="font-size:13px;color:#666">Tasks Completed</div>
+            </div>
+            <div style="background:#f8f9fa;padding:20px;border-radius:12px;text-align:center">
+                <div style="font-size:32px;font-weight:700;color:#f39c12"><?php echo $user_stats['tasks_pending'] ?? 0; ?></div>
+                <div style="font-size:13px;color:#666">Tasks Pending</div>
+            </div>
+            <div style="background:#f8f9fa;padding:20px;border-radius:12px;text-align:center">
+                <div style="font-size:32px;font-weight:700;color:#27ae60">₹<?php echo number_format($user_stats['total_earnings'] ?? 0, 0); ?></div>
+                <div style="font-size:13px;color:#666">Total Earnings</div>
+            </div>
+            <div style="background:#f8f9fa;padding:20px;border-radius:12px;text-align:center">
+                <div style="font-size:32px;font-weight:700;color:#e74c3c"><?php echo $user_stats['streak_days'] ?? 0; ?></div>
+                <div style="font-size:13px;color:#666">Day Streak</div>
+            </div>
+        </div>
+        
+        <div class="card-title">📅 Account Details</div>
+        <div style="font-size:14px;color:#666;line-height:2">
+            <p><strong>Account Created:</strong> <?php echo date('d M Y, H:i', strtotime($user['created_at'])); ?></p>
+            <p><strong>Last Login:</strong> <?php echo $user['last_login'] ? date('d M Y, H:i', strtotime($user['last_login'])) : 'N/A'; ?></p>
+            <p><strong>Total Logins:</strong> <?php echo $user['login_count'] ?? 0; ?></p>
+            <p><strong>Account Status:</strong> <span style="color:#27ae60;font-weight:600"><?php echo ucfirst($user['status']); ?></span></p>
+            <p><strong>User ID:</strong> #<?php echo $user_id; ?></p>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="hideDeleteModal()">&times;</span>
+        <div class="modal-title">⚠️ Delete Account</div>
+        <p style="color:#666;margin-bottom:20px;font-size:14px">This action cannot be undone. This will permanently delete your account, tasks, and all associated data.</p>
+        
+        <form method="POST">
+            <div class="form-group">
+                <label>Type your email to confirm</label>
+                <input type="email" name="confirm_email" class="form-control" placeholder="<?php echo escape($user['email']); ?>" required>
+            </div>
+            <div class="form-group">
+                <label>Enter your password</label>
+                <input type="password" name="delete_password" class="form-control" placeholder="Your password" required>
+            </div>
+            <button type="submit" name="delete_account" class="btn btn-danger btn-block">🗑️ Permanently Delete My Account</button>
+        </form>
+    </div>
+</div>
+
+<script>
+// Tab switching
+function showTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+    
+    document.querySelector(`.tab:nth-child(${['profile','payment','security','activity'].indexOf(tab)+1})`).classList.add('active');
+    document.getElementById(tab + 'Tab').classList.add('active');
+    
+    // Update URL
+    history.replaceState(null, '', '?tab=' + tab);
+}
+
+// Delete modal
+function showDeleteModal() {
+    document.getElementById('deleteModal').classList.add('show');
+}
+
+function hideDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('show');
+}
+
+// Close modal on outside click
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) hideDeleteModal();
+});
+
+// Avatar preview
+document.getElementById('avatarInput')?.addEventListener('change', function(e) {
+    if (this.files && this.files[0]) {
+        const file = this.files[0];
+        if (file.size > 2 * 1024 * 1024) {
+            alert('File size must be less than 2MB');
+            this.value = '';
+            return;
         }
-        
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(e) {
-            if (window.innerWidth <= 768 && 
-                sidebar.classList.contains('open') && 
-                !sidebar.contains(e.target) && 
-                e.target !== mobileMenuBtn) {
-                sidebar.classList.remove('open');
-            }
-        });
-        
-        // Password validation
-        document.querySelector('form[name="change_password"]').addEventListener('submit', function(e) {
-            const newPassword = document.getElementById('new_password').value;
-            const confirmPassword = document.getElementById('confirm_password').value;
-            
-            if (newPassword !== confirmPassword) {
-                e.preventDefault();
-                alert('New passwords do not match!');
-                return false;
-            }
-            
-            if (newPassword.length < 6) {
-                e.preventDefault();
-                alert('Password must be at least 6 characters long!');
-                return false;
-            }
-            
-            return true;
-        });
-    </script>
+        // Submit form
+        if (confirm('Upload this profile picture?')) {
+            document.getElementById('avatarForm').submit();
+        } else {
+            this.value = '';
+        }
+    }
+});
+</script>
 </body>
 </html>
