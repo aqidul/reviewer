@@ -203,6 +203,201 @@ $getStepStatus = fn(string $status): string =>
             color: #333;
             margin-bottom: 10px;
         }
+        
+        /* Chatbot Styles */
+        .chat-toggle {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 25px rgba(102, 126, 234, 0.5);
+            z-index: 1000;
+            transition: all 0.3s;
+            border: none;
+        }
+        .chat-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+        }
+        .chat-toggle svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+        }
+        .chat-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #e74c3c;
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chat-window {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            width: 380px;
+            max-width: calc(100vw - 40px);
+            height: 500px;
+            max-height: calc(100vh - 150px);
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            z-index: 1001;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-window.show {
+            display: flex;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .chat-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            line-height: 1;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+        }
+        .message.bot {
+            justify-content: flex-start;
+        }
+        .message.user {
+            justify-content: flex-end;
+        }
+        .message-content {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .message.bot .message-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .chat-input {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+        }
+        .chat-input input:focus {
+            border-color: #667eea;
+        }
+        .chat-input button {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-input button:hover {
+            opacity: 0.9;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 18px;
+            border-bottom-left-radius: 5px;
+            width: fit-content;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .typing-indicator.show {
+            display: block;
+        }
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: typing 1s infinite;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; margin-right: 0; }
+        @keyframes typing {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        
+        @media (max-width: 480px) {
+            .chat-window {
+                right: 10px;
+                bottom: 80px;
+                width: calc(100vw - 20px);
+                height: calc(100vh - 100px);
+            }
+            .chat-toggle {
+                right: 15px;
+                bottom: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -281,5 +476,120 @@ $getStepStatus = fn(string $status): string =>
             <?php endif; ?>
         </div>
     </div>
+    
+    <!-- AI Chat Toggle Button -->
+    <button class="chat-toggle" id="chatToggle" title="AI Support Chat">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+            <circle cx="8" cy="10" r="1.5"/>
+            <circle cx="12" cy="10" r="1.5"/>
+            <circle cx="16" cy="10" r="1.5"/>
+        </svg>
+    </button>
+    
+    <!-- Chat Window -->
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <h4>🤖 AI Support</h4>
+            <button class="chat-close" id="chatClose">&times;</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="message-content">
+                    Hi <?php echo $user_name; ?>! 👋 I'm your AI assistant. How can I help you today?
+                </div>
+            </div>
+            <div class="typing-indicator" id="typingIndicator">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="chatInput" placeholder="Type your message..." autocomplete="off">
+            <button id="chatSend">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Chat Elements
+        const chatToggle = document.getElementById('chatToggle');
+        const chatWindow = document.getElementById('chatWindow');
+        const chatClose = document.getElementById('chatClose');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const chatSend = document.getElementById('chatSend');
+        const typingIndicator = document.getElementById('typingIndicator');
+        
+        // Toggle chat window
+        chatToggle.addEventListener('click', () => {
+            chatWindow.classList.toggle('show');
+            if (chatWindow.classList.contains('show')) {
+                chatInput.focus();
+            }
+        });
+        
+        chatClose.addEventListener('click', () => {
+            chatWindow.classList.remove('show');
+        });
+        
+        // Send message function
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+            
+            // Add user message
+            addMessage(message, 'user');
+            chatInput.value = '';
+            
+            // Show typing indicator
+            typingIndicator.classList.add('show');
+            scrollToBottom();
+            
+            // Send to API
+            fetch('<?php echo APP_URL; ?>/chatbot/api.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'message=' + encodeURIComponent(message)
+            })
+            .then(response => response.json())
+            .then(data => {
+                typingIndicator.classList.remove('show');
+                if (data.success) {
+                    addMessage(data.response, 'bot');
+                } else {
+                    addMessage('Sorry, something went wrong. Please try again.', 'bot');
+                }
+            })
+            .catch(error => {
+                typingIndicator.classList.remove('show');
+                addMessage('Connection error. Please try again.', 'bot');
+            });
+        }
+        
+        // Add message to chat
+        function addMessage(text, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + type;
+            messageDiv.innerHTML = '<div class="message-content">' + text.replace(/\n/g, '<br>') + '</div>';
+            chatMessages.insertBefore(messageDiv, typingIndicator);
+            scrollToBottom();
+        }
+        
+        // Scroll to bottom
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Event listeners
+        chatSend.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
 </body>
 </html>
