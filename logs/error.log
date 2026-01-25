@@ -225,3 +225,166 @@ Stack trace:
 [25-Jan-2026 08:07:04 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
 [25-Jan-2026 08:07:08 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
 [25-Jan-2026 08:07:11 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:30:12 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:30:20 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:30:35 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:30:35 UTC] [2] mkdir(): Permission denied in /var/www/palians/reviewer/includes/security.php:187
+[25-Jan-2026 08:30:35 UTC] [2] move_uploaded_file(/var/www/palians/reviewer/includes/../uploads/delivery_screenshots/file_1769329835_6975d4ab1041e.png): Failed to open stream: No such file or directory in /var/www/palians/reviewer/includes/security.php:193
+[25-Jan-2026 08:30:35 UTC] [2] move_uploaded_file(): Unable to move &quot;/tmp/phpGmfYy1&quot; to &quot;/var/www/palians/reviewer/includes/../uploads/delivery_screenshots/file_1769329835_6975d4ab1041e.png&quot; in /var/www/palians/reviewer/includes/security.php:193
+[25-Jan-2026 08:30:35 UTC] File upload failed: file_1769329835_6975d4ab1041e.png
+[25-Jan-2026 08:35:46 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:35:47 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:35:51 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:35:55 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:36:14 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:36:29 UTC] Image Host Response (Step 2): HTTP 200 - https://palians.com/image-host/view.php?img=5ff2b94f373c043809dc0160ace09980.png
+[25-Jan-2026 08:36:37 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:36:50 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:36:50 UTC] [2] mkdir(): Permission denied in /var/www/palians/reviewer/includes/security.php:187
+[25-Jan-2026 08:36:50 UTC] [2] move_uploaded_file(/var/www/palians/reviewer/includes/../uploads/review_screenshots/file_1769330210_6975d6229f160.png): Failed to open stream: No such file or directory in /var/www/palians/reviewer/includes/security.php:193
+[25-Jan-2026 08:36:50 UTC] [2] move_uploaded_file(): Unable to move &quot;/tmp/phpfIQlHN&quot; to &quot;/var/www/palians/reviewer/includes/../uploads/review_screenshots/file_1769330210_6975d6229f160.png&quot; in /var/www/palians/reviewer/includes/security.php:193
+[25-Jan-2026 08:36:50 UTC] File upload failed: file_1769330210_6975d6229f160.png
+[25-Jan-2026 08:37:04 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:37:13 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:37:22 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:37:23 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:37:30 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:37:30 UTC] Reviewers found: 1
+[25-Jan-2026 08:37:37 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:37:40 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:37:47 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:37:47 UTC] Reviewers found: 1
+[25-Jan-2026 08:37:54 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:37:58 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:38:06 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:38:06 UTC] Reviewers found: 1
+[25-Jan-2026 08:38:09 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:38:13 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:42:22 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:42:23 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:42:28 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:42:33 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:42:42 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:42:52 UTC] Image Host Response (Step 3): HTTP 200 - https://palians.com/image-host/view.php?img=88bdfb2e97b57a21bb8016955982dbc1.png
+[25-Jan-2026 08:42:55 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:43:15 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:43:22 UTC] Image Host Response (Step 4): HTTP 200 - https://palians.com/image-host/view.php?img=b0bab00067f353810ea7767fafba444e.png
+[25-Jan-2026 08:43:25 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:43:33 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:43:34 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:43:42 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:43:42 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:43:52 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:43:54 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:44:04 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:44:34 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:44:34 UTC] Reviewers found: 1
+[25-Jan-2026 08:44:39 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:44:42 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:44:47 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:44:53 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:44:56 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:44:56 UTC] Reviewers found: 1
+[25-Jan-2026 08:44:58 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:45:34 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:45:34 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:45:38 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:45:38 UTC] Reviewers found: 1
+[25-Jan-2026 08:45:39 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:45:39 UTC] Reviewers found: 1
+[25-Jan-2026 08:45:41 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:45:41 UTC] Reviewers found: 1
+[25-Jan-2026 08:59:39 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:59:39 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 08:59:43 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function redirectTo() in /var/www/palians/reviewer/logout.php:30
+Stack trace:
+#0 {main}
+  thrown in /var/www/palians/reviewer/logout.php on line 30
+[25-Jan-2026 08:59:47 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:14:48 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:14:51 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:14:57 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:14:57 UTC] Reviewers found: 1
+[25-Jan-2026 09:16:43 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:16:45 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:16:48 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:16:48 UTC] Reviewers found: 1
+[25-Jan-2026 09:16:50 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:16:57 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:17:00 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:17:00 UTC] Reviewers found: 1
+[25-Jan-2026 09:17:03 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:17:05 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:17:05 UTC] Reviewers found: 1
+[25-Jan-2026 09:17:37 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:17:48 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:17:48 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:18:50 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:18:52 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:19:16 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:19:21 UTC] Image Host Response: HTTP 200 - https://palians.com/image-host/view.php?img=e35770467fe5b28548a26c6e7d3a88e5.png
+[25-Jan-2026 09:19:27 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:19:30 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:21:10 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:21:14 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function redirectTo() in /var/www/palians/reviewer/logout.php:30
+Stack trace:
+#0 {main}
+  thrown in /var/www/palians/reviewer/logout.php on line 30
+[25-Jan-2026 09:22:58 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:23:14 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:23:28 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:23:42 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:23:54 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:23:55 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:23:58 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:28:23 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:28:24 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:28:30 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:29:15 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:32:15 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:32:21 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:33:40 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:33:53 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:33:54 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:34:50 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:34:53 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:35:08 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:35:16 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:35:39 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:35:46 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:36:29 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:36:39 UTC] Image Host Response (Step 2): HTTP 200 - https://palians.com/image-host/view.php?img=9824881679fdbe89af1e3ba8b2563b19.png
+[25-Jan-2026 09:36:44 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:37:26 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:37:47 UTC] Image Host Response (Step 3): HTTP 200 - https://palians.com/image-host/view.php?img=4cbe45915511062d5e652ee81cc44b25.png
+[25-Jan-2026 09:39:01 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:59:19 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 09:59:57 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:00:16 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:00:17 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:00:27 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:00:30 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:00:33 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:00:43 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:00:50 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:01:01 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:02:01 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:02:05 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:02:11 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:02:23 UTC] SQLSTATE[01000]: Warning: 1265 Data truncated for column 'step_status' at row 1
+[25-Jan-2026 10:03:29 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:03:30 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:03:38 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:03:45 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:03:47 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:03:50 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:03:57 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:08:43 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:09:06 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:09:09 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:09:19 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:09:52 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:09:55 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:10:01 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:10:15 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
+[25-Jan-2026 10:10:35 UTC] [2] session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /var/www/palians/reviewer/includes/config.php:84
