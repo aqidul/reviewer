@@ -24,7 +24,7 @@ try {
         LEFT JOIN task_steps ts2 ON t.id = ts2.task_id AND ts2.step_number = 2
         LEFT JOIN task_steps ts3 ON t.id = ts3.task_id AND ts3.step_number = 3
         LEFT JOIN task_steps ts4 ON t.id = ts4.task_id AND ts4.step_number = 4
-        WHERE t.refund_requested = 1 
+        WHERE ts1.step_status = 'completed' 
         AND (ts4.step_status IS NULL OR ts4.step_status != 'completed')
     ";
     

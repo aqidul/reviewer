@@ -2,6 +2,7 @@
 session_start();
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
 
 if (!isset($_SESSION['admin_name'])) {
     header('Location: ' . ADMIN_URL);
@@ -33,6 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     $product_link = sanitizeInput($_POST['product_link'] ?? '');
+    $commission = floatval($_POST['commission'] ?? 0);
+    $deadline = $_POST['deadline'] ?? null;
+    $priority = $_POST['priority'] ?? 'medium';
     
     if (empty($product_link)) {
         $errors[] = 'Product link is required';
@@ -44,23 +48,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (empty($errors)) {
         try {
+            $pdo->beginTransaction();
+            
+            // Insert task
             $stmt = $pdo->prepare("
-                INSERT INTO tasks (user_id, product_link, task_status)
-                VALUES (:user_id, :product_link, 'pending')
+                INSERT INTO tasks (user_id, product_link, task_status, commission, deadline, priority, created_at)
+                VALUES (:user_id, :product_link, 'pending', :commission, :deadline, :priority, NOW())
             ");
             
             $stmt->execute([
                 ':user_id' => $user_id,
-                ':product_link' => $product_link
+                ':product_link' => $product_link,
+                ':commission' => $commission,
+                ':deadline' => $deadline ?: null,
+                ':priority' => $priority
             ]);
             
             $task_id = $pdo->lastInsertId();
-            logActivity('Admin assigned task', $task_id, $user_id);
+            
+            // Create task steps
+            $steps = ['Order Placed', 'Delivery Received', 'Review Submitted', 'Refund Requested'];
+            foreach ($steps as $index => $step) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO task_steps (task_id, step_number, step_status, created_at)
+                    VALUES (?, ?, 'pending', NOW())
+                ");
+                $stmt->execute([$task_id, $index + 1]);
+            }
+            
+            $pdo->commit();
+            
+            // Log activity
+            logActivity('Admin assigned task #' . $task_id, $task_id, $user_id);
+            
+            // Send notification to user
+            createNotification($user_id, 'task', '📋 New Task Assigned', 'A new review task has been assigned to you. Check your dashboard!', APP_URL . '/user/');
+            
+            // Send email notification
+            sendTaskNotification($user_id, 'task_assigned', ['task_id' => $task_id]);
             
             $success = true;
         } catch (PDOException $e) {
-            error_log($e->getMessage());
-            $errors[] = 'Failed to assign task';
+            $pdo->rollBack();
+            error_log("Assign Task Error: " . $e->getMessage());
+            $errors[] = 'Failed to assign task: ' . $e->getMessage();
         }
     }
 }
@@ -77,6 +108,7 @@ $csrf_token = generateCSRFToken();
     <style>
         body {
             background: #f5f5f5;
+            font-family: 'Segoe UI', sans-serif;
         }
         .admin-wrapper {
             display: grid;
@@ -98,8 +130,18 @@ $csrf_token = generateCSRFToken();
             padding-bottom: 20px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
+        .sidebar-brand h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .sidebar-brand small {
+            color: #888;
+            font-size: 11px;
+        }
         .sidebar-menu {
             list-style: none;
+            padding: 0;
+            margin: 0;
         }
         .sidebar-menu a {
             color: #bbb;
@@ -108,6 +150,7 @@ $csrf_token = generateCSRFToken();
             display: block;
             border-radius: 8px;
             transition: all 0.3s;
+            margin-bottom: 5px;
         }
         .sidebar-menu a:hover,
         .sidebar-menu a.active {
@@ -117,114 +160,193 @@ $csrf_token = generateCSRFToken();
         .admin-content {
             padding: 30px;
         }
-        .form-card {
+        .page-title {
+            font-size: 24px;
+            margin-bottom: 25px;
+            color: #333;
+        }
+        .card {
             background: white;
-            padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            padding: 25px;
             max-width: 600px;
         }
         .user-info {
             background: #f8f9fa;
             padding: 15px;
             border-radius: 8px;
-            margin-bottom: 25px;
-            border-left: 4px solid #3498db;
+            margin-bottom: 20px;
+        }
+        .user-info p {
+            margin: 5px 0;
+            color: #555;
+        }
+        .user-info strong {
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 20px;
         }
         .form-group label {
+            display: block;
+            margin-bottom: 8px;
             font-weight: 600;
             color: #333;
-            margin-bottom: 8px;
-            display: block;
         }
         .form-control {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 14px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
         }
-        .btn-assign {
-            width: 100%;
-            padding: 12px;
-            background: #27ae60;
+        .form-control:focus {
+            border-color: #27ae60;
+            outline: none;
+        }
+        .form-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        .btn-submit {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
             color: white;
             border: none;
+            padding: 12px 30px;
             border-radius: 8px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
         }
         .alert {
-            margin-bottom: 20px;
-            padding: 12px 15px;
+            padding: 15px;
             border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-danger {
+            background: #ffe6e6;
+            color: #c0392b;
+            border: 1px solid #f5c6cb;
         }
         .alert-success {
             background: #d4edda;
             color: #155724;
+            border: 1px solid #c3e6cb;
         }
-        .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .admin-wrapper {
+                grid-template-columns: 1fr;
+            }
+            .admin-sidebar {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="admin-wrapper">
-        <div class="admin-sidebar">
-            <div class="sidebar-brand">
-                <h3>⚙️ Admin</h3>
-                <p><?php echo APP_NAME; ?></p>
-            </div>
-            <ul class="sidebar-menu">
-                <li><a href="<?php echo ADMIN_URL; ?>/dashboard.php">📊 Dashboard</a></li>
-                <li><a href="<?php echo ADMIN_URL; ?>/reviewers.php" class="active">👥 Reviewers</a></li>
-                <li><a href="<?php echo ADMIN_URL; ?>/task-pending.php">📋 Pending Tasks</a></li>
-                <li><a href="<?php echo ADMIN_URL; ?>/task-completed.php">✓ Completed Tasks</a></li>
-                <li><a href="<?php echo ADMIN_URL; ?>/faq-manager.php">🤖 Chatbot FAQ</a></li>
-                <li style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px;">
-                    <a href="<?php echo APP_URL; ?>/logout.php" style="color: #e74c3c;">🚪 Logout</a>
-                </li>
-            </ul>
+<div class="admin-wrapper">
+    <div class="admin-sidebar">
+        <div class="sidebar-brand">
+            <h3>⚙️ Admin</h3>
+            <small>ReviewFlow</small>
         </div>
+        <ul class="sidebar-menu">
+            <li><a href="<?php echo ADMIN_URL; ?>/dashboard.php">📊 Dashboard</a></li>
+            <li><a href="<?php echo ADMIN_URL; ?>/reviewers.php" class="active">👥 Reviewers</a></li>
+            <li><a href="<?php echo ADMIN_URL; ?>/pending-tasks.php">📋 Pending Tasks</a></li>
+            <li><a href="<?php echo ADMIN_URL; ?>/completed-tasks.php">✅ Completed Tasks</a></li>
+            <li><a href="<?php echo ADMIN_URL; ?>/chatbot-faq.php">🤖 Chatbot FAQ</a></li>
+            <li style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <a href="<?php echo ADMIN_URL; ?>/logout.php" style="color: #e74c3c;">🚪 Logout</a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="admin-content">
+        <a href="<?php echo ADMIN_URL; ?>/reviewers.php" class="back-link">← Back to Reviewers</a>
+        <h1 class="page-title">📝 Assign New Task</h1>
         
-        <div class="admin-content">
-            <h1 style="color: #2c3e50; margin-bottom: 30px;">📌 Assign New Task</h1>
+        <?php if ($success): ?>
+            <div class="alert alert-success">
+                ✅ Task assigned successfully! 
+                <a href="<?php echo ADMIN_URL; ?>/reviewers.php">Go back to Reviewers</a>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (!empty($errors)): ?>
+            <div class="alert alert-danger">
+                <?php foreach ($errors as $error): ?>
+                    <p style="margin:5px 0">❌ <?php echo escape($error); ?></p>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+        
+        <div class="card">
+            <div class="user-info">
+                <p><strong>Reviewer:</strong> <?php echo escape($user['name']); ?></p>
+                <p><strong>Email:</strong> <?php echo escape($user['email']); ?></p>
+                <p><strong>Mobile:</strong> <?php echo escape($user['mobile']); ?></p>
+            </div>
             
-            <div class="form-card">
-                <div class="user-info">
-                    <p><strong>Reviewer:</strong> <?php echo escape($user['name']); ?></p>
-                    <p><strong>Email:</strong> <?php echo escape($user['email']); ?></p>
-                    <p><strong>Mobile:</strong> <?php echo escape($user['mobile']); ?></p>
+            <form method="POST" action="">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                
+                <div class="form-group">
+                    <label for="product_link">Product Link (Amazon/Flipkart) *</label>
+                    <input type="url" id="product_link" name="product_link" class="form-control" 
+                           placeholder="https://amazon.com/product/..." required
+                           value="<?php echo escape($_POST['product_link'] ?? ''); ?>">
+                    <p class="form-text">Paste the product link where user should submit review</p>
                 </div>
                 
-                <?php if ($success): ?>
-                    <div class="alert alert-success">
-                        ✓ Task assigned successfully! Task ID: #<?php echo intval($task_id); ?><br>
-                        <small>User will see this task in their dashboard.</small>
-                    </div>
-                    <a href="<?php echo ADMIN_URL; ?>/reviewers.php" style="color: #3498db;">← Back to Reviewers</a>
-                <?php else: ?>
-                    <?php if (!empty($errors)): ?>
-                        <?php foreach ($errors as $error): ?>
-                            <div class="alert alert-danger">✗ <?php echo escape($error); ?></div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                    
-                    <form method="POST">
-                        <div class="form-group">
-                            <label for="product_link">Product Link (Amazon/Flipkart) *</label>
-                            <input type="url" id="product_link" name="product_link" class="form-control" 
-                                   placeholder="https://amazon.com/product/..." required>
-                            <small>Paste the product link where user should submit review</small>
-                        </div>
-                        
-                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                        <button type="submit" class="btn-assign">Assign Task to Reviewer</button>
-                    </form>
-                <?php endif; ?>
-            </div>
+                <div class="form-group">
+                    <label for="commission">Commission (₹)</label>
+                    <input type="number" id="commission" name="commission" class="form-control" 
+                           placeholder="0.00" step="0.01" min="0"
+                           value="<?php echo escape($_POST['commission'] ?? ''); ?>">
+                    <p class="form-text">Amount user will earn after completing this task</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="deadline">Deadline</label>
+                    <input type="date" id="deadline" name="deadline" class="form-control"
+                           min="<?php echo date('Y-m-d'); ?>"
+                           value="<?php echo escape($_POST['deadline'] ?? ''); ?>">
+                    <p class="form-text">Optional: Set a deadline for task completion</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="priority">Priority</label>
+                    <select id="priority" name="priority" class="form-control">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn-submit">Assign Task to Reviewer</button>
+            </form>
         </div>
     </div>
+</div>
 </body>
 </html>

@@ -18,7 +18,7 @@ $user_name = escape($_SESSION['user_name'] ?? '');
 createWallet($user_id);
 
 // Get user data
-$wallet_balance = getWalletBalance($user_id);
+$wallet_balance = (float)getWalletBalance($user_id);
 $notification_count = getUnreadNotificationCount($user_id);
 $notifications = getNotifications($user_id, 5);
 $user_stats = getUserStats($user_id);
@@ -62,6 +62,14 @@ try {
 } catch (PDOException $e) {
     $unread_messages = 0;
 }
+
+// Type cast all stats values
+$tasks_completed = (int)($user_stats['tasks_completed'] ?? 0);
+$tasks_pending = (int)($user_stats['tasks_pending'] ?? 0);
+$total_earnings = (float)($user_stats['total_earnings'] ?? 0);
+$user_rating = (float)($user_stats['rating'] ?? 5.0);
+$user_level = (int)($user_stats['level'] ?? 1);
+$streak_days = (int)($user_stats['streak_days'] ?? 0);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -86,9 +94,9 @@ try {
         .user-info p{color:#666;font-size:13px;margin-top:3px}
         .user-level{display:inline-block;background:linear-gradient(135deg,#f39c12,#e67e22);color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-left:8px}
         .header-actions{display:flex;gap:10px;align-items:center}
-        .wallet-badge{background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;padding:10px 18px;border-radius:25px;font-weight:600;display:flex;align-items:center;gap:8px;text-decoration:none;font-size:14px;transition:transform 0.2s}
+        .wallet-badge{background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;padding:10px 18px;border-radius:25px;font-weight:600;display:flex;align-items:center;gap:8px;text-decoration:none;transition:transform 0.2s}
         .wallet-badge:hover{transform:scale(1.05)}
-        .icon-btn{position:relative;width:42px;height:42px;background:#f5f5f5;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;font-size:18px;transition:background 0.2s}
+        .icon-btn{position:relative;width:42px;height:42px;background:#f5f5f5;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;font-size:18px;transition:background 0.2s;text-decoration:none}
         .icon-btn:hover{background:#eee}
         .icon-btn .badge{position:absolute;top:-3px;right:-3px;background:#e74c3c;color:#fff;min-width:18px;height:18px;border-radius:9px;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:600}
         .logout-btn{padding:10px 18px;background:#e74c3c;color:#fff;border:none;border-radius:8px;cursor:pointer;text-decoration:none;font-weight:600;font-size:13px}
@@ -201,10 +209,10 @@ try {
         .notification-empty{padding:30px;text-align:center;color:#999;font-size:13px}
         
         /* Chat Button & Window */
-        .chat-toggle{position:fixed;bottom:25px;right:25px;width:60px;height:60px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 5px 25px rgba(102,126,234,0.5);z-index:999;border:none;color:#fff;font-size:26px;transition:transform 0.2s}
+        .chat-toggle{position:fixed;bottom:25px;right:25px;width:60px;height:60px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;font-size:28px;box-shadow:0 5px 20px rgba(102,126,234,0.4);transition:transform 0.2s;z-index:999}
         .chat-toggle:hover{transform:scale(1.1)}
         
-        .chat-window{position:fixed;bottom:100px;right:25px;width:380px;max-width:calc(100vw - 50px);height:500px;max-height:calc(100vh - 150px);background:#fff;border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,0.2);z-index:1000;display:none;flex-direction:column;overflow:hidden}
+        .chat-window{position:fixed;bottom:100px;right:25px;width:380px;max-width:calc(100vw - 50px);height:500px;max-height:calc(100vh - 150px);background:#fff;border-radius:20px;box-shadow:0 10px 50px rgba(0,0,0,0.2);display:none;flex-direction:column;z-index:1000;overflow:hidden}
         .chat-window.show{display:flex}
         .chat-header{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:18px 20px;display:flex;justify-content:space-between;align-items:center}
         .chat-header h4{margin:0;font-size:16px;font-weight:600}
@@ -261,8 +269,8 @@ try {
     <!-- Header -->
     <div class="header">
         <div class="user-info">
-            <h1>👋 Welcome, <?php echo $user_name; ?>!<span class="user-level">Lvl <?php echo $user_stats['level'] ?? 1; ?></span></h1>
-            <p>📊 <?php echo $user_stats['tasks_completed'] ?? 0; ?> tasks completed • ⭐ <?php echo number_format($user_stats['rating'] ?? 5, 1); ?> rating</p>
+            <h1>👋 Welcome, <?php echo $user_name; ?>!<span class="user-level">Lvl <?php echo $user_level; ?></span></h1>
+            <p>📊 <?php echo $tasks_completed; ?> tasks completed • ⭐ <?php echo number_format($user_rating, 1); ?> rating</p>
         </div>
         <div class="header-actions">
             <a href="<?php echo APP_URL; ?>/user/wallet.php" class="wallet-badge">
@@ -316,13 +324,13 @@ try {
         </div>
         <div class="stat-card earnings">
             <div class="stat-icon">📈</div>
-            <div class="stat-value">₹<?php echo number_format($user_stats['total_earnings'] ?? 0, 2); ?></div>
+            <div class="stat-value">₹<?php echo number_format($total_earnings, 2); ?></div>
             <div class="stat-label">Total Earnings</div>
             <div class="stat-action"><a href="<?php echo APP_URL; ?>/user/transactions.php">View History →</a></div>
         </div>
         <div class="stat-card tasks">
             <div class="stat-icon">✅</div>
-            <div class="stat-value"><?php echo $user_stats['tasks_completed'] ?? 0; ?></div>
+            <div class="stat-value"><?php echo $tasks_completed; ?></div>
             <div class="stat-label">Tasks Completed</div>
             <div class="stat-action"><a href="#tasks">View Tasks →</a></div>
         </div>
@@ -380,18 +388,21 @@ try {
                     </div>
                 <?php else: ?>
                     <?php foreach ($tasks as $task): 
-                        $progress = ($task['completed_steps'] / 4) * 100;
-                        $is_completed = $task['task_status'] === 'completed';
-                        $is_urgent = !$is_completed && $task['days_left'] !== null && $task['days_left'] >= 0 && $task['days_left'] <= 1;
-                        $is_warning = !$is_completed && $task['days_left'] !== null && $task['days_left'] > 1 && $task['days_left'] <= 3;
-                        $is_overdue = !$is_completed && $task['days_left'] !== null && $task['days_left'] < 0;
+                        $completed_steps = (int)($task['completed_steps'] ?? 0);
+                        $progress = ($completed_steps / 4) * 100;
+                        $is_completed = ($task['task_status'] ?? '') === 'completed';
+                        $days_left = $task['days_left'];
+                        $is_urgent = !$is_completed && $days_left !== null && $days_left >= 0 && $days_left <= 1;
+                        $is_warning = !$is_completed && $days_left !== null && $days_left > 1 && $days_left <= 3;
+                        $is_overdue = !$is_completed && $days_left !== null && $days_left < 0;
+                        $commission = (float)($task['commission'] ?? 0);
                     ?>
                         <div class="task-card <?php echo $is_completed ? 'completed' : ($is_overdue || $is_urgent ? 'urgent' : ($is_warning ? 'warning' : '')); ?>">
                             <div class="task-header">
                                 <div>
                                     <span class="task-id">Task #<?php echo $task['id']; ?></span>
-                                    <?php if ($task['commission'] > 0): ?>
-                                        <span class="task-commission">💰 ₹<?php echo number_format($task['commission'], 0); ?></span>
+                                    <?php if ($commission > 0): ?>
+                                        <span class="task-commission">💰 ₹<?php echo number_format($commission, 0); ?></span>
                                     <?php endif; ?>
                                 </div>
                                 <?php if ($is_completed): ?>
@@ -412,29 +423,29 @@ try {
                             </div>
                             
                             <div class="task-meta">
-                                <span>📊 <?php echo $task['completed_steps']; ?>/4 Steps</span>
+                                <span>📊 <?php echo $completed_steps; ?>/4 Steps</span>
                                 <span>📅 <?php echo date('d M Y', strtotime($task['created_at'])); ?></span>
-                                <?php if ($task['deadline']): ?>
+                                <?php if (!empty($task['deadline'])): ?>
                                     <span>⏰ Due: <?php echo date('d M', strtotime($task['deadline'])); ?>
-                                        <?php if (!$is_completed): ?>
-                                            (<?php echo $is_overdue ? abs($task['days_left']) . 'd overdue' : $task['days_left'] . 'd left'; ?>)
+                                        <?php if (!$is_completed && $days_left !== null): ?>
+                                            (<?php echo $is_overdue ? abs($days_left) . 'd overdue' : $days_left . 'd left'; ?>)
                                         <?php endif; ?>
                                     </span>
                                 <?php endif; ?>
-                                <?php if ($task['priority'] && $task['priority'] !== 'medium'): ?>
+                                <?php if (!empty($task['priority']) && $task['priority'] !== 'medium'): ?>
                                     <span>🎯 <?php echo ucfirst($task['priority']); ?></span>
                                 <?php endif; ?>
                             </div>
                             
                             <div class="task-actions">
                                 <?php if (!$is_completed): ?>
-                                    <?php if ($task['completed_steps'] == 0): ?>
+                                    <?php if ($completed_steps == 0): ?>
                                         <a href="<?php echo APP_URL; ?>/user/submit-order.php?task_id=<?php echo $task['id']; ?>">Start Task →</a>
-                                    <?php elseif ($task['completed_steps'] == 1): ?>
+                                    <?php elseif ($completed_steps == 1): ?>
                                         <a href="<?php echo APP_URL; ?>/user/submit-delivery.php?task_id=<?php echo $task['id']; ?>">Continue Step 2 →</a>
-                                    <?php elseif ($task['completed_steps'] == 2): ?>
+                                    <?php elseif ($completed_steps == 2): ?>
                                         <a href="<?php echo APP_URL; ?>/user/submit-review.php?task_id=<?php echo $task['id']; ?>">Continue Step 3 →</a>
-                                    <?php elseif ($task['completed_steps'] == 3): ?>
+                                    <?php elseif ($completed_steps == 3): ?>
                                         <a href="<?php echo APP_URL; ?>/user/submit-refund.php?task_id=<?php echo $task['id']; ?>">Final Step →</a>
                                     <?php endif; ?>
                                 <?php endif; ?>
@@ -456,9 +467,9 @@ try {
                     <div class="referral-code" id="referralCode"><?php echo $referral_code; ?></div>
                     <button class="copy-btn" onclick="copyReferralCode()">📋 Copy Code</button>
                     <div class="share-btns">
-                        <a href="https://wa.me/?text=<?php echo urlencode("🎁 Join " . APP_NAME . " and earn money!\n\nUse my referral code: " . $referral_code . "\n\n👉 " . APP_URL); ?>" target="_blank" class="share-btn whatsapp" title="Share on WhatsApp">📱</a>
-                        <a href="https://t.me/share/url?url=<?php echo urlencode(APP_URL); ?>&text=<?php echo urlencode("Join " . APP_NAME . "! Use code: " . $referral_code); ?>" target="_blank" class="share-btn telegram" title="Share on Telegram">✈️</a>
-                        <a href="https://twitter.com/intent/tweet?text=<?php echo urlencode("Join " . APP_NAME . " and earn! Use my code: " . $referral_code . " " . APP_URL); ?>" target="_blank" class="share-btn twitter" title="Share on Twitter">🐦</a>
+                        <a href="https://wa.me/?text=<?php echo urlencode("🎁 Join " . APP_NAME . " and earn money!\n\nUse my referral code: " . $referral_code . "\n\n👉 " . APP_URL); ?>" target="_blank" class="share-btn whatsapp">📱</a>
+                        <a href="https://t.me/share/url?url=<?php echo urlencode(APP_URL); ?>&text=<?php echo urlencode("Join " . APP_NAME . "! Use code: " . $referral_code); ?>" target="_blank" class="share-btn telegram">✈️</a>
+                        <a href="https://twitter.com/intent/tweet?text=<?php echo urlencode("Join " . APP_NAME . " and earn! Use my code: " . $referral_code . " " . APP_URL); ?>" target="_blank" class="share-btn twitter">🐦</a>
                     </div>
                 </div>
             </div>
@@ -474,11 +485,11 @@ try {
                     <?php foreach ($transactions as $txn): ?>
                         <div class="transaction-item">
                             <div class="txn-info">
-                                <div class="txn-type"><?php echo escape($txn['description']); ?></div>
+                                <div class="txn-type"><?php echo escape($txn['description'] ?? 'Transaction'); ?></div>
                                 <div class="txn-date"><?php echo date('d M, H:i', strtotime($txn['created_at'])); ?></div>
                             </div>
                             <div class="txn-amount <?php echo in_array($txn['type'], ['credit', 'bonus', 'referral']) ? 'credit' : 'debit'; ?>">
-                                <?php echo in_array($txn['type'], ['credit', 'bonus', 'referral']) ? '+' : '-'; ?>₹<?php echo number_format($txn['amount'], 2); ?>
+                                <?php echo in_array($txn['type'], ['credit', 'bonus', 'referral']) ? '+' : '-'; ?>₹<?php echo number_format((float)($txn['amount'] ?? 0), 2); ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -491,19 +502,19 @@ try {
                 <div class="widget-title">📊 Your Stats</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
                     <div style="background:#f8f9fa;padding:12px;border-radius:8px;text-align:center">
-                        <div style="font-size:20px;font-weight:700;color:#667eea"><?php echo $user_stats['tasks_completed'] ?? 0; ?></div>
+                        <div style="font-size:20px;font-weight:700;color:#667eea"><?php echo $tasks_completed; ?></div>
                         <div style="font-size:11px;color:#666">Completed</div>
                     </div>
                     <div style="background:#f8f9fa;padding:12px;border-radius:8px;text-align:center">
-                        <div style="font-size:20px;font-weight:700;color:#f39c12"><?php echo $user_stats['tasks_pending'] ?? 0; ?></div>
+                        <div style="font-size:20px;font-weight:700;color:#f39c12"><?php echo $tasks_pending; ?></div>
                         <div style="font-size:11px;color:#666">Pending</div>
                     </div>
                     <div style="background:#f8f9fa;padding:12px;border-radius:8px;text-align:center">
-                        <div style="font-size:20px;font-weight:700;color:#27ae60">⭐ <?php echo number_format($user_stats['rating'] ?? 5, 1); ?></div>
+                        <div style="font-size:20px;font-weight:700;color:#27ae60">⭐ <?php echo number_format($user_rating, 1); ?></div>
                         <div style="font-size:11px;color:#666">Rating</div>
                     </div>
                     <div style="background:#f8f9fa;padding:12px;border-radius:8px;text-align:center">
-                        <div style="font-size:20px;font-weight:700;color:#e74c3c"><?php echo $user_stats['streak_days'] ?? 0; ?></div>
+                        <div style="font-size:20px;font-weight:700;color:#e74c3c"><?php echo $streak_days; ?></div>
                         <div style="font-size:11px;color:#666">Day Streak</div>
                     </div>
                 </div>
@@ -554,7 +565,6 @@ function copyReferralCode() {
             alert('✓ Referral code copied: ' + code);
         });
     } else {
-        // Fallback
         const input = document.createElement('input');
         input.value = code;
         document.body.appendChild(input);
@@ -582,28 +592,22 @@ function sendChatMessage() {
     
     const messages = document.getElementById('chatMessages');
     
-    // Add user message
     messages.innerHTML += `<div class="chat-message user"><div class="chat-bubble">${escapeHtml(message)}</div></div>`;
     input.value = '';
     messages.scrollTop = messages.scrollHeight;
     
-    // Show typing indicator
     const typingId = 'typing-' + Date.now();
     messages.innerHTML += `<div class="chat-message bot" id="${typingId}"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
     messages.scrollTop = messages.scrollHeight;
     
-    // Send to API
     fetch('<?php echo APP_URL; ?>/chatbot/api.php', {
         method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'message=' + encodeURIComponent(message)
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: message})
     })
     .then(r => r.json())
     .then(data => {
-        // Remove typing indicator
         document.getElementById(typingId)?.remove();
-        
-        // Add bot response
         const response = data.response || 'Sorry, something went wrong.';
         messages.innerHTML += `<div class="chat-message bot"><div class="chat-bubble">${response.replace(/\n/g, '<br>')}</div></div>`;
         messages.scrollTop = messages.scrollHeight;
@@ -615,19 +619,16 @@ function sendChatMessage() {
     });
 }
 
-// Escape HTML
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-// Enter key to send
 document.getElementById('chatInput')?.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') sendChatMessage();
 });
 
-// PWA Install
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('<?php echo APP_URL; ?>/sw.js').catch(() => {});
 }

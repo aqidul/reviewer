@@ -2,6 +2,7 @@
 session_start();
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ' . APP_URL . '/index.php');
@@ -40,13 +41,13 @@ try {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $delivered_screenshot = $step_data['delivered_screenshot'] ?? '';
+    $delivery_screenshot = $step_data['delivery_screenshot'] ?? '';
     
-    if (isset($_FILES['delivered_screenshot']) && $_FILES['delivered_screenshot']['error'] === UPLOAD_ERR_OK) {
-        if ($_FILES['delivered_screenshot']['size'] > 5 * 1024 * 1024) {
+    if (isset($_FILES['delivery_screenshot']) && $_FILES['delivery_screenshot']['error'] === UPLOAD_ERR_OK) {
+        if ($_FILES['delivery_screenshot']['size'] > 5 * 1024 * 1024) {
             $errors[] = 'File too large (max 5MB)';
         } else {
-            $cfile = new CURLFile($_FILES['delivered_screenshot']['tmp_name'], $_FILES['delivered_screenshot']['type'], $_FILES['delivered_screenshot']['name']);
+            $cfile = new CURLFile($_FILES['delivery_screenshot']['tmp_name'], $_FILES['delivery_screenshot']['type'], $_FILES['delivery_screenshot']['name']);
             $ch = curl_init();
             curl_setopt_array($ch, [
                 CURLOPT_URL => 'https://palians.com/image-host/upload.php',
@@ -62,24 +63,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if ($httpCode === 200 && !empty($response)) {
                 $lines = explode("\n", trim($response));
-                if (!empty($lines[0])) $delivered_screenshot = $lines[0];
+                if (!empty($lines[0])) $delivery_screenshot = $lines[0];
                 else $errors[] = 'Upload failed';
             } else {
                 $errors[] = 'Upload failed';
             }
         }
-    } elseif (empty($delivered_screenshot)) {
+    } elseif (empty($delivery_screenshot)) {
         $errors[] = 'Screenshot required';
     }
     
-    if (empty($errors) && !empty($delivered_screenshot)) {
+    if (empty($errors) && !empty($delivery_screenshot)) {
         try {
             if ($step_data) {
-                $stmt = $pdo->prepare("UPDATE task_steps SET delivered_screenshot = :ss, step_status = 'completed', submitted_by_user = true, updated_at = NOW() WHERE task_id = :tid AND step_number = 2");
+                $stmt = $pdo->prepare("UPDATE task_steps SET delivery_screenshot = :ss, step_status = 'completed', submitted_by_user = true, updated_at = NOW() WHERE task_id = :tid AND step_number = 2");
             } else {
-                $stmt = $pdo->prepare("INSERT INTO task_steps (task_id, step_number, step_name, delivered_screenshot, step_status, submitted_by_user) VALUES (:tid, 2, 'Order Delivered', :ss, 'completed', true)");
+                $stmt = $pdo->prepare("INSERT INTO task_steps (task_id, step_number, step_name, delivery_screenshot, step_status, submitted_by_user) VALUES (:tid, 2, 'Order Delivered', :ss, 'completed', true)");
             }
-            $stmt->execute([':tid' => $task_id, ':ss' => $delivered_screenshot]);
+            $stmt->execute([':tid' => $task_id, ':ss' => $delivery_screenshot]);
             $success = true;
             
             $stmt = $pdo->prepare("SELECT * FROM task_steps WHERE task_id = :task_id AND step_number = 2");
@@ -131,10 +132,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form method="POST" enctype="multipart/form-data">
         <div class="form-group">
             <label>Delivery Screenshot *</label>
-            <input type="file" name="delivered_screenshot" accept="image/*" <?php echo empty($step_data['delivered_screenshot']) ? 'required' : ''; ?>>
+            <input type="file" name="delivery_screenshot" accept="image/*" <?php echo empty($step_data['delivery_screenshot']) ? 'required' : ''; ?>>
             <div class="file-info">Max 5MB • JPG, PNG, WebP</div>
-            <?php if (!empty($step_data['delivered_screenshot'])): ?>
-                <div class="preview"><img src="<?php echo escape($step_data['delivered_screenshot']); ?>" alt="Preview"></div>
+            <?php if (!empty($step_data['delivery_screenshot'])): ?>
+                <div class="preview"><img src="<?php echo escape($step_data['delivery_screenshot']); ?>" alt="Preview"></div>
             <?php endif; ?>
         </div>
         <button type="submit" class="btn btn-primary">Submit Step 2</button>

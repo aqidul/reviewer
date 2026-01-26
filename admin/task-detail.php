@@ -79,13 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_refund'])) {
                     admin_payment_screenshot = :screenshot,
                     step_status = 'completed',
                     refund_processed_at = NOW(),
-                    refund_processed_by = :admin
+                    refund_processed_by = :admin_id
                 WHERE task_id = :task_id AND step_number = 4
             ");
             $stmt->execute([
                 ':amount' => $refund_amount,
                 ':screenshot' => $payment_ss,
-                ':admin' => $admin_name,
+                ':admin_id' => $_SESSION['admin_id'],
                 ':task_id' => $task_id
             ]);
             

@@ -2,6 +2,7 @@
 session_start();
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ' . APP_URL . '/index.php');
@@ -40,7 +41,7 @@ try {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $review_screenshot = $step_data['review_submitted_screenshot'] ?? '';
+    $review_screenshot = $step_data['review_screenshot'] ?? '';
     
     if (isset($_FILES['review_screenshot']) && $_FILES['review_screenshot']['error'] === UPLOAD_ERR_OK) {
         if ($_FILES['review_screenshot']['size'] > 5 * 1024 * 1024) {
@@ -75,9 +76,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors) && !empty($review_screenshot)) {
         try {
             if ($step_data) {
-                $stmt = $pdo->prepare("UPDATE task_steps SET review_submitted_screenshot = :ss, step_status = 'completed', submitted_by_user = true, updated_at = NOW() WHERE task_id = :tid AND step_number = 3");
+                $stmt = $pdo->prepare("UPDATE task_steps SET review_screenshot = :ss, step_status = 'completed', submitted_by_user = true, updated_at = NOW() WHERE task_id = :tid AND step_number = 3");
             } else {
-                $stmt = $pdo->prepare("INSERT INTO task_steps (task_id, step_number, step_name, review_submitted_screenshot, step_status, submitted_by_user) VALUES (:tid, 3, 'Review Submitted', :ss, 'completed', true)");
+                $stmt = $pdo->prepare("INSERT INTO task_steps (task_id, step_number, step_name, review_screenshot, step_status, submitted_by_user) VALUES (:tid, 3, 'Review Submitted', :ss, 'completed', true)");
             }
             $stmt->execute([':tid' => $task_id, ':ss' => $review_screenshot]);
             $success = true;
@@ -130,10 +131,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form method="POST" enctype="multipart/form-data">
         <div class="form-group">
             <label>Review Screenshot *</label>
-            <input type="file" name="review_screenshot" accept="image/*" <?php echo empty($step_data['review_submitted_screenshot']) ? 'required' : ''; ?>>
+            <input type="file" name="review_screenshot" accept="image/*" <?php echo empty($step_data['review_screenshot']) ? 'required' : ''; ?>>
             <div class="file-info">Max 5MB • JPG, PNG, WebP</div>
-            <?php if (!empty($step_data['review_submitted_screenshot'])): ?>
-                <div class="preview"><img src="<?php echo escape($step_data['review_submitted_screenshot']); ?>" alt="Preview"></div>
+            <?php if (!empty($step_data['review_screenshot'])): ?>
+                <div class="preview"><img src="<?php echo escape($step_data['review_screenshot']); ?>" alt="Preview"></div>
             <?php endif; ?>
         </div>
         <button type="submit" class="btn btn-primary">Submit Step 3</button>
