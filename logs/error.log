@@ -1007,3 +1007,179 @@ Stack trace:
 #1 {main}
   thrown in /var/www/palians/reviewer/includes/header.php on line 31
 [26-Jan-2026 13:48:29 UTC] Wallet Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'upi_id' in 'field list'
+[26-Jan-2026 15:19:20 UTC] Reviewers found: 17
+[26-Jan-2026 15:22:13 UTC] Reviewers found: 17
+[26-Jan-2026 15:25:25 UTC] Reviewers found: 17
+[26-Jan-2026 15:43:53 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[26-Jan-2026 15:56:57 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[26-Jan-2026 15:57:47 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[26-Jan-2026 16:00:52 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[26-Jan-2026 16:21:32 UTC] PHP Fatal error:  Uncaught TypeError: strtolower(): Argument #1 ($string) must be of type string, null given in /var/www/palians/reviewer/chatbot/api.php:334
+Stack trace:
+#0 /var/www/palians/reviewer/chatbot/api.php(334): strtolower()
+#1 /var/www/palians/reviewer/chatbot/api.php(127): Chatbot->searchFAQ()
+#2 /var/www/palians/reviewer/chatbot/api.php(50): Chatbot->getResponse()
+#3 {main}
+  thrown in /var/www/palians/reviewer/chatbot/api.php on line 334
+[26-Jan-2026 16:21:52 UTC] PHP Fatal error:  Uncaught TypeError: strtolower(): Argument #1 ($string) must be of type string, null given in /var/www/palians/reviewer/chatbot/api.php:334
+Stack trace:
+#0 /var/www/palians/reviewer/chatbot/api.php(334): strtolower()
+#1 /var/www/palians/reviewer/chatbot/api.php(127): Chatbot->searchFAQ()
+#2 /var/www/palians/reviewer/chatbot/api.php(50): Chatbot->getResponse()
+#3 {main}
+  thrown in /var/www/palians/reviewer/chatbot/api.php on line 334
+[26-Jan-2026 16:23:28 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function checkRateLimit() in /var/www/palians/reviewer/user/signup.php:24
+Stack trace:
+#0 {main}
+  thrown in /var/www/palians/reviewer/user/signup.php on line 24
+[26-Jan-2026 16:23:44 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function checkRateLimit() in /var/www/palians/reviewer/user/signup.php:24
+Stack trace:
+#0 {main}
+  thrown in /var/www/palians/reviewer/user/signup.php on line 24
+[26-Jan-2026 17:17:29 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[26-Jan-2026 17:17:48 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[26-Jan-2026 19:11:16 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[26-Jan-2026 19:38:20 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[26-Jan-2026 19:41:10 UTC] PHP Fatal error:  Uncaught TypeError: strtolower(): Argument #1 ($string) must be of type string, null given in /var/www/palians/reviewer/chatbot/api.php:334
+Stack trace:
+#0 /var/www/palians/reviewer/chatbot/api.php(334): strtolower()
+#1 /var/www/palians/reviewer/chatbot/api.php(127): Chatbot->searchFAQ()
+#2 /var/www/palians/reviewer/chatbot/api.php(50): Chatbot->getResponse()
+#3 {main}
+  thrown in /var/www/palians/reviewer/chatbot/api.php on line 334
+[26-Jan-2026 19:41:21 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in /var/www/palians/reviewer/includes/header.php:31
+Stack trace:
+#0 /var/www/palians/reviewer/help.php(39): include()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/header.php on line 31
+[26-Jan-2026 19:49:47 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[26-Jan-2026 19:50:00 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[26-Jan-2026 23:44:56 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[26-Jan-2026 23:45:08 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[26-Jan-2026 23:46:42 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 00:51:26 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 01:04:46 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 01:04:56 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 01:06:06 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 01:06:24 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 01:24:12 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[27-Jan-2026 01:28:22 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[27-Jan-2026 04:22:18 UTC] Reviewers found: 35
+[27-Jan-2026 04:31:11 UTC] Reviewers found: 36
+[27-Jan-2026 04:34:57 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 04:35:30 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 04:39:26 UTC] Reviewers found: 38
+[27-Jan-2026 04:46:04 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 04:49:39 UTC] Reviewers found: 38
+[27-Jan-2026 04:50:20 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:20 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:20 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:20 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:20 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:20 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:20 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:20 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:20 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:20 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:21 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:22 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:22 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:22 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:22 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:22 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:22 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:22 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:22 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 04:50:22 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 04:50:22 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 05:38:17 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[27-Jan-2026 06:00:37 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 06:00:37 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 06:00:53 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 06:00:53 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 06:33:01 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[27-Jan-2026 06:40:51 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 06:42:06 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 06:42:06 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 06:42:15 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 06:42:15 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 06:54:06 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 06:59:17 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 07:03:01 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 07:09:04 UTC] Image Host Response: HTTP 200 - https://palians.com/image-host/view.php?img=5c69f3bbcd4d4ba1f0ceece42777ed77.png
+[27-Jan-2026 07:41:32 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 07:41:32 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 07:44:55 UTC] Messages Error: SQLSTATE[42000]: Syntax error or access violation: 1055 Expression #9 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'reviewflow.m.task_id' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
+[27-Jan-2026 07:45:01 UTC] Messages Error: SQLSTATE[42000]: Syntax error or access violation: 1055 Expression #9 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'reviewflow.m.task_id' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
+[27-Jan-2026 07:56:09 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 07:58:32 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 07:58:32 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 07:59:26 UTC] Messages Error: SQLSTATE[42000]: Syntax error or access violation: 1055 Expression #9 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'reviewflow.m.task_id' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
+[27-Jan-2026 08:02:50 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[27-Jan-2026 08:08:40 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 08:08:40 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 08:30:16 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[27-Jan-2026 08:51:50 UTC] Image Host Response: HTTP 200 - https://palians.com/image-host/view.php?img=dee9c2925e7e5bbe81a077f162541cdd.jpeg
+[27-Jan-2026 09:07:14 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 09:22:19 UTC] Image Host Response: HTTP 0 - 
+[27-Jan-2026 09:25:57 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 09:28:18 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[27-Jan-2026 09:28:35 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[27-Jan-2026 09:28:40 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[27-Jan-2026 09:28:45 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[27-Jan-2026 09:29:00 UTC] Forgot Password Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'reset_token' in 'field list'
+[27-Jan-2026 09:31:12 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 10:39:02 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 10:39:33 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 10:40:15 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 11:34:42 UTC] [2] Undefined array key "admin_id" in /var/www/palians/reviewer/admin/task-detail.php:88
+[27-Jan-2026 11:38:34 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 11:38:34 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 11:38:34 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 11:38:34 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 11:38:34 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 11:38:34 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 11:38:34 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 11:38:34 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 11:38:35 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[27-Jan-2026 11:38:35 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[27-Jan-2026 11:39:22 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 11:39:39 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 11:39:52 UTC] Login Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'remember_token' in 'field list'
+[27-Jan-2026 11:40:07 UTC] Image Host Response: HTTP 200 - https://palians.com/image-host/view.php?img=f4f666e17cea3f26b52f0071fea26688.png
+[27-Jan-2026 11:40:58 UTC] PHP Fatal error:  Uncaught TypeError: strtolower(): Argument #1 ($string) must be of type string, null given in /var/www/palians/reviewer/chatbot/api.php:334
+Stack trace:
+#0 /var/www/palians/reviewer/chatbot/api.php(334): strtolower()
+#1 /var/www/palians/reviewer/chatbot/api.php(127): Chatbot->searchFAQ()
+#2 /var/www/palians/reviewer/chatbot/api.php(50): Chatbot->getResponse()
+#3 {main}
+  thrown in /var/www/palians/reviewer/chatbot/api.php on line 334

@@ -12,14 +12,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = (int)$_SESSION['user_id'];
-
-// Check if admin is logged in as user
-$admin_viewing = false;
-$original_admin = '';
-if (isset($_SESSION['admin_logged_in_as_user']) && $_SESSION['admin_logged_in_as_user'] === true) {
-    $admin_viewing = true;
-    $original_admin = $_SESSION['original_admin_name'] ?? 'Admin';
-}
 $user_name = escape($_SESSION['user_name'] ?? '');
 
 // Create wallet if not exists
@@ -273,13 +265,6 @@ $streak_days = (int)($user_stats['streak_days'] ?? 0);
     </style>
 </head>
 <body>
-<?php if ($admin_viewing): ?>
-<div style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;padding:12px 20px;text-align:center;position:fixed;top:0;left:0;right:0;z-index:9999;box-shadow:0 2px 10px rgba(0,0,0,0.3);">
-    ⚠️ Viewing as <strong><?php echo escape($user_name); ?></strong> (Admin: <?php echo escape($original_admin); ?>)
-    <a href="<?php echo APP_URL; ?>/admin-return.php" style="background:#fff;color:#e74c3c;padding:6px 15px;border-radius:5px;margin-left:15px;text-decoration:none;font-weight:600;">← Return to Admin</a>
-</div>
-<style>.dashboard{padding-top:55px !important}</style>
-<?php endif; ?>
 <div class="dashboard">
     <!-- Header -->
     <div class="header">
