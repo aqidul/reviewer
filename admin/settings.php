@@ -79,6 +79,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
     $update_settings['registration_enabled'] = isset($_POST['registration_enabled']) ? '1' : '0';
     $update_settings['maintenance_mode'] = isset($_POST['maintenance_mode']) ? '1' : '0';
     
+    // Payment Settings
+    if (isset($_POST['razorpay_key_id'])) {
+        $update_settings['razorpay_key_id'] = sanitizeInput($_POST['razorpay_key_id']);
+    }
+    if (isset($_POST['razorpay_key_secret'])) {
+        $update_settings['razorpay_key_secret'] = sanitizeInput($_POST['razorpay_key_secret']);
+    }
+    $update_settings['razorpay_enabled'] = isset($_POST['razorpay_enabled']) ? '1' : '0';
+    $update_settings['razorpay_test_mode'] = isset($_POST['razorpay_test_mode']) ? '1' : '0';
+    
+    if (isset($_POST['payumoney_merchant_key'])) {
+        $update_settings['payumoney_merchant_key'] = sanitizeInput($_POST['payumoney_merchant_key']);
+    }
+    if (isset($_POST['payumoney_merchant_salt'])) {
+        $update_settings['payumoney_merchant_salt'] = sanitizeInput($_POST['payumoney_merchant_salt']);
+    }
+    $update_settings['payumoney_enabled'] = isset($_POST['payumoney_enabled']) ? '1' : '0';
+    $update_settings['payumoney_test_mode'] = isset($_POST['payumoney_test_mode']) ? '1' : '0';
+    
+    if (isset($_POST['admin_commission_per_review'])) {
+        $update_settings['admin_commission_per_review'] = max(0, floatval($_POST['admin_commission_per_review']));
+    }
+    
+    // Legal Pages
+    if (isset($_POST['terms_content'])) {
+        $update_settings['terms_content'] = $_POST['terms_content'];
+    }
+    if (isset($_POST['privacy_content'])) {
+        $update_settings['privacy_content'] = $_POST['privacy_content'];
+    }
+    if (isset($_POST['refund_content'])) {
+        $update_settings['refund_content'] = $_POST['refund_content'];
+    }
+    if (isset($_POST['disclaimer_content'])) {
+        $update_settings['disclaimer_content'] = $_POST['disclaimer_content'];
+    }
+    
     // Save settings
     try {
         $stmt = $pdo->prepare("
@@ -409,6 +446,12 @@ try {
                 <a href="?tab=maintenance" class="nav-item <?php echo $active_tab === 'maintenance' ? 'active' : ''; ?>">
                     <span class="icon">🛠️</span> Maintenance
                 </a>
+                <a href="?tab=payment" class="nav-item <?php echo $active_tab === 'payment' ? 'active' : ''; ?>">
+                    <span class="icon">💳</span> Payment Settings
+                </a>
+                <a href="?tab=legal" class="nav-item <?php echo $active_tab === 'legal' ? 'active' : ''; ?>">
+                    <span class="icon">📄</span> Legal Pages
+                </a>
                 <a href="?tab=about" class="nav-item <?php echo $active_tab === 'about' ? 'active' : ''; ?>">
                     <span class="icon">ℹ️</span> About
                 </a>
@@ -720,6 +763,150 @@ try {
                             <a href="https://palians.com/phpmyadmin" target="_blank" class="btn btn-success">Open phpMyAdmin</a>
                         </div>
                     </div>
+                </div>
+                
+                <!-- Payment Settings -->
+                <div class="settings-card <?php echo $active_tab === 'payment' ? 'active' : ''; ?>" id="payment">
+                    <div class="card-title">💳 Payment Settings</div>
+                    <div class="card-subtitle">Configure payment gateways and commission</div>
+                    
+                    <form method="POST">
+                        <input type="hidden" name="active_tab" value="payment">
+                        
+                        <div class="form-section">
+                            <div class="section-title">💳 Razorpay Settings</div>
+                            
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Enable Razorpay</div>
+                                    <div class="toggle-desc">Accept payments via Razorpay gateway</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="razorpay_enabled" value="1" <?php echo ($settings['razorpay_enabled'] ?? '0') === '1' ? 'checked' : ''; ?>>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Test Mode</div>
+                                    <div class="toggle-desc">Use test credentials for development</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="razorpay_test_mode" value="1" <?php echo ($settings['razorpay_test_mode'] ?? '0') === '1' ? 'checked' : ''; ?>>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Key ID</label>
+                                    <input type="text" name="razorpay_key_id" class="form-control" value="<?php echo escape($settings['razorpay_key_id'] ?? ''); ?>" placeholder="rzp_test_xxxxx or rzp_live_xxxxx">
+                                </div>
+                                <div class="form-group">
+                                    <label>Key Secret</label>
+                                    <input type="password" name="razorpay_key_secret" class="form-control" value="<?php echo escape($settings['razorpay_key_secret'] ?? ''); ?>" placeholder="Enter secret key">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="section-title">💰 PayU Money Settings</div>
+                            
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Enable PayU Money</div>
+                                    <div class="toggle-desc">Accept payments via PayU Money gateway</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="payumoney_enabled" value="1" <?php echo ($settings['payumoney_enabled'] ?? '0') === '1' ? 'checked' : ''; ?>>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Test Mode</div>
+                                    <div class="toggle-desc">Use test credentials for development</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" name="payumoney_test_mode" value="1" <?php echo ($settings['payumoney_test_mode'] ?? '0') === '1' ? 'checked' : ''; ?>>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Merchant Key</label>
+                                    <input type="text" name="payumoney_merchant_key" class="form-control" value="<?php echo escape($settings['payumoney_merchant_key'] ?? ''); ?>" placeholder="Enter merchant key">
+                                </div>
+                                <div class="form-group">
+                                    <label>Merchant Salt</label>
+                                    <input type="password" name="payumoney_merchant_salt" class="form-control" value="<?php echo escape($settings['payumoney_merchant_salt'] ?? ''); ?>" placeholder="Enter merchant salt">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="section-title">💵 Commission Settings</div>
+                            
+                            <div class="form-group">
+                                <label>Admin Commission Per Review (₹)</label>
+                                <input type="number" name="admin_commission_per_review" class="form-control" value="<?php echo escape($settings['admin_commission_per_review'] ?? '5'); ?>" step="0.01" min="0" placeholder="5.00">
+                                <div class="form-hint">Amount earned by admin per review completed</div>
+                            </div>
+                        </div>
+                        
+                        <div class="btn-group">
+                            <button type="submit" name="save_settings" class="btn btn-primary">💾 Save Payment Settings</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Legal Pages -->
+                <div class="settings-card <?php echo $active_tab === 'legal' ? 'active' : ''; ?>" id="legal">
+                    <div class="card-title">📄 Legal Pages</div>
+                    <div class="card-subtitle">Manage terms, privacy policy, and other legal content</div>
+                    
+                    <form method="POST">
+                        <input type="hidden" name="active_tab" value="legal">
+                        
+                        <div class="info-box">
+                            <p>💡 These pages will be displayed to users. Use HTML for formatting.</p>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="section-title">📋 Terms & Conditions</div>
+                            <div class="form-group">
+                                <textarea name="terms_content" class="form-control" style="min-height:200px" placeholder="Enter terms and conditions..."><?php echo escape($settings['terms_content'] ?? ''); ?></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="section-title">🔒 Privacy Policy</div>
+                            <div class="form-group">
+                                <textarea name="privacy_content" class="form-control" style="min-height:200px" placeholder="Enter privacy policy..."><?php echo escape($settings['privacy_content'] ?? ''); ?></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="section-title">💰 Refund Policy</div>
+                            <div class="form-group">
+                                <textarea name="refund_content" class="form-control" style="min-height:200px" placeholder="Enter refund policy..."><?php echo escape($settings['refund_content'] ?? ''); ?></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <div class="section-title">⚠️ Disclaimer</div>
+                            <div class="form-group">
+                                <textarea name="disclaimer_content" class="form-control" style="min-height:200px" placeholder="Enter disclaimer..."><?php echo escape($settings['disclaimer_content'] ?? ''); ?></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="btn-group">
+                            <button type="submit" name="save_settings" class="btn btn-primary">💾 Save Legal Pages</button>
+                        </div>
+                    </form>
                 </div>
                 
                 <!-- About -->

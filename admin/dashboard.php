@@ -61,6 +61,21 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) FROM chatbot_unanswered WHERE is_resolved = 0");
     $unanswered_questions = (int)$stmt->fetchColumn();
     
+    // Seller Stats
+    $stmt = $pdo->query("SELECT COUNT(*) FROM sellers");
+    $total_sellers = (int)$stmt->fetchColumn();
+    
+    $stmt = $pdo->query("SELECT COUNT(*) FROM sellers WHERE status = 'active'");
+    $active_sellers = (int)$stmt->fetchColumn();
+    
+    // Revenue from Sellers
+    $stmt = $pdo->query("SELECT COALESCE(SUM(grand_total), 0) FROM review_requests WHERE payment_status = 'paid'");
+    $total_seller_revenue = (float)$stmt->fetchColumn();
+    
+    // Pending Review Request Approvals
+    $stmt = $pdo->query("SELECT COUNT(*) FROM review_requests WHERE admin_status = 'pending' AND payment_status = 'paid'");
+    $pending_approvals = (int)$stmt->fetchColumn();
+    
     // Revenue Stats (this month)
     $stmt = $pdo->query("
         SELECT 
@@ -149,6 +164,7 @@ try {
     $total_users = $active_users = $new_users_month = $total_tasks = $pending_tasks = $completed_tasks = 0;
     $total_wallet_balance = $total_paid = $pending_withdrawal_amount = 0;
     $pending_withdrawals = $unread_messages = $unanswered_questions = 0;
+    $total_sellers = $active_sellers = $total_seller_revenue = $pending_approvals = 0;
     $month_stats = ['total_credited' => 0, 'total_withdrawn' => 0];
     $daily_registrations = $daily_tasks = $monthly_revenue = [];
     $recent_activities = $recent_users = $pending_withdrawal_list = $top_earners = [];
@@ -438,6 +454,34 @@ try {
                 <div class="stat-value">₹<?php echo number_format($total_paid, 0); ?></div>
                 <div class="stat-label">Total Paid Out</div>
                 <div class="stat-change up">₹<?php echo number_format($month_stats['total_withdrawn'] ?? 0, 0); ?> this month</div>
+            </div>
+        </div>
+        
+        <!-- New Seller & Revenue Stats -->
+        <div class="stats-grid">
+            <div class="stat-card cyan">
+                <div class="stat-icon">🏪</div>
+                <div class="stat-value"><?php echo number_format($total_sellers); ?></div>
+                <div class="stat-label">Total Sellers</div>
+                <div class="stat-change"><?php echo $active_sellers; ?> active</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-icon">💵</div>
+                <div class="stat-value">₹<?php echo number_format($total_seller_revenue, 0); ?></div>
+                <div class="stat-label">Seller Revenue</div>
+                <div class="stat-change">From paid review requests</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-icon">📝</div>
+                <div class="stat-value"><?php echo number_format($pending_approvals); ?></div>
+                <div class="stat-label">Pending Approvals</div>
+                <div class="stat-change">Review requests to approve</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value"><?php echo number_format($active_users); ?></div>
+                <div class="stat-label">Active Users</div>
+                <div class="stat-change">Last 7 days</div>
             </div>
         </div>
         
