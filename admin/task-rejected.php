@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$admin_note, $admin_name, $rejection_id]);
                 $success = "Marked as reviewed successfully!";
                 
-            if ($action === 'allow_resubmit') {
+            } elseif ($action === 'allow_resubmit') {
                 $admin_note = sanitizeInput($_POST['admin_note'] ?? 'Resubmission allowed by admin');
                 $stmt = $pdo->prepare("
                     UPDATE task_rejections 
