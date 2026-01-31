@@ -95,7 +95,7 @@ try {
         $where_filter = "HAVING unread_count > 0";
     }
     
-    $stmt = $pdo->query("
+  $stmt = $pdo->query("
         SELECT 
             u.id as user_id,
             u.name as user_name,
@@ -105,14 +105,10 @@ try {
             COUNT(m.id) as message_count,
             SUM(CASE WHEN m.receiver_type = 'admin' AND m.is_read = 0 THEN 1 ELSE 0 END) as unread_count,
             MAX(m.created_at) as last_message_time,
-            (SELECT message FROM messages WHERE 
-                ((sender_type = 'user' AND sender_id = u.id) OR (receiver_type = 'user' AND receiver_id = u.id))
-                AND COALESCE(task_id, 0) = COALESCE(m.task_id, 0)
-                ORDER BY created_at DESC LIMIT 1
-            ) as last_message
+            MAX(m.message) as last_message
         FROM messages m
-        JOIN users u ON (m.sender_type = 'user' AND m.sender_id = u.id) OR (m.receiver_type = 'user' AND m.receiver_id = u.id)
-        GROUP BY u.id, COALESCE(m.task_id, 0)
+        JOIN users u ON m.sender_id = u.id AND m.sender_type = 'user'
+        GROUP BY u.id, u.name, u.email, u.mobile, COALESCE(m.task_id, 0)
         $where_filter
         ORDER BY unread_count DESC, last_message_time DESC
     ");
