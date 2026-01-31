@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($user_id && !empty($penalty_type)) {
                     // Add penalty
                     $stmt = $pdo->prepare("
-                        INSERT INTO user_penalties (user_id, penalty_type, reason, amount, issued_by, created_at)
+                        INSERT INTO user_penalties (user_id, penalty_type, reason, amount, created_by, created_at)
                         VALUES (?, ?, ?, ?, ?, NOW())
                     ");
                     $stmt->execute([$user_id, $penalty_type, $penalty_reason, $penalty_amount, $admin_name]);

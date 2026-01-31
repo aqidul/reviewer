@@ -852,7 +852,7 @@ try {
                             
                             <div class="form-group">
                                 <label>Admin Commission Per Review (₹)</label>
-                                <input type="number" name="admin_commission_per_review" class="form-control" value="<?php echo escape($settings['admin_commission_per_review'] ?? '5'); ?>" step="0.01" min="0" placeholder="5.00">
+                                <input type="number" name="admin_commission_per_review" class="form-control" value="<?php echo escape($settings['admin_commission_per_review'] ?? DEFAULT_ADMIN_COMMISSION_PER_REVIEW); ?>" step="0.01" min="0" placeholder="<?php echo DEFAULT_ADMIN_COMMISSION_PER_REVIEW; ?>.00">
                                 <div class="form-hint">Amount earned by admin per review completed</div>
                             </div>
                         </div>

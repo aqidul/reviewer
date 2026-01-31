@@ -33,6 +33,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MIN_WITHDRAWAL = 100;
 const REFERRAL_BONUS = 50;
 const FIRST_TASK_BONUS = 25;
+const DEFAULT_ADMIN_COMMISSION_PER_REVIEW = 5;
 
 // WhatsApp Settings
 const WHATSAPP_API_URL = 'https://api.whatsapp.com/send';
