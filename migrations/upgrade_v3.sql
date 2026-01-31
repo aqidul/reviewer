@@ -7,6 +7,7 @@
 -- WARNING: This will add new tables and modify existing ones
 -- BACKUP YOUR DATABASE BEFORE RUNNING THIS SCRIPT
 
+-- IMPORTANT: Change 'reviewflow' below to your actual database name if different
 USE reviewflow;
 
 -- ============================================
