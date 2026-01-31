@@ -4,7 +4,8 @@
 # Enable RewriteEngine
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /reviewer/seller/
+    # Note: Adjust RewriteBase according to your installation path
+    # RewriteBase /reviewer/seller/
     
     # Force HTTPS
     RewriteCond %{HTTPS} off

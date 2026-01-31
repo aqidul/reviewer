@@ -39,10 +39,13 @@ if ($action === 'initiate') {
             exit;
         }
         
+        // Check demo mode flag from settings (only for development/testing)
+        $demo_mode = getSetting('payment_demo_mode', '0') === '1';
+        
         // Check if PaymentFactory is available
-        if (!file_exists(__DIR__ . '/../includes/payment/PaymentFactory.php')) {
-            // Payment gateway not configured, simulate success for demo
-            $error = 'Payment gateway is not configured. This is a demo mode.';
+        if ($demo_mode || !file_exists(__DIR__ . '/../includes/payment/PaymentFactory.php')) {
+            // DEMO MODE - Only for development/testing
+            error_log('WARNING: Payment processed in DEMO MODE for request #' . $request_id);
             
             // For demo purposes, mark as paid directly
             $pdo->beginTransaction();
@@ -134,8 +137,15 @@ if ($action === 'initiate') {
     // Handle payment callback from gateway
     
     try {
-        // Get payment details from POST
+        // Get payment details from POST with validation
         $gateway_type = $_POST['gateway'] ?? 'razorpay';
+        
+        // Validate gateway type
+        $allowed_gateways = ['razorpay', 'payumoney'];
+        if (!in_array($gateway_type, $allowed_gateways)) {
+            throw new Exception('Invalid payment gateway');
+        }
+        
         $payment_id = $_POST['razorpay_payment_id'] ?? $_POST['payment_id'] ?? '';
         $order_id = $_POST['razorpay_order_id'] ?? $_POST['order_id'] ?? '';
         $signature = $_POST['razorpay_signature'] ?? $_POST['signature'] ?? '';
@@ -248,6 +258,12 @@ if ($action === 'initiate') {
     
     if ($amount < 100 || $amount > 100000) {
         header('Location: wallet.php?error=invalid_amount');
+        exit;
+    }
+    
+    // Verify amount from session to prevent parameter tampering
+    if (!isset($_SESSION['wallet_add_amount']) || $_SESSION['wallet_add_amount'] != $amount) {
+        header('Location: wallet.php?error=invalid_session');
         exit;
     }
     

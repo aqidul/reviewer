@@ -118,7 +118,8 @@ try {
 
 <script>
 function viewInvoice(invoiceId) {
-    // Simple preview - in production, this would fetch from backend
+    // Invoice preview functionality
+    // NOTE: Requires invoice-view.php to be implemented
     const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
     document.getElementById('invoiceContent').innerHTML = `
         <div class="text-center">
@@ -138,13 +139,18 @@ function viewInvoice(invoiceId) {
         })
         .catch(error => {
             document.getElementById('invoiceContent').innerHTML = `
-                <div class="alert alert-danger">Failed to load invoice</div>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Invoice preview feature is under development. Please use download option.
+                </div>
             `;
         });
 }
 
 function downloadInvoice(invoiceId) {
-    window.location.href = 'invoice-download.php?id=' + invoiceId;
+    // NOTE: Requires invoice-download.php to be implemented
+    alert('Invoice download feature is under development. This will generate and download PDF invoice.');
+    // window.location.href = 'invoice-download.php?id=' + invoiceId;
 }
 
 function printInvoice() {

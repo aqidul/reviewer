@@ -43,6 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_money'])) {
     } elseif ($amount > 100000) {
         $error = 'Maximum amount to add is ₹1,00,000';
     } else {
+        // Store amount in session to prevent parameter tampering
+        $_SESSION['wallet_add_amount'] = $amount;
+        
         // Redirect to payment gateway
         // In production, create payment order and redirect
         header('Location: payment-callback.php?action=add_money&amount=' . $amount);
