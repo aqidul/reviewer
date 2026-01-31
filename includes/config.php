@@ -16,7 +16,8 @@ const DB_CHARSET = 'utf8mb4';
 const APP_NAME = 'ReviewFlow';
 const APP_URL = 'https://palians.com/reviewer';
 const ADMIN_URL = 'https://palians.com/reviewer/admin';
-const APP_VERSION = '2.0.0';
+const SELLER_URL = 'https://palians.com/reviewer/seller';
+const APP_VERSION = '3.0.0';
 
 // Security Settings
 const SESSION_TIMEOUT = 3600;
@@ -32,6 +33,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MIN_WITHDRAWAL = 100;
 const REFERRAL_BONUS = 50;
 const FIRST_TASK_BONUS = 25;
+const DEFAULT_ADMIN_COMMISSION_PER_REVIEW = 5;
 
 // WhatsApp Settings
 const WHATSAPP_API_URL = 'https://api.whatsapp.com/send';
@@ -45,8 +47,24 @@ const SMTP_PASS = 'your-app-password';
 const SMTP_FROM = 'noreply@palians.com';
 const SMTP_FROM_NAME = 'ReviewFlow';
 
+// Payment Gateway Settings (Override with database settings)
+const RAZORPAY_KEY_ID = '';
+const RAZORPAY_KEY_SECRET = '';
+const PAYUMONEY_MERCHANT_KEY = '';
+const PAYUMONEY_MERCHANT_SALT = '';
+
+// GST Settings
+const GST_RATE = 18;
+const SAC_CODE = '998371';
+
 // Create directories
-$dirs = [UPLOAD_DIR, UPLOAD_DIR . 'qr/', UPLOAD_DIR . 'profiles/', __DIR__ . '/../logs'];
+$dirs = [
+    UPLOAD_DIR, 
+    UPLOAD_DIR . 'qr/', 
+    UPLOAD_DIR . 'profiles/', 
+    UPLOAD_DIR . 'invoices/',
+    __DIR__ . '/../logs'
+];
 foreach ($dirs as $dir) {
     if (!is_dir($dir)) @mkdir($dir, 0755, true);
 }

@@ -1114,4 +1114,431 @@ if (!function_exists('cleanOldData')) {
         return $results;
     }
 }
+
+// ============================================
+// TIER & BADGE SYSTEM FUNCTIONS (v3.0)
+// ============================================
+
+/**
+ * Calculate tier points for a user
+ */
+if (!function_exists('calculateTierPoints')) {
+    function calculateTierPoints(int $userId): float {
+        global $pdo;
+        
+        try {
+            $stmt = $pdo->prepare("
+                SELECT 
+                    COALESCE(COUNT(DISTINCT t.id), 0) as tasks_completed,
+                    COALESCE(u.active_days, 0) as active_days,
+                    COALESCE(COUNT(DISTINCT r.id), 0) as successful_referrals,
+                    COALESCE(u.quality_score, 5.0) as quality_score,
+                    COALESCE(u.consistency_score, 5.0) as consistency_score
+                FROM users u
+                LEFT JOIN tasks t ON t.user_id = u.id AND t.status = 'completed'
+                LEFT JOIN referrals r ON r.referrer_id = u.id AND r.status = 'completed'
+                WHERE u.id = ?
+                GROUP BY u.id
+            ");
+            $stmt->execute([$userId]);
+            $data = $stmt->fetch();
+            
+            if (!$data) return 0;
+            
+            // Calculate weighted points
+            $points = 0;
+            $points += $data['tasks_completed'] * 1; // 1 point per task
+            $points += $data['active_days'] * 0.5; // 0.5 point per active day
+            $points += $data['successful_referrals'] * 5; // 5 points per referral
+            
+            // Quality bonus (up to 10 points)
+            $qualityBonus = ($data['quality_score'] >= 4.5) ? 10 : ($data['quality_score'] >= 4.0 ? 5 : 0);
+            $points += $qualityBonus;
+            
+            // Consistency bonus (up to 5 points)
+            $consistencyBonus = ($data['consistency_score'] >= 4.5) ? 5 : ($data['consistency_score'] >= 4.0 ? 3 : 0);
+            $points += $consistencyBonus;
+            
+            return round($points, 2);
+            
+        } catch (PDOException $e) {
+            error_log("Calculate Tier Points Error: " . $e->getMessage());
+            return 0;
+        }
+    }
+}
+
+/**
+ * Get user tier information
+ */
+if (!function_exists('getUserTier')) {
+    function getUserTier(int $userId): ?array {
+        global $pdo;
+        
+        try {
+            $stmt = $pdo->prepare("
+                SELECT t.*, u.tier_points
+                FROM users u
+                JOIN reviewer_tiers t ON u.tier_id = t.id
+                WHERE u.id = ?
+            ");
+            $stmt->execute([$userId]);
+            return $stmt->fetch();
+            
+        } catch (PDOException $e) {
+            error_log("Get User Tier Error: " . $e->getMessage());
+            return null;
+        }
+    }
+}
+
+/**
+ * Check and upgrade user tier if eligible
+ */
+if (!function_exists('checkTierUpgrade')) {
+    function checkTierUpgrade(int $userId): bool {
+        global $pdo;
+        
+        try {
+            // Calculate current points
+            $points = calculateTierPoints($userId);
+            
+            // Get appropriate tier
+            $stmt = $pdo->prepare("
+                SELECT id FROM reviewer_tiers
+                WHERE min_points <= ? AND (max_points >= ? OR max_points IS NULL)
+                ORDER BY min_points DESC
+                LIMIT 1
+            ");
+            $stmt->execute([$points, $points]);
+            $tier = $stmt->fetch();
+            
+            if (!$tier) return false;
+            
+            // Update user tier
+            $stmt = $pdo->prepare("UPDATE users SET tier_id = ?, tier_points = ? WHERE id = ?");
+            $stmt->execute([$tier['id'], $points, $userId]);
+            
+            // Create notification
+            createNotification(
+                $userId,
+                'tier_upgrade',
+                'Tier Upgraded!',
+                "Congratulations! You've been upgraded to a new tier level.",
+                "user/dashboard.php"
+            );
+            
+            return true;
+            
+        } catch (PDOException $e) {
+            error_log("Check Tier Upgrade Error: " . $e->getMessage());
+            return false;
+        }
+    }
+}
+
+/**
+ * Award badge to user
+ */
+if (!function_exists('awardBadge')) {
+    function awardBadge(int $userId, string $badgeCode): bool {
+        global $pdo;
+        
+        try {
+            // Get badge ID
+            $stmt = $pdo->prepare("SELECT id, reward_points, reward_amount FROM badges WHERE badge_code = ? AND is_active = 1");
+            $stmt->execute([$badgeCode]);
+            $badge = $stmt->fetch();
+            
+            if (!$badge) return false;
+            
+            // Check if already earned
+            $stmt = $pdo->prepare("SELECT id FROM user_badges WHERE user_id = ? AND badge_id = ?");
+            $stmt->execute([$userId, $badge['id']]);
+            if ($stmt->fetch()) return false; // Already has badge
+            
+            // Award badge
+            $stmt = $pdo->prepare("INSERT INTO user_badges (user_id, badge_id) VALUES (?, ?)");
+            $stmt->execute([$userId, $badge['id']]);
+            
+            // Add reward points to tier points
+            if ($badge['reward_points'] > 0) {
+                $stmt = $pdo->prepare("UPDATE users SET tier_points = tier_points + ? WHERE id = ?");
+                $stmt->execute([$badge['reward_points'], $userId]);
+            }
+            
+            // Add reward amount to wallet
+            if ($badge['reward_amount'] > 0) {
+                addMoneyToWallet($userId, $badge['reward_amount'], 'Badge Reward: ' . $badgeCode);
+            }
+            
+            // Check for tier upgrade
+            checkTierUpgrade($userId);
+            
+            return true;
+            
+        } catch (PDOException $e) {
+            error_log("Award Badge Error: " . $e->getMessage());
+            return false;
+        }
+    }
+}
+
+/**
+ * Check badge eligibility for user
+ */
+if (!function_exists('checkBadgeEligibility')) {
+    function checkBadgeEligibility(int $userId): array {
+        global $pdo;
+        
+        $awarded = [];
+        
+        try {
+            // Get all active badges not yet earned
+            $stmt = $pdo->prepare("
+                SELECT b.* FROM badges b
+                WHERE b.is_active = 1
+                AND b.id NOT IN (SELECT badge_id FROM user_badges WHERE user_id = ?)
+            ");
+            $stmt->execute([$userId]);
+            $badges = $stmt->fetchAll();
+            
+            foreach ($badges as $badge) {
+                $eligible = false;
+                
+                switch ($badge['criteria_type']) {
+                    case 'tasks':
+                        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tasks WHERE user_id = ? AND status = 'completed'");
+                        $stmt->execute([$userId]);
+                        $count = (int)$stmt->fetchColumn();
+                        $eligible = $count >= $badge['criteria_value'];
+                        break;
+                        
+                    case 'referrals':
+                        $stmt = $pdo->prepare("SELECT COUNT(*) FROM referrals WHERE referrer_id = ? AND status = 'completed'");
+                        $stmt->execute([$userId]);
+                        $count = (int)$stmt->fetchColumn();
+                        $eligible = $count >= $badge['criteria_value'];
+                        break;
+                        
+                    case 'quality':
+                        $stmt = $pdo->prepare("SELECT quality_score FROM users WHERE id = ?");
+                        $stmt->execute([$userId]);
+                        $score = (float)$stmt->fetchColumn();
+                        $eligible = ($score * 10) >= $badge['criteria_value'];
+                        break;
+                        
+                    case 'streak':
+                        $stmt = $pdo->prepare("SELECT active_days FROM users WHERE id = ?");
+                        $stmt->execute([$userId]);
+                        $days = (int)$stmt->fetchColumn();
+                        $eligible = $days >= $badge['criteria_value'];
+                        break;
+                        
+                    case 'earnings':
+                        $stmt = $pdo->prepare("
+                            SELECT COALESCE(SUM(amount), 0) FROM wallet_transactions 
+                            WHERE user_id = ? AND type IN ('credit', 'bonus', 'referral') AND status = 'completed'
+                        ");
+                        $stmt->execute([$userId]);
+                        $earnings = (float)$stmt->fetchColumn();
+                        $eligible = $earnings >= $badge['criteria_value'];
+                        break;
+                }
+                
+                if ($eligible) {
+                    if (awardBadge($userId, $badge['badge_code'])) {
+                        $awarded[] = $badge['badge_code'];
+                    }
+                }
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Check Badge Eligibility Error: " . $e->getMessage());
+        }
+        
+        return $awarded;
+    }
+}
+
+// ============================================
+// GST & INVOICE FUNCTIONS (v3.0)
+// ============================================
+
+/**
+ * Calculate GST amount
+ */
+if (!function_exists('calculateGST')) {
+    function calculateGST(float $amount, bool $breakdown = false) {
+        $gstRate = getSetting('gst_rate', 18) / 100;
+        $gstAmount = $amount * $gstRate;
+        
+        if (!$breakdown) {
+            return $gstAmount;
+        }
+        
+        // For same state: CGST + SGST, for different state: IGST
+        return [
+            'cgst' => $gstAmount / 2,
+            'sgst' => $gstAmount / 2,
+            'igst' => 0, // Set based on state comparison
+            'total' => $gstAmount
+        ];
+    }
+}
+
+/**
+ * Generate invoice number
+ */
+if (!function_exists('generateInvoiceNumber')) {
+    function generateInvoiceNumber(): string {
+        $prefix = 'INV';
+        $year = date('Y');
+        $month = date('m');
+        $random = str_pad((string)rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+        
+        return "{$prefix}/{$year}/{$month}/{$random}";
+    }
+}
+
+/**
+ * Generate GST invoice
+ */
+if (!function_exists('generateInvoice')) {
+    function generateInvoice(int $reviewRequestId): ?int {
+        global $pdo;
+        
+        try {
+            // Get review request details
+            $stmt = $pdo->prepare("
+                SELECT rr.*, s.name as seller_name, s.gst_number as seller_gst, 
+                       s.company_name as seller_legal_name, s.billing_address as seller_address,
+                       pt.id as payment_id
+                FROM review_requests rr
+                JOIN sellers s ON rr.seller_id = s.id
+                LEFT JOIN payment_transactions pt ON pt.review_request_id = rr.id AND pt.status = 'success'
+                WHERE rr.id = ?
+            ");
+            $stmt->execute([$reviewRequestId]);
+            $request = $stmt->fetch();
+            
+            if (!$request) return null;
+            
+            // Get platform GST settings
+            $stmt = $pdo->query("SELECT * FROM gst_settings WHERE is_active = 1 ORDER BY id DESC LIMIT 1");
+            $platformGst = $stmt->fetch();
+            
+            if (!$platformGst) return null;
+            
+            // Calculate GST breakdown
+            $gst = calculateGST($request['total_amount'], true);
+            
+            // Generate invoice number
+            $invoiceNumber = generateInvoiceNumber();
+            
+            // Insert invoice
+            $stmt = $pdo->prepare("
+                INSERT INTO tax_invoices (
+                    invoice_number, seller_id, review_request_id, payment_transaction_id,
+                    seller_gst, seller_legal_name, seller_address,
+                    platform_gst, platform_legal_name, platform_address,
+                    base_amount, cgst_amount, sgst_amount, igst_amount, total_gst, grand_total,
+                    sac_code, invoice_date
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE())
+            ");
+            
+            $stmt->execute([
+                $invoiceNumber,
+                $request['seller_id'],
+                $reviewRequestId,
+                $request['payment_id'],
+                $request['seller_gst'],
+                $request['seller_legal_name'] ?? $request['seller_name'],
+                $request['seller_address'],
+                $platformGst['gst_number'],
+                $platformGst['legal_name'],
+                $platformGst['registered_address'],
+                $request['total_amount'],
+                $gst['cgst'],
+                $gst['sgst'],
+                $gst['igst'],
+                $gst['total'],
+                $request['grand_total'],
+                getSetting('gst_sac_code', '998371')
+            ]);
+            
+            return (int)$pdo->lastInsertId();
+            
+        } catch (PDOException $e) {
+            error_log("Generate Invoice Error: " . $e->getMessage());
+            return null;
+        }
+    }
+}
+
+// ============================================
+// FRAUD DETECTION FUNCTIONS (v3.0)
+// ============================================
+
+/**
+ * Detect potential fraud
+ */
+if (!function_exists('detectFraud')) {
+    function detectFraud(int $userId, string $activityType, string $description, string $severity = 'medium'): bool {
+        global $pdo;
+        
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO suspicious_activities (user_id, activity_type, description, severity, status)
+                VALUES (?, ?, ?, ?, 'pending')
+            ");
+            
+            return $stmt->execute([$userId, $activityType, $description, $severity]);
+            
+        } catch (PDOException $e) {
+            error_log("Detect Fraud Error: " . $e->getMessage());
+            return false;
+        }
+    }
+}
+
+/**
+ * Check if feature is enabled
+ */
+if (!function_exists('isFeatureEnabled')) {
+    function isFeatureEnabled(string $featureKey, ?int $userId = null): bool {
+        global $pdo;
+        
+        try {
+            $stmt = $pdo->prepare("SELECT is_enabled, is_beta FROM feature_flags WHERE feature_key = ?");
+            $stmt->execute([$featureKey]);
+            $feature = $stmt->fetch();
+            
+            if (!$feature) return false;
+            
+            // If not enabled, return false
+            if (!$feature['is_enabled']) return false;
+            
+            // If beta and user provided, check beta access
+            if ($feature['is_beta'] && $userId) {
+                $stmt = $pdo->prepare("
+                    SELECT COUNT(*) FROM beta_users bu
+                    JOIN feature_flags ff ON bu.feature_id = ff.id
+                    WHERE ff.feature_key = ? AND bu.user_id = ?
+                ");
+                $stmt->execute([$featureKey, $userId]);
+                return (int)$stmt->fetchColumn() > 0;
+            }
+            
+            // If beta but no user, return false
+            if ($feature['is_beta']) return false;
+            
+            return true;
+            
+        } catch (PDOException $e) {
+            error_log("Check Feature Error: " . $e->getMessage());
+            return false;
+        }
+    }
+}
 ?>
