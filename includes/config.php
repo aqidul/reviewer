@@ -17,7 +17,7 @@ const APP_NAME = 'ReviewFlow';
 const APP_URL = 'https://palians.com/reviewer';
 const ADMIN_URL = 'https://palians.com/reviewer/admin';
 const SELLER_URL = 'https://palians.com/reviewer/seller';
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '2.0.0';
 
 // Security Settings
 const SESSION_TIMEOUT = 3600;
