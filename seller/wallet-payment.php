@@ -74,8 +74,8 @@ try {
         throw new Exception('Failed to update wallet balance');
     }
     
-    // Generate payment ID
-    $payment_id = 'WALLET_' . time() . '_' . $request_id;
+    // Generate payment ID with better uniqueness
+    $payment_id = 'WALLET_' . time() . '_' . uniqid() . '_' . $request_id;
     
     // Update review request
     $stmt = $pdo->prepare("
