@@ -32,6 +32,33 @@ try {
 ?>
 
 <div class="container-fluid">
+    <?php if (isset($_GET['success'])): ?>
+        <div class="alert alert-success alert-dismissible fade show">
+            <?php
+            $success_messages = [
+                'payment_completed' => 'Payment completed successfully! Your review request is now being processed.',
+                'payment_completed_wallet' => 'Payment completed successfully using wallet! Your review request is now being processed.'
+            ];
+            echo $success_messages[$_GET['success']] ?? 'Operation completed successfully!';
+            ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+    
+    <?php if (isset($_GET['error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show">
+            <?php
+            $error_messages = [
+                'invalid_session' => 'Invalid session. Please try again.',
+                'request_not_found' => 'Review request not found.',
+                'invalid_request' => 'Invalid request.'
+            ];
+            echo isset($error_messages[$_GET['error']]) ? $error_messages[$_GET['error']] : htmlspecialchars($_GET['error']);
+            ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+    
     <div class="row mb-4">
         <div class="col">
             <nav aria-label="breadcrumb">
