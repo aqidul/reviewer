@@ -209,10 +209,10 @@ try {
         
         .toggle-switch{position:relative;display:inline-block;width:50px;height:26px}
         .toggle-switch input{opacity:0;width:0;height:0}
-        .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#cbd5e1;transition:0.3s;border-radius:26px}
+        .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#cbd5e1;transition:0.3s;border-radius:26px}
         .toggle-slider:before{position:absolute;content:"";height:20px;width:20px;left:3px;bottom:3px;background:#fff;transition:0.3s;border-radius:50%}
-        input:checked + .toggle-slider{background:#10b981}
-        input:checked + .toggle-slider:before{transform:translateX(24px)}
+        .toggle-switch input:checked + .toggle-slider{background-color:#10b981 !important}
+        .toggle-switch input:checked + .toggle-slider:before{transform:translateX(24px)}
         
         .badge{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600}
         .badge-enabled{background:#dcfce7;color:#166534}
@@ -324,9 +324,9 @@ try {
                                                 <input type="hidden" name="feature_id" value="<?php echo $feature['id']; ?>">
                                                 <input type="hidden" name="is_enabled" value="<?php echo $feature['is_enabled'] ? 0 : 1; ?>">
                                                 <label class="toggle-switch">
-                                                    <input type="checkbox" <?php echo $feature['is_enabled'] ? 'checked' : ''; ?> onchange="this.form.submit()">
+                                                    <input type="checkbox" <?php echo $feature['is_enabled'] ? 'checked' : ''; ?> onchange="this.form.submit()" style="<?php echo $feature['is_enabled'] ? '' : ''; ?>">
                                                     <input type="hidden" name="toggle_feature" value="1">
-                                                    <span class="toggle-slider"></span>
+                                                    <span class="toggle-slider" <?php echo $feature['is_enabled'] ? 'style="background-color:#10b981"' : ''; ?>></span>
                                                 </label>
                                             </form>
                                         </div>
@@ -338,7 +338,7 @@ try {
                                                 <label class="toggle-switch">
                                                     <input type="checkbox" <?php echo $feature['is_beta'] ? 'checked' : ''; ?> onchange="this.form.submit()">
                                                     <input type="hidden" name="toggle_beta" value="1">
-                                                    <span class="toggle-slider"></span>
+                                                    <span class="toggle-slider" <?php echo $feature['is_enabled'] ? 'style="background-color:#10b981"' : ''; ?>></span>
                                                 </label>
                                             </form>
                                         </div>
@@ -467,5 +467,15 @@ try {
             }
         }
     </script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".toggle-switch input[type=checkbox]").forEach(function(cb) {
+        if(cb.checked) {
+            cb.nextElementSibling.style.backgroundColor = "#10b981";
+            cb.nextElementSibling.querySelector(":before") && (cb.nextElementSibling.style.transform = "translateX(24px)");
+        }
+    });
+});
+</script>
 </body>
 </html>

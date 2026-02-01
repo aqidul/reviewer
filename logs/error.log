@@ -1183,3 +1183,253 @@ Stack trace:
 #2 /var/www/palians/reviewer/chatbot/api.php(50): Chatbot->getResponse()
 #3 {main}
   thrown in /var/www/palians/reviewer/chatbot/api.php on line 334
+[31-Jan-2026 22:37:17 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in /var/www/palians/reviewer/includes/header.php:31
+Stack trace:
+#0 /var/www/palians/reviewer/pages/terms.php(130): include()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/header.php on line 31
+[31-Jan-2026 22:44:29 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[31-Jan-2026 22:48:17 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 117 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(117): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 22:48:19 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 117 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(117): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 22:48:52 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[31-Jan-2026 22:50:06 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[31-Jan-2026 22:50:30 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 117 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(117): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 22:53:57 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 117 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(117): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 22:54:00 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 117 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(117): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 22:54:56 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 117 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(117): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 22:55:04 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 117 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(117): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 22:55:29 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 117 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(117): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 22:56:39 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 22:56:41 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 22:56:52 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 22:56:54 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 22:57:47 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:00:47 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:00:49 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:01:51 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:01:55 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:02:08 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:02:10 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:03:34 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:03:59 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:04:01 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:04:32 UTC] [2] Undefined variable $conn in /var/www/palians/reviewer/seller/test-payment.php:19
+[31-Jan-2026 23:04:32 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /var/www/palians/reviewer/seller/test-payment.php:19
+Stack trace:
+#0 {main}
+  thrown in /var/www/palians/reviewer/seller/test-payment.php on line 19
+[31-Jan-2026 23:04:35 UTC] [2] Undefined variable $conn in /var/www/palians/reviewer/seller/test-payment.php:19
+[31-Jan-2026 23:04:35 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /var/www/palians/reviewer/seller/test-payment.php:19
+Stack trace:
+#0 {main}
+  thrown in /var/www/palians/reviewer/seller/test-payment.php on line 19
+[31-Jan-2026 23:04:56 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:05:07 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:05:10 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:07:42 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:07:45 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:14:58 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 118 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(118): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:16:01 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:16:03 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:17:11 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:17:40 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:18:33 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[31-Jan-2026 23:26:21 UTC] GST Settings Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'created_by' in 'field list'
+[31-Jan-2026 23:27:37 UTC] Rejected Tasks Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 't.platform' in 'field list'
+[31-Jan-2026 23:27:41 UTC] [8192] number_format(): Passing null to parameter #1 ($num) of type float is deprecated in /var/www/palians/reviewer/admin/suspicious-users.php:287
+[31-Jan-2026 23:27:41 UTC] [8192] number_format(): Passing null to parameter #1 ($num) of type float is deprecated in /var/www/palians/reviewer/admin/suspicious-users.php:288
+[31-Jan-2026 23:27:41 UTC] [8192] number_format(): Passing null to parameter #1 ($num) of type float is deprecated in /var/www/palians/reviewer/admin/suspicious-users.php:289
+[31-Jan-2026 23:27:41 UTC] [8192] number_format(): Passing null to parameter #1 ($num) of type float is deprecated in /var/www/palians/reviewer/admin/suspicious-users.php:290
+[31-Jan-2026 23:29:11 UTC] GST Settings Error: SQLSTATE[HY000]: General error: 1366 Incorrect integer value: 'aqidulmumtaz' for column 'created_by' at row 1
+[31-Jan-2026 23:32:17 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[31-Jan-2026 23:41:35 UTC] Rejected Tasks Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 't.platform' in 'field list'
+[31-Jan-2026 23:41:59 UTC] [8192] number_format(): Passing null to parameter #1 ($num) of type float is deprecated in /var/www/palians/reviewer/admin/suspicious-users.php:287
+[31-Jan-2026 23:41:59 UTC] [8192] number_format(): Passing null to parameter #1 ($num) of type float is deprecated in /var/www/palians/reviewer/admin/suspicious-users.php:288
+[31-Jan-2026 23:41:59 UTC] [8192] number_format(): Passing null to parameter #1 ($num) of type float is deprecated in /var/www/palians/reviewer/admin/suspicious-users.php:289
+[31-Jan-2026 23:41:59 UTC] [8192] number_format(): Passing null to parameter #1 ($num) of type float is deprecated in /var/www/palians/reviewer/admin/suspicious-users.php:290
+[01-Feb-2026 00:07:45 UTC] Rejected Tasks Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 't.platform' in 'field list'
+[01-Feb-2026 00:14:50 UTC] Rejected Tasks Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 't.platform' in 'field list'
+[01-Feb-2026 00:18:39 UTC] PHP Fatal error:  Uncaught TypeError: RazorpayPayment::createOrder(): Argument #1 ($amount) must be of type float, array given, called in /var/www/palians/reviewer/seller/payment-callback.php on line 120 and defined in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php:33
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(120): RazorpayPayment->createOrder()
+#1 {main}
+  thrown in /var/www/palians/reviewer/includes/payment/RazorpayPayment.php on line 33
+[01-Feb-2026 00:20:15 UTC] Rejected Tasks Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 't.platform' in 'field list'
+[01-Feb-2026 00:20:19 UTC] Rejected Tasks Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 't.platform' in 'field list'
+[01-Feb-2026 00:20:33 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in /var/www/palians/reviewer/admin/users.php:5
+Stack trace:
+#0 {main}
+  thrown in /var/www/palians/reviewer/admin/users.php on line 5
+[01-Feb-2026 00:20:37 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in /var/www/palians/reviewer/admin/users.php:5
+Stack trace:
+#0 {main}
+  thrown in /var/www/palians/reviewer/admin/users.php on line 5
+[01-Feb-2026 00:21:15 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:710
+[01-Feb-2026 00:21:15 UTC] [2] Undefined array key "amount" in /var/www/palians/reviewer/includes/functions.php:715
+[01-Feb-2026 00:22:51 UTC] Rejected Tasks Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 't.platform' in 'field list'
+[01-Feb-2026 00:22:55 UTC] Rejected Tasks Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 't.platform' in 'field list'
+[01-Feb-2026 00:23:39 UTC] Rejected Tasks Error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 't.platform' in 'field list'
+[01-Feb-2026 00:26:35 UTC] [8192] htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/palians/reviewer/admin/task-rejected.php:361
+[01-Feb-2026 00:26:35 UTC] [8192] htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/palians/reviewer/admin/task-rejected.php:361
+[01-Feb-2026 00:26:37 UTC] [8192] htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/palians/reviewer/admin/task-rejected.php:361
+[01-Feb-2026 00:26:37 UTC] [8192] htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/palians/reviewer/admin/task-rejected.php:361
+[01-Feb-2026 00:27:36 UTC] [8192] htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/palians/reviewer/admin/task-rejected.php:361
+[01-Feb-2026 00:27:36 UTC] [8192] htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/palians/reviewer/admin/task-rejected.php:361
+[01-Feb-2026 00:30:18 UTC] [8192] htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/palians/reviewer/admin/task-rejected.php:361
+[01-Feb-2026 00:30:18 UTC] [8192] htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/palians/reviewer/admin/task-rejected.php:361
+[01-Feb-2026 00:33:31 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:38:03 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:38:40 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:38:45 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:42:27 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:42:56 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:45:07 UTC] WARNING: Payment processed in DEMO MODE for request #10
+[01-Feb-2026 00:45:34 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:45:39 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:45:55 UTC] WARNING: Payment processed in DEMO MODE for request #12
+[01-Feb-2026 00:49:48 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:51:38 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:57:42 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:58:00 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:58:05 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:59:19 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:59:38 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 00:59:41 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 01:01:35 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 01:02:28 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 01:03:04 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 01:07:14 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 01:07:58 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 01:09:15 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61

@@ -158,6 +158,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_refund'])) {
             $stmt = $pdo->prepare("UPDATE tasks SET task_status = 'rejected', refund_requested = 0 WHERE id = :id");
             $stmt->execute([':id' => $task_id]);
             
+            // Insert into task_rejections table
+            $stmt = $pdo->prepare("INSERT INTO task_rejections (task_id, user_id, rejected_by, rejection_reason, rejection_type, can_resubmit, created_at) VALUES (:task_id, :user_id, :rejected_by, :reason, :type, 1, NOW())");
+            $stmt->execute([
+                ':task_id' => $task_id,
+                ':user_id' => $task['user_id'],
+                ':rejected_by' => $admin_name,
+                ':reason' => $final_reason,
+                ':type' => 'other'
+            ]);
+            
             createNotification($task['user_id'], 'warning', 'Refund Rejected', 'Your refund request for Task #' . $task_id . ' was rejected. Reason: ' . $final_reason);
             
             $pdo->commit();

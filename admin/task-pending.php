@@ -26,6 +26,7 @@ try {
         LEFT JOIN task_steps ts4 ON t.id = ts4.task_id AND ts4.step_number = 4
         WHERE ts1.step_status = 'completed' 
         AND (ts4.step_status IS NULL OR ts4.step_status != 'completed')
+        AND t.task_status != 'rejected'
     ";
     
     $params = [];

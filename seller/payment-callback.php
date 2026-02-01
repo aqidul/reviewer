@@ -1,6 +1,10 @@
 <?php
+error_reporting(E_ALL);
+ini_set("display_errors", 1);
 session_start();
 require_once __DIR__ . '/../includes/config.php';
+global $pdo;
+
 
 // Check if seller is logged in
 if (!isset($_SESSION['seller_id'])) {
@@ -114,7 +118,16 @@ if ($action === 'initiate') {
             ]
         ];
         
-        $paymentOrder = $gateway->createOrder($orderData);
+        $stmt2 = $pdo->prepare("SELECT name, email, mobile FROM sellers WHERE id = ?");
+        $stmt2->execute([$seller_id]);
+        $seller = $stmt2->fetch();
+        
+        $paymentOrder = $gateway->createOrder(
+            (float) $request['grand_total'],
+            'REQ_' . $request_id,
+            ['name' => $seller['name'], 'email' => $seller['email'], 'phone' => $seller['mobile']],
+            ['seller_id' => $seller_id, 'request_id' => $request_id]
+        );
         
         // Store order details in session
         $_SESSION['payment_order'] = [

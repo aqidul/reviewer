@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             // Calculate amounts
-            $total_amount = $reviews_needed * $admin_commission;
+            $total_amount = ($product_price + $admin_commission) * $reviews_needed;
             $gst_amount = ($total_amount * $gst_rate) / 100;
             $grand_total = $total_amount + $gst_amount;
             
@@ -228,7 +228,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function updateCalculator() {
         const reviews = parseInt(reviewsInput.value) || 0;
-        const subtotal = reviews * adminCommission;
+        const productPrice = parseFloat(document.querySelector('input[name="product_price"]').value) || 0;
+        const subtotal = (productPrice + adminCommission) * reviews;
         const gst = (subtotal * gstRate) / 100;
         const total = subtotal + gst;
         
@@ -239,6 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     reviewsInput.addEventListener('input', updateCalculator);
+    document.querySelector('input[name="product_price"]').addEventListener('input', updateCalculator);
     updateCalculator();
 });
 </script>

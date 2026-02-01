@@ -372,6 +372,11 @@ try {
             <div class="sidebar-divider"></div>
             <li><a href="<?php echo ADMIN_URL; ?>/reports.php">📈 Reports</a></li>
             <li><a href="<?php echo ADMIN_URL; ?>/settings.php">⚙️ Settings</a></li>
+            <li><a href="<?php echo ADMIN_URL; ?>/gst-settings.php">💰 GST Settings</a></li>
+            <li><a href="<?php echo ADMIN_URL; ?>/sellers.php">🏪 Sellers</a></li>
+            <li><a href="<?php echo ADMIN_URL; ?>/features.php">✨ Features</a></li>
+            <li><a href="<?php echo ADMIN_URL; ?>/review-requests.php">📝 Review Requests</a></li>
+            <li><a href="<?php echo ADMIN_URL; ?>/suspicious-users.php">🚨 Suspicious Users</a></li>
             <div class="sidebar-divider"></div>
             <li><a href="<?php echo APP_URL; ?>/logout.php" class="logout">🚪 Logout</a></li>
         </ul>
