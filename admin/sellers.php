@@ -254,6 +254,13 @@ try {
                                 <td><?php echo date('d M Y', strtotime($seller['created_at'])); ?></td>
                                 <td>
                                     <div class="action-buttons">
+                                        <?php if ($seller['status'] === 'active'): ?>
+                                            <a href="login-as-seller.php?seller_id=<?php echo $seller['id']; ?>" 
+                                               class="btn btn-primary btn-small" 
+                                               title="Login as this seller">
+                                                🔐 Login as Seller
+                                            </a>
+                                        <?php endif; ?>
                                         <?php if ($seller['status'] === 'suspended'): ?>
                                             <form method="POST" style="display:inline">
                                                 <input type="hidden" name="seller_id" value="<?php echo $seller['id']; ?>">

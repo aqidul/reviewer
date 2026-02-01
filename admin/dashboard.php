@@ -742,6 +742,16 @@ try {
     </div>
 </div>
 
+<!-- Version Display -->
+<?php require_once __DIR__ . '/../includes/version-display.php'; ?>
+
+<!-- Include Theme CSS and JS -->
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/themes.css">
+<script src="<?= APP_URL ?>/assets/js/theme.js"></script>
+
+<!-- Include Chatbot Widget -->
+<?php require_once __DIR__ . '/../includes/chatbot-widget.php'; ?>
+
 <script>
 // Auto refresh every 5 minutes
 setTimeout(() => location.reload(), 300000);
