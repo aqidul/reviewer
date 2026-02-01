@@ -49,6 +49,10 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) FROM withdrawal_requests WHERE status = 'pending'");
     $pending_withdrawals = (int)$stmt->fetchColumn();
     
+    // Pending Wallet Recharge Requests
+    $stmt = $pdo->query("SELECT COUNT(*) FROM wallet_recharge_requests WHERE status = 'pending'");
+    $pending_wallet_recharges = (int)$stmt->fetchColumn();
+    
     // Pending Withdrawal Amount
     $stmt = $pdo->query("SELECT COALESCE(SUM(amount), 0) FROM withdrawal_requests WHERE status = 'pending'");
     $pending_withdrawal_amount = (float)$stmt->fetchColumn();
@@ -365,6 +369,7 @@ try {
             <li><a href="<?php echo ADMIN_URL; ?>/task-completed.php">✅ Completed Tasks</a></li>
             <div class="sidebar-divider"></div>
             <li><a href="<?php echo ADMIN_URL; ?>/withdrawals.php">💸 Withdrawals <?php if($pending_withdrawals > 0): ?><span class="badge"><?php echo $pending_withdrawals; ?></span><?php endif; ?></a></li>
+            <li><a href="<?php echo ADMIN_URL; ?>/wallet-requests.php">💳 Wallet Recharges <?php if($pending_wallet_recharges > 0): ?><span class="badge"><?php echo $pending_wallet_recharges; ?></span><?php endif; ?></a></li>
             <li><a href="<?php echo ADMIN_URL; ?>/messages.php">💬 Messages <?php if($unread_messages > 0): ?><span class="badge"><?php echo $unread_messages; ?></span><?php endif; ?></a></li>
             <div class="sidebar-divider"></div>
             <li><a href="<?php echo ADMIN_URL; ?>/faq-manager.php">🤖 Chatbot FAQ</a></li>
@@ -397,7 +402,7 @@ try {
         </div>
         
         <!-- Alert Cards -->
-        <?php if ($pending_withdrawals > 0 || $unread_messages > 0 || $unanswered_questions > 0): ?>
+        <?php if ($pending_withdrawals > 0 || $pending_wallet_recharges > 0 || $unread_messages > 0 || $unanswered_questions > 0): ?>
         <div class="alert-grid">
             <?php if ($pending_withdrawals > 0): ?>
             <div class="alert-card warning">
@@ -407,6 +412,17 @@ try {
                     <div class="alert-desc">₹<?php echo number_format($pending_withdrawal_amount, 0); ?> waiting to be processed</div>
                 </div>
                 <a href="<?php echo ADMIN_URL; ?>/withdrawals.php" class="alert-action">Process</a>
+            </div>
+            <?php endif; ?>
+            
+            <?php if ($pending_wallet_recharges > 0): ?>
+            <div class="alert-card warning">
+                <div class="alert-icon">💳</div>
+                <div class="alert-content">
+                    <div class="alert-title"><?php echo $pending_wallet_recharges; ?> Wallet Recharge Requests</div>
+                    <div class="alert-desc">Seller wallet recharge requests pending approval</div>
+                </div>
+                <a href="<?php echo ADMIN_URL; ?>/wallet-requests.php" class="alert-action">Review</a>
             </div>
             <?php endif; ?>
             

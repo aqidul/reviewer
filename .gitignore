@@ -2,3 +2,5 @@
 vendor/
 node_modules/
 storage/logs/*
+uploads/wallet_screenshots/*
+!uploads/wallet_screenshots/.gitkeep
