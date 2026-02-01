@@ -1,7 +1,14 @@
 <?php
 session_start();
 require_once __DIR__ . '/../includes/config.php';
-require_once __DIR__ . '/includes/header.php';
+
+// Check authentication and get seller_id before any output
+if (!isset($_SESSION['seller_id'])) {
+    header('Location: ' . SELLER_URL . '/index.php');
+    exit;
+}
+
+$seller_id = $_SESSION['seller_id'];
 
 $error = '';
 $success = '';
@@ -137,6 +144,9 @@ try {
 } catch (PDOException $e) {
     error_log('Failed to fetch recharge requests: ' . $e->getMessage());
 }
+
+// Include header after all processing is done to allow redirects
+require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container-fluid">
