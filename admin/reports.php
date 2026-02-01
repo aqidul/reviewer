@@ -116,6 +116,68 @@ if (isset($_GET['export'])) {
                     'ID', 'Referrer', 'Referred User', 'Bonus Amount', 'Status', 'Created', 'Completed'
                 ]);
                 break;
+                
+            case 'gst':
+                // Export GST report for seller transactions
+                $stmt = $pdo->prepare("
+                    SELECT 
+                        pt.id as transaction_id,
+                        DATE(pt.created_at) as transaction_date,
+                        s.name as seller_name,
+                        s.gst_number as seller_gst,
+                        s.company_name,
+                        rr.id as invoice_number,
+                        rr.product_name,
+                        rr.reviews_needed as quantity,
+                        rr.total_amount as taxable_amount,
+                        rr.gst_amount as gst_amount,
+                        rr.grand_total as total_amount,
+                        pt.payment_gateway as payment_method,
+                        pt.gateway_payment_id as payment_reference,
+                        gs.gst_number as company_gst,
+                        gs.legal_name as company_name,
+                        gs.state_code
+                    FROM payment_transactions pt
+                    JOIN sellers s ON pt.seller_id = s.id
+                    LEFT JOIN review_requests rr ON pt.review_request_id = rr.id
+                    LEFT JOIN gst_settings gs ON gs.is_active = 1
+                    WHERE pt.status = 'success' 
+                    AND DATE(pt.created_at) BETWEEN ? AND ?
+                    ORDER BY pt.created_at DESC
+                ");
+                $stmt->execute([$date_from, $date_to]);
+                $data = $stmt->fetchAll();
+                
+                // Check if JSON export is requested
+                if (isset($_GET['format']) && $_GET['format'] === 'json') {
+                    header('Content-Type: application/json; charset=utf-8');
+                    header('Content-Disposition: attachment; filename="gst_report_' . date('Y-m-d') . '.json"');
+                    
+                    $json_data = [
+                        'report_title' => 'GST Report',
+                        'period' => [
+                            'from' => $date_from,
+                            'to' => $date_to
+                        ],
+                        'generated_at' => date('Y-m-d H:i:s'),
+                        'total_transactions' => count($data),
+                        'total_taxable_amount' => array_sum(array_column($data, 'taxable_amount')),
+                        'total_gst_amount' => array_sum(array_column($data, 'gst_amount')),
+                        'total_amount' => array_sum(array_column($data, 'total_amount')),
+                        'transactions' => $data
+                    ];
+                    
+                    echo json_encode($json_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                    exit;
+                } else {
+                    // CSV export
+                    exportCSV($data, 'gst_report_' . date('Y-m-d') . '.csv', [
+                        'Transaction ID', 'Date', 'Seller Name', 'Seller GST', 'Company', 'Invoice #', 
+                        'Product', 'Quantity', 'Taxable Amount', 'GST Amount', 'Total Amount', 
+                        'Payment Method', 'Payment Reference', 'Our GST', 'Our Company', 'State Code'
+                    ]);
+                }
+                break;
         }
     } catch (PDOException $e) {
         error_log("Export Error: " . $e->getMessage());
@@ -527,6 +589,16 @@ while ($current <= $end) {
                 <div class="icon">🎁</div>
                 <div class="label">Referrals</div>
                 <div class="desc">Export as CSV</div>
+            </a>
+            <a href="?from=<?php echo $date_from; ?>&to=<?php echo $date_to; ?>&export=gst" class="export-btn">
+                <div class="icon">💰</div>
+                <div class="label">GST Report</div>
+                <div class="desc">Export as CSV</div>
+            </a>
+            <a href="?from=<?php echo $date_from; ?>&to=<?php echo $date_to; ?>&export=gst&format=json" class="export-btn" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff">
+                <div class="icon">📊</div>
+                <div class="label">GST Report</div>
+                <div class="desc">Export as JSON</div>
             </a>
         </div>
         

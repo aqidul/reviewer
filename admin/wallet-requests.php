@@ -146,6 +146,10 @@ $pending_count = $status_counts['pending'] ?? 0;
 $approved_count = $status_counts['approved'] ?? 0;
 $rejected_count = $status_counts['rejected'] ?? 0;
 $total_count = array_sum($status_counts);
+
+// For sidebar
+$current_page = 'wallet-requests';
+$pending_wallet_recharges = $pending_count;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -153,37 +157,21 @@ $total_count = array_sum($status_counts);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wallet Recharge Requests - <?= APP_NAME ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <?php require_once __DIR__ . '/includes/styles.php'; ?>
     <style>
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: #f8fafc;
-        }
-        .navbar {
-            background: #1e293b;
-        }
         .badge-count {
             font-size: 0.75rem;
             padding: 0.25rem 0.5rem;
         }
+        .table-responsive{overflow-x:auto}
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-dark mb-4">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="dashboard.php">
-                <i class="bi bi-speedometer2"></i> <?= APP_NAME ?> Admin
-            </a>
-            <div class="d-flex align-items-center text-white">
-                <span class="me-3"><?= htmlspecialchars($admin_name) ?></span>
-                <a href="logout.php" class="btn btn-sm btn-outline-light">Logout</a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container-fluid">
+<div class="admin-layout">
+    <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
+    
+    <div class="main-content">
         <div class="row mb-4">
             <div class="col">
                 <nav aria-label="breadcrumb">
@@ -192,26 +180,26 @@ $total_count = array_sum($status_counts);
                         <li class="breadcrumb-item active">Wallet Recharge Requests</li>
                     </ol>
                 </nav>
-                <h3 class="mb-0">Wallet Recharge Requests</h3>
+                <h3 class="page-title">Wallet Recharge Requests</h3>
                 <p class="text-muted">Manage seller wallet recharge requests via bank transfer</p>
             </div>
         </div>
         
         <?php if (!empty($errors)): ?>
-            <div class="alert alert-danger alert-dismissible fade show">
+            <div class="alert alert-danger alert-dismissible">
                 <ul class="mb-0">
                     <?php foreach ($errors as $error): ?>
                         <li><?= htmlspecialchars($error) ?></li>
                     <?php endforeach; ?>
                 </ul>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()" aria-label="Close">&times;</button>
             </div>
         <?php endif; ?>
         
         <?php if ($success): ?>
-            <div class="alert alert-success alert-dismissible fade show">
+            <div class="alert alert-success alert-dismissible">
                 <?= htmlspecialchars($success) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()" aria-label="Close">&times;</button>
             </div>
         <?php endif; ?>
         
@@ -332,75 +320,77 @@ $total_count = array_sum($status_counts);
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Action Modal -->
-    <div class="modal fade" id="actionModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form method="POST" id="actionForm">
-                    <input type="hidden" name="request_id" id="modal_request_id">
-                    <input type="hidden" name="action" id="modal_action">
-                    
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modal_title">Confirm Action</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div id="modal_message"></div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Admin Remarks</label>
-                            <textarea name="admin_remarks" class="form-control" rows="3" 
-                                      id="admin_remarks_field" placeholder="Enter remarks (optional for approval, required for rejection)"></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="modal_submit_btn">Confirm</button>
+<script>
+    function showActionModal(requestId, action, sellerName, amount) {
+        const modal = document.createElement('div');
+        modal.className = 'custom-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'modal-title');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999';
+        
+        const isApprove = action === 'approve';
+        const bgColor = isApprove ? '#ecfdf5' : '#fef2f2';
+        const textColor = isApprove ? '#047857' : '#b91c1c';
+        const btnClass = isApprove ? 'btn-success' : 'btn-danger';
+        const btnText = isApprove ? 'Approve' : 'Reject';
+        
+        // Escape strings for HTML
+        const escapedSellerName = sellerName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        
+        modal.innerHTML = `
+            <div style="background:#fff;border-radius:15px;padding:30px;max-width:500px;width:90%">
+                <h3 id="modal-title" style="margin-bottom:20px">${isApprove ? 'Approve' : 'Reject'} Recharge Request</h3>
+                <div style="background:${bgColor};color:${textColor};padding:15px;border-radius:10px;margin-bottom:20px">
+                    <strong>Confirm ${isApprove ? 'Approval' : 'Rejection'}</strong><br>
+                    Seller: <strong>${escapedSellerName}</strong><br>
+                    Amount: <strong>₹${amount.toFixed(2)}</strong><br>
+                    ${isApprove ? 'This amount will be added to the seller\'s wallet.' : 'Please provide a reason for rejection.'}
+                </div>
+                <form method="POST" style="margin-bottom:20px">
+                    <input type="hidden" name="request_id" value="${requestId}">
+                    <input type="hidden" name="action" value="${action}">
+                    <label style="display:block;margin-bottom:10px;font-weight:500">Admin Remarks</label>
+                    <textarea name="admin_remarks" rows="3" ${!isApprove ? 'required' : ''} 
+                        placeholder="${isApprove ? 'Optional remarks' : 'Required - explain reason for rejection'}"
+                        style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px"></textarea>
+                    <div style="display:flex;gap:10px;margin-top:20px">
+                        <button type="button" class="btn btn-secondary" style="flex:1">Cancel</button>
+                        <button type="submit" class="btn ${btnClass}" style="flex:1">${btnText}</button>
                     </div>
                 </form>
             </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function showActionModal(requestId, action, sellerName, amount) {
-            document.getElementById('modal_request_id').value = requestId;
-            document.getElementById('modal_action').value = action;
-            
-            const modal = new bootstrap.Modal(document.getElementById('actionModal'));
-            const title = document.getElementById('modal_title');
-            const message = document.getElementById('modal_message');
-            const submitBtn = document.getElementById('modal_submit_btn');
-            const remarksField = document.getElementById('admin_remarks_field');
-            
-            if (action === 'approve') {
-                title.textContent = 'Approve Recharge Request';
-                message.innerHTML = `<div class="alert alert-success">
-                    <strong>Confirm Approval</strong><br>
-                    Seller: <strong>${sellerName}</strong><br>
-                    Amount: <strong>₹${amount.toFixed(2)}</strong><br>
-                    This amount will be added to the seller's wallet.
-                </div>`;
-                submitBtn.className = 'btn btn-success';
-                submitBtn.textContent = 'Approve';
-                remarksField.required = false;
-            } else if (action === 'reject') {
-                title.textContent = 'Reject Recharge Request';
-                message.innerHTML = `<div class="alert alert-danger">
-                    <strong>Confirm Rejection</strong><br>
-                    Seller: <strong>${sellerName}</strong><br>
-                    Amount: <strong>₹${amount.toFixed(2)}</strong><br>
-                    Please provide a reason for rejection.
-                </div>`;
-                submitBtn.className = 'btn btn-danger';
-                submitBtn.textContent = 'Reject';
-                remarksField.required = true;
+        `;
+        
+        // Close button handler
+        const cancelBtn = modal.querySelector('button[type="button"]');
+        cancelBtn.addEventListener('click', () => modal.remove());
+        
+        // Close on ESC key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscape);
             }
-            
-            modal.show();
-        }
-    </script>
+        };
+        document.addEventListener('keydown', handleEscape);
+        
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        });
+        
+        document.body.appendChild(modal);
+        
+        // Focus management
+        const firstInput = modal.querySelector('textarea');
+        if (firstInput) firstInput.focus();
+    }
+</script>
 </body>
 </html>
