@@ -55,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_recharge'])) {
         // Handle file upload
         $file = $_FILES['payment_screenshot'];
         $allowed_types = ['image/jpeg', 'image/jpg', 'image/png'];
+        $allowed_extensions = ['jpg', 'jpeg', 'png'];
         $max_size = 5 * 1024 * 1024; // 5MB
         
         if ($file['error'] !== UPLOAD_ERR_OK) {
@@ -64,39 +65,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_recharge'])) {
         } elseif ($file['size'] > $max_size) {
             $error = 'File size must be less than 5MB';
         } else {
-            // Generate unique filename
-            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $filename = 'wallet_' . $seller_id . '_' . time() . '_' . uniqid() . '.' . $extension;
-            $upload_dir = __DIR__ . '/../uploads/wallet_screenshots/';
-            $upload_path = $upload_dir . $filename;
-            
-            // Ensure directory exists
-            if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0755, true);
-            }
-            
-            if (move_uploaded_file($file['tmp_name'], $upload_path)) {
-                // Insert recharge request into database
-                try {
-                    $stmt = $pdo->prepare("
-                        INSERT INTO wallet_recharge_requests 
-                        (seller_id, amount, utr_number, screenshot_path, transfer_date, status) 
-                        VALUES (?, ?, ?, ?, ?, 'pending')
-                    ");
-                    $stmt->execute([$seller_id, $amount, $utr_number, $filename, $transfer_date]);
-                    
-                    $success = 'Your wallet recharge request has been submitted successfully! Our team will review it shortly.';
-                    
-                    // Clear form data
-                    unset($_POST);
-                } catch (PDOException $e) {
-                    error_log('Recharge request error: ' . $e->getMessage());
-                    $error = 'Failed to submit request. Please try again.';
-                    // Delete uploaded file
-                    @unlink($upload_path);
-                }
+            // Additional security: Verify file is actually an image
+            $image_info = @getimagesize($file['tmp_name']);
+            if ($image_info === false) {
+                $error = 'Invalid image file. Please upload a valid image.';
             } else {
-                $error = 'Failed to upload screenshot. Please try again.';
+                // Validate extension matches MIME type
+                $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                if (!in_array($extension, $allowed_extensions)) {
+                    $error = 'Invalid file extension';
+                } else {
+                    // Generate unique filename
+                    $filename = 'wallet_' . $seller_id . '_' . time() . '_' . uniqid() . '.' . $extension;
+                    $upload_dir = __DIR__ . '/../uploads/wallet_screenshots/';
+                    $upload_path = $upload_dir . $filename;
+                    
+                    // Ensure directory exists
+                    if (!is_dir($upload_dir)) {
+                        mkdir($upload_dir, 0755, true);
+                    }
+                    
+                    if (move_uploaded_file($file['tmp_name'], $upload_path)) {
+                        // Set proper file permissions
+                        chmod($upload_path, 0644);
+                        
+                        // Insert recharge request into database
+                        try {
+                            $stmt = $pdo->prepare("
+                                INSERT INTO wallet_recharge_requests 
+                                (seller_id, amount, utr_number, screenshot_path, transfer_date, status) 
+                                VALUES (?, ?, ?, ?, ?, 'pending')
+                            ");
+                            $stmt->execute([$seller_id, $amount, $utr_number, $filename, $transfer_date]);
+                            
+                            $success = 'Your wallet recharge request has been submitted successfully! Our team will review it shortly.';
+                            
+                            // Clear form data
+                            unset($_POST);
+                        } catch (PDOException $e) {
+                            error_log('Recharge request error: ' . $e->getMessage());
+                            $error = 'Failed to submit request. Please try again.';
+                            // Delete uploaded file
+                            @unlink($upload_path);
+                        }
+                    } else {
+                        $error = 'Failed to upload screenshot. Please try again.';
+                    }
+                }
             }
         }
     }
