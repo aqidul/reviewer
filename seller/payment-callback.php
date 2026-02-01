@@ -1,9 +1,5 @@
 <?php
-error_reporting(E_ALL);
-ini_set("display_errors", 1);
-session_start();
 require_once __DIR__ . '/../includes/config.php';
-global $pdo;
 
 
 // Check if seller is logged in
@@ -106,18 +102,7 @@ if ($action === 'initiate') {
         // Use first available gateway
         $gateway = PaymentFactory::getGateway($gateways[0]['code'], $pdo);
         
-        // Create order
-        $orderData = [
-            'amount' => $request['grand_total'],
-            'currency' => 'INR',
-            'receipt' => 'REQ_' . $request_id,
-            'notes' => [
-                'seller_id' => $seller_id,
-                'request_id' => $request_id,
-                'product_name' => $request['product_name']
-            ]
-        ];
-        
+        // Get seller details
         $stmt2 = $pdo->prepare("SELECT name, email, mobile FROM sellers WHERE id = ?");
         $stmt2->execute([$seller_id]);
         $seller = $stmt2->fetch();
