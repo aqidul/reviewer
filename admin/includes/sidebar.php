@@ -97,6 +97,7 @@ if (!isset($current_page)) {
         <div class="sidebar-divider"></div>
         <li><a href="<?php echo ADMIN_URL; ?>/messages.php" class="<?= $current_page === 'messages' ? 'active' : '' ?>">💬 Messages <?php if($unread_messages > 0): ?><span class="badge"><?php echo $unread_messages; ?></span><?php endif; ?></a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/sellers.php" class="<?= $current_page === 'sellers' ? 'active' : '' ?>">🏪 Sellers</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/seller-wallet-manage.php" class="<?= $current_page === 'seller-wallet-manage' ? 'active' : '' ?>">💼 Manage Seller Wallet</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/reports.php" class="<?= $current_page === 'reports' ? 'active' : '' ?>">📈 Reports</a></li>
         
         <!-- Settings Section -->
