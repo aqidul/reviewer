@@ -1,5 +1,4 @@
 <?php
-session_start();
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/includes/header.php';
 
@@ -178,6 +177,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="card-body">
                     <div class="mb-3">
                         <div class="d-flex justify-content-between mb-2">
+                            <span>Product Price:</span>
+                            <strong id="calc_product_price">₹0.00</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
                             <span>Commission per Review:</span>
                             <strong>₹<?= number_format($admin_commission, 2) ?></strong>
                         </div>
@@ -186,6 +189,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <strong id="calc_reviews">0</strong>
                         </div>
                         <hr>
+                        <div class="d-flex justify-content-between mb-2 small text-muted">
+                            <span>Product Price × Reviews:</span>
+                            <span id="calc_product_total">₹0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 small text-muted">
+                            <span>Commission × Reviews:</span>
+                            <span id="calc_commission_total">₹0.00</span>
+                        </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span>Subtotal:</span>
                             <strong id="calc_subtotal">₹0.00</strong>
@@ -229,11 +240,19 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateCalculator() {
         const reviews = parseInt(reviewsInput.value) || 0;
         const productPrice = parseFloat(document.querySelector('input[name="product_price"]').value) || 0;
-        const subtotal = (productPrice + adminCommission) * reviews;
+        
+        // Calculate breakdown
+        const productTotal = productPrice * reviews;
+        const commissionTotal = adminCommission * reviews;
+        const subtotal = productTotal + commissionTotal;
         const gst = (subtotal * gstRate) / 100;
         const total = subtotal + gst;
         
+        // Update display
+        document.getElementById('calc_product_price').textContent = '₹' + productPrice.toFixed(2);
         document.getElementById('calc_reviews').textContent = reviews;
+        document.getElementById('calc_product_total').textContent = '₹' + productTotal.toFixed(2);
+        document.getElementById('calc_commission_total').textContent = '₹' + commissionTotal.toFixed(2);
         document.getElementById('calc_subtotal').textContent = '₹' + subtotal.toFixed(2);
         document.getElementById('calc_gst').textContent = '₹' + gst.toFixed(2);
         document.getElementById('calc_total').textContent = '₹' + total.toFixed(2);
