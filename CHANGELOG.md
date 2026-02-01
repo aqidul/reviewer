@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2] - 2026-02-01
+
+### New Features
+- Added wallet payment option for review requests
+- Sellers can now pay using wallet balance instead of Razorpay
+- Shows wallet balance on payment page
+- Instant payment with no additional fees when using wallet
+- Automatic wallet balance check before payment
+- "Add Money" link for insufficient balance cases
+
+### Improvements
+- Enhanced payment page UI with two payment method options
+- Better visual distinction between Wallet and Razorpay payment methods
+- Added payment confirmation dialog for wallet payments
+- Improved transaction logging for wallet payments
+- Enhanced error handling and user feedback
+
+### Technical Improvements
+- Database transactions for wallet payments to ensure data consistency
+- Row-level locking to prevent race conditions
+- Automatic invoice generation for wallet payments
+- Comprehensive error logging for debugging
+
 ## [2.0.1] - 2026-02-01
 
 ### Bug Fixes
