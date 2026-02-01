@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS wallet_recharge_requests (
     transfer_date DATE NOT NULL,
     status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
     admin_remarks TEXT,
-    approved_by INT,
+    approved_by VARCHAR(100),
     approved_at DATETIME,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

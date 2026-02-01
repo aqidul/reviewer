@@ -6,6 +6,12 @@ require_once __DIR__ . '/includes/header.php';
 $error = '';
 $success = '';
 
+// Check for success message from redirect
+if (isset($_SESSION['wallet_success'])) {
+    $success = $_SESSION['wallet_success'];
+    unset($_SESSION['wallet_success']);
+}
+
 // Get wallet details
 try {
     $stmt = $pdo->prepare("SELECT * FROM seller_wallet WHERE seller_id = ?");
@@ -98,10 +104,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_recharge'])) {
                             ");
                             $stmt->execute([$seller_id, $amount, $utr_number, $filename, $transfer_date]);
                             
-                            $success = 'Your wallet recharge request has been submitted successfully! Our team will review it shortly.';
-                            
-                            // Clear form data
-                            unset($_POST);
+                            // Redirect to prevent form resubmission (Post/Redirect/Get pattern)
+                            $_SESSION['wallet_success'] = 'Your wallet recharge request has been submitted successfully! Our team will review it shortly.';
+                            header('Location: wallet.php');
+                            exit;
                         } catch (PDOException $e) {
                             error_log('Recharge request error: ' . $e->getMessage());
                             $error = 'Failed to submit request. Please try again.';

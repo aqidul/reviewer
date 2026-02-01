@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         SET status = 'approved', admin_remarks = ?, approved_by = ?, approved_at = NOW()
                         WHERE id = ?
                     ");
-                    $stmt->execute([$admin_remarks, $_SESSION['admin_id'] ?? 1, $request_id]);
+                    $stmt->execute([$admin_remarks, $admin_name, $request_id]);
                     
                     // Update seller wallet balance
                     $stmt = $pdo->prepare("
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             SET status = 'rejected', admin_remarks = ?, approved_by = ?, approved_at = NOW()
                             WHERE id = ?
                         ");
-                        $stmt->execute([$admin_remarks, $_SESSION['admin_id'] ?? 1, $request_id]);
+                        $stmt->execute([$admin_remarks, $admin_name, $request_id]);
                         
                         $pdo->commit();
                         $success = "Recharge request #$request_id rejected.";
