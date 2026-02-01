@@ -165,13 +165,15 @@ if ($action === 'initiate') {
         require_once __DIR__ . '/../includes/payment/PaymentFactory.php';
         $gateway = PaymentFactory::getGateway($gateway_type, $pdo);
         
-        $verification = [
-            'order_id' => $order_id,
-            'payment_id' => $payment_id,
-            'signature' => $signature
+               $verification = [
+            'razorpay_order_id' => $order_id,
+            'razorpay_payment_id' => $payment_id,
+            'razorpay_signature' => $signature
         ];
         
         $isValid = $gateway->verifyPayment($verification);
+
+         
         
         if (!$isValid) {
             throw new Exception('Payment verification failed');
@@ -220,6 +222,45 @@ if ($action === 'initiate') {
         ");
         $stmt->execute([$request['grand_total'], $seller_id]);
         
+
+        // Generate Invoice
+        $invoice_number = 'INV-' . date('Ymd') . '-' . str_pad($request_id, 5, '0', STR_PAD_LEFT);
+        
+        $gst_stmt = $pdo->query("SELECT * FROM gst_settings LIMIT 1");
+        $gst_settings = $gst_stmt->fetch();
+        
+        $seller_stmt = $pdo->prepare("SELECT * FROM sellers WHERE id = ?");
+        $seller_stmt->execute([$seller_id]);
+        $seller = $seller_stmt->fetch();
+        
+        $cgst = $request['gst_amount'] / 2;
+        $sgst = $request['gst_amount'] / 2;
+        
+        $invoice_stmt = $pdo->prepare("
+            INSERT INTO tax_invoices 
+            (invoice_number, seller_id, review_request_id, seller_gst, seller_legal_name, 
+             seller_address, platform_gst, platform_legal_name, platform_address,
+             base_amount, cgst_amount, sgst_amount, igst_amount, total_gst, grand_total, invoice_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE())
+        ");
+        $invoice_stmt->execute([
+            $invoice_number,
+            $seller_id,
+            $request_id,
+            $seller['gst_number'] ?? '',
+            $seller['company_name'] ?? $seller['name'],
+            $seller['address'] ?? '',
+            $gst_settings['gst_number'] ?? '',
+            $gst_settings['legal_name'] ?? 'ReviewFlow',
+            $gst_settings['address'] ?? '',
+            $request['total_amount'],
+            $cgst,
+            $sgst,
+            0,
+            $request['gst_amount'],
+            $request['grand_total']
+        ]);
+
         $pdo->commit();
         
         // Clear session
@@ -229,7 +270,7 @@ if ($action === 'initiate') {
         exit;
         
     } catch (Exception $e) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) { $pdo->rollBack(); }
         error_log('Payment callback error: ' . $e->getMessage());
         
         // Mark payment as failed if request_id exists
@@ -293,7 +334,7 @@ if ($action === 'initiate') {
         exit;
         
     } catch (PDOException $e) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) { $pdo->rollBack(); }
         error_log('Add money error: ' . $e->getMessage());
         header('Location: wallet.php?error=transaction_failed');
         exit;

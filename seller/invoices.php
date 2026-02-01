@@ -149,8 +149,8 @@ function viewInvoice(invoiceId) {
 
 function downloadInvoice(invoiceId) {
     // NOTE: Requires invoice-download.php to be implemented
-    alert('Invoice download feature is under development. This will generate and download PDF invoice.');
-    // window.location.href = 'invoice-download.php?id=' + invoiceId;
+    window.location.href = 'invoice-download.php?id=' + invoiceId;
+    
 }
 
 function printInvoice() {
@@ -169,12 +169,12 @@ function printInvoice() {
         </head>
         <body>
             ${content}
-            <script>
+            <scr" + "ipt>
                 window.onload = function() {
                     window.print();
                     setTimeout(function() { window.close(); }, 100);
                 };
-            </script>
+            </scr" + "ipt>
         </body>
         </html>
     `);

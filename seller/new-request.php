@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
-require_once __DIR__ . '/includes/header.php';
 
 $error = '';
 $success = '';
@@ -9,6 +8,14 @@ $success = '';
 $admin_commission = (float) getSetting('admin_commission_per_review', 50);
 $gst_rate = (float) getSetting('gst_rate', 18);
 
+// Check seller session
+if (!isset($_SESSION['seller_id'])) {
+    header('Location: index.php');
+    exit;
+}
+$seller_id = $_SESSION['seller_id'];
+
+// Process form BEFORE any HTML output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $product_link = trim($_POST['product_link'] ?? '');
     $product_name = trim($_POST['product_name'] ?? '');
@@ -56,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $request_id = $pdo->lastInsertId();
             
-            // Redirect to payment page
+            // Redirect to payment page - BEFORE any HTML output!
             header('Location: payment-callback.php?request_id=' . $request_id . '&action=initiate');
             exit;
             
@@ -66,6 +73,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// NOW include header (after all possible redirects)
+require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container-fluid">
@@ -95,10 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card">
                 <div class="card-body">
                     <form method="POST" action="" id="reviewRequestForm">
-                        <!-- Product Information -->
-                        <h5 class="mb-3">
-                            <i class="bi bi-box"></i> Product Information
-                        </h5>
+                        <h5 class="mb-3"><i class="bi bi-box"></i> Product Information</h5>
                         
                         <div class="mb-3">
                             <label class="form-label">Product Link <span class="text-danger">*</span></label>
@@ -122,7 +129,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                        placeholder="Enter brand name" 
                                        value="<?= htmlspecialchars($_POST['brand_name'] ?? '') ?>" required>
                             </div>
-                            
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Product Price (₹) <span class="text-danger">*</span></label>
                                 <input type="number" name="product_price" class="form-control" 
@@ -132,11 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         
                         <hr class="my-4">
-                        
-                        <!-- Platform & Reviews -->
-                        <h5 class="mb-3">
-                            <i class="bi bi-star"></i> Review Details
-                        </h5>
+                        <h5 class="mb-3"><i class="bi bi-star"></i> Review Details</h5>
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -147,7 +149,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <option value="other" <?= ($_POST['platform'] ?? '') === 'other' ? 'selected' : '' ?>>Other</option>
                                 </select>
                             </div>
-                            
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Number of Reviews Needed <span class="text-danger">*</span></label>
                                 <input type="number" name="reviews_needed" id="reviews_needed" class="form-control" 
@@ -169,52 +170,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         
         <div class="col-lg-4">
-            <!-- Pricing Calculator -->
             <div class="card mb-3">
                 <div class="card-header bg-primary text-white">
                     <h6 class="mb-0"><i class="bi bi-calculator"></i> Price Calculator</h6>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Product Price:</span>
-                            <strong id="calc_product_price">₹0.00</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Commission per Review:</span>
-                            <strong>₹<?= number_format($admin_commission, 2) ?></strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Number of Reviews:</span>
-                            <strong id="calc_reviews">0</strong>
-                        </div>
-                        <hr>
-                        <div class="d-flex justify-content-between mb-2 small text-muted">
-                            <span>Product Price × Reviews:</span>
-                            <span id="calc_product_total">₹0.00</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2 small text-muted">
-                            <span>Commission × Reviews:</span>
-                            <span id="calc_commission_total">₹0.00</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Subtotal:</span>
-                            <strong id="calc_subtotal">₹0.00</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2 text-muted">
-                            <span>GST (<?= $gst_rate ?>%):</span>
-                            <span id="calc_gst">₹0.00</span>
-                        </div>
-                        <hr>
-                        <div class="d-flex justify-content-between">
-                            <strong>Total Amount:</strong>
-                            <strong class="text-primary" id="calc_total">₹0.00</strong>
-                        </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Commission per Review:</span>
+                        <strong>₹<?= number_format($admin_commission, 2) ?></strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Number of Reviews:</span>
+                        <strong id="calc_reviews">0</strong>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <strong id="calc_subtotal">₹0.00</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-muted">
+                        <span>GST (<?= $gst_rate ?>%):</span>
+                        <span id="calc_gst">₹0.00</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <strong>Total Amount:</strong>
+                        <strong class="text-primary" id="calc_total">₹0.00</strong>
                     </div>
                 </div>
             </div>
             
-            <!-- Info Box -->
             <div class="card">
                 <div class="card-body">
                     <h6 class="mb-3"><i class="bi bi-info-circle"></i> Important Notes</h6>
@@ -240,19 +225,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateCalculator() {
         const reviews = parseInt(reviewsInput.value) || 0;
         const productPrice = parseFloat(document.querySelector('input[name="product_price"]').value) || 0;
-        
-        // Calculate breakdown
-        const productTotal = productPrice * reviews;
-        const commissionTotal = adminCommission * reviews;
-        const subtotal = productTotal + commissionTotal;
+        const subtotal = (productPrice + adminCommission) * reviews;
         const gst = (subtotal * gstRate) / 100;
         const total = subtotal + gst;
         
-        // Update display
-        document.getElementById('calc_product_price').textContent = '₹' + productPrice.toFixed(2);
         document.getElementById('calc_reviews').textContent = reviews;
-        document.getElementById('calc_product_total').textContent = '₹' + productTotal.toFixed(2);
-        document.getElementById('calc_commission_total').textContent = '₹' + commissionTotal.toFixed(2);
         document.getElementById('calc_subtotal').textContent = '₹' + subtotal.toFixed(2);
         document.getElementById('calc_gst').textContent = '₹' + gst.toFixed(2);
         document.getElementById('calc_total').textContent = '₹' + total.toFixed(2);

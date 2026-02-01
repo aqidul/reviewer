@@ -1433,3 +1433,9 @@ Stack trace:
 [01-Feb-2026 01:07:14 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
 [01-Feb-2026 01:07:58 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
 [01-Feb-2026 01:09:15 UTC] [2] Cannot modify header information - headers already sent by (output started at /var/www/palians/reviewer/seller/includes/header.php:27) in /var/www/palians/reviewer/seller/new-request.php:61
+[01-Feb-2026 01:42:21 UTC] PHP Fatal error:  Uncaught PDOException: There is no active transaction in /var/www/palians/reviewer/seller/payment-callback.php:236
+Stack trace:
+#0 /var/www/palians/reviewer/seller/payment-callback.php(236): PDO->rollBack()
+#1 Command line code(9): include('...')
+#2 {main}
+  thrown in /var/www/palians/reviewer/seller/payment-callback.php on line 236
