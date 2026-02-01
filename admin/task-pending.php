@@ -109,7 +109,12 @@ try {
     <div class="content">
         <div class="page-title">
             <span>📋 Pending Tasks</span>
-            <span class="badge"><?php echo count($tasks); ?> Task(s)</span>
+            <div style="display:flex;gap:10px;align-items:center">
+                <a href="task-pending-brandwise.php" class="btn btn-secondary" style="font-size:14px;padding:8px 16px;text-decoration:none">
+                    📁 Brand View
+                </a>
+                <span class="badge"><?php echo count($tasks); ?> Task(s)</span>
+            </div>
         </div>
         
         <div class="filter-box">

@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-02-01
+
+### Bug Fixes
+- Fixed wallet balance not updating after admin approval - Enhanced error logging and validation
+- Fixed seller dropdown search in Manage Seller Wallet page - Now opens on first character and focus
+- Fixed missing sidebar links for brand-wise tasks and export features
+
+### New Features
+- Added brand-wise organization to pending tasks with collapsible sections
+- Created dedicated brand view page for pending tasks (task-pending-brandwise.php)
+- Added "Brand View" link to pending tasks page
+
+### Improvements
+- Completely reorganized admin sidebar with professional structure
+- Added submenu support for brand-wise task views under main task links
+- Enhanced sidebar organization with clear sections: Users, Tasks, Finance, Sellers, Reports & Export, Settings, Chatbot
+- Added Export Review Data link to sidebar under Reports & Export section
+- Added Manage Seller Wallet link to sidebar under Finance section
+- Removed duplicate and unnecessary sidebar items
+- Improved badge counts for pending items in sidebar
+- Enhanced error logging in wallet approval process for better debugging
+- Updated migration script to support bank_transfer and admin_adjustment payment types
+
+### Technical Improvements
+- Enhanced database migration for payment_transactions table ENUM values
+- Improved error handling in wallet-requests.php with detailed logging
+- Better JavaScript handling for seller dropdown with immediate search
+- Added focus event handler for better UX in seller selection
+
 ## [2.0.0] - 2026-02-01
 
 ### Bug Fixes

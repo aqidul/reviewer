@@ -53,7 +53,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         VALUES (?, ?, 0)
                         ON DUPLICATE KEY UPDATE balance = balance + ?
                     ");
-                    $stmt->execute([$request['seller_id'], $request['amount'], $request['amount']]);
+                    $result = $stmt->execute([$request['seller_id'], $request['amount'], $request['amount']]);
+                    
+                    if (!$result) {
+                        $error_info = $stmt->errorInfo();
+                        error_log('Wallet balance update failed for seller_id ' . $request['seller_id'] . ': ' . json_encode($error_info));
+                        throw new Exception('Failed to update wallet balance');
+                    }
+                    
+                    error_log('Wallet balance updated successfully for seller_id ' . $request['seller_id'] . ', amount: ' . $request['amount']);
                     
                     // Insert payment transaction record
                     $stmt = $pdo->prepare("
@@ -61,14 +69,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         (seller_id, review_request_id, amount, gst_amount, total_amount, payment_gateway, gateway_payment_id, status, created_at)
                         VALUES (?, NULL, ?, 0, ?, 'bank_transfer', ?, 'success', NOW())
                     ");
-                    $stmt->execute([
+                    $result = $stmt->execute([
                         $request['seller_id'], 
                         $request['amount'], 
                         $request['amount'],
                         'UTR:' . $request['utr_number']
                     ]);
                     
+                    if (!$result) {
+                        $error_info = $stmt->errorInfo();
+                        error_log('Payment transaction insert failed for seller_id ' . $request['seller_id'] . ': ' . json_encode($error_info));
+                        throw new Exception('Failed to record payment transaction');
+                    }
+                    
                     $pdo->commit();
+                    error_log('Recharge request #' . $request_id . ' approved successfully for seller_id ' . $request['seller_id']);
                     $success = "Recharge request #$request_id approved successfully! ₹" . number_format($request['amount'], 2) . " added to seller wallet.";
                     
                 } elseif ($action === 'reject') {
