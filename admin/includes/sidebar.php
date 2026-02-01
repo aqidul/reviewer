@@ -74,7 +74,7 @@ if (!isset($current_page)) {
 <!-- Sidebar -->
 <div class="sidebar">
     <div class="sidebar-header">
-        <h2>⚙️ <?php echo APP_NAME; ?></h2>
+        <h2>⚙️ <?php echo htmlspecialchars(APP_NAME); ?></h2>
     </div>
     <ul class="sidebar-menu">
         <li><a href="<?php echo ADMIN_URL; ?>/dashboard.php" class="<?= $current_page === 'dashboard' ? 'active' : '' ?>">📊 Dashboard</a></li>

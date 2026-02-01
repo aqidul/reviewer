@@ -336,16 +336,32 @@ searchInput.addEventListener('input', function() {
     if (filtered.length === 0) {
         dropdown.innerHTML = '<div style="padding:15px;text-align:center;color:#64748b">No sellers found</div>';
     } else {
-        dropdown.innerHTML = filtered.map(seller => `
-            <div class="seller-option" onclick="selectSeller(${seller.id}, '${seller.name.replace(/'/g, "\\'")}', '${seller.email}', ${seller.balance || 0})">
-                <div class="seller-name">${seller.name}</div>
-                <div class="seller-email">${seller.email}</div>
-                <div class="seller-balance">Balance: ₹${(seller.balance || 0).toFixed(2)}</div>
-            </div>
-        `).join('');
+        dropdown.innerHTML = filtered.map(seller => {
+            const safeName = seller.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+            const safeEmail = seller.email.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+            return `
+                <div class="seller-option" data-id="${seller.id}" data-name="${safeName}" data-email="${safeEmail}" data-balance="${seller.balance || 0}">
+                    <div class="seller-name">${safeName}</div>
+                    <div class="seller-email">${safeEmail}</div>
+                    <div class="seller-balance">Balance: ₹${(seller.balance || 0).toFixed(2)}</div>
+                </div>
+            `;
+        }).join('');
     }
     
     dropdown.classList.add('show');
+});
+
+// Add click handler for seller options
+dropdown.addEventListener('click', function(e) {
+    const option = e.target.closest('.seller-option');
+    if (option) {
+        const id = option.dataset.id;
+        const name = option.dataset.name;
+        const email = option.dataset.email;
+        const balance = parseFloat(option.dataset.balance);
+        selectSeller(id, name, email, balance);
+    }
 });
 
 // Click outside to close dropdown

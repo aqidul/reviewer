@@ -192,14 +192,14 @@ $pending_wallet_recharges = $pending_count;
                         <li><?= htmlspecialchars($error) ?></li>
                     <?php endforeach; ?>
                 </ul>
-                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'">&times;</button>
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()" aria-label="Close">&times;</button>
             </div>
         <?php endif; ?>
         
         <?php if ($success): ?>
             <div class="alert alert-success alert-dismissible">
                 <?= htmlspecialchars($success) ?>
-                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'">&times;</button>
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()" aria-label="Close">&times;</button>
             </div>
         <?php endif; ?>
         
@@ -325,6 +325,10 @@ $pending_wallet_recharges = $pending_count;
 <script>
     function showActionModal(requestId, action, sellerName, amount) {
         const modal = document.createElement('div');
+        modal.className = 'custom-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'modal-title');
         modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999';
         
         const isApprove = action === 'approve';
@@ -333,12 +337,15 @@ $pending_wallet_recharges = $pending_count;
         const btnClass = isApprove ? 'btn-success' : 'btn-danger';
         const btnText = isApprove ? 'Approve' : 'Reject';
         
+        // Escape strings for HTML
+        const escapedSellerName = sellerName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        
         modal.innerHTML = `
             <div style="background:#fff;border-radius:15px;padding:30px;max-width:500px;width:90%">
-                <h3 style="margin-bottom:20px">${isApprove ? 'Approve' : 'Reject'} Recharge Request</h3>
+                <h3 id="modal-title" style="margin-bottom:20px">${isApprove ? 'Approve' : 'Reject'} Recharge Request</h3>
                 <div style="background:${bgColor};color:${textColor};padding:15px;border-radius:10px;margin-bottom:20px">
                     <strong>Confirm ${isApprove ? 'Approval' : 'Rejection'}</strong><br>
-                    Seller: <strong>${sellerName}</strong><br>
+                    Seller: <strong>${escapedSellerName}</strong><br>
                     Amount: <strong>₹${amount.toFixed(2)}</strong><br>
                     ${isApprove ? 'This amount will be added to the seller\'s wallet.' : 'Please provide a reason for rejection.'}
                 </div>
@@ -350,15 +357,39 @@ $pending_wallet_recharges = $pending_count;
                         placeholder="${isApprove ? 'Optional remarks' : 'Required - explain reason for rejection'}"
                         style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px"></textarea>
                     <div style="display:flex;gap:10px;margin-top:20px">
-                        <button type="button" onclick="this.closest('div[style*=fixed]').remove()" 
-                            class="btn btn-secondary" style="flex:1">Cancel</button>
+                        <button type="button" class="btn btn-secondary" style="flex:1">Cancel</button>
                         <button type="submit" class="btn ${btnClass}" style="flex:1">${btnText}</button>
                     </div>
                 </form>
             </div>
         `;
         
+        // Close button handler
+        const cancelBtn = modal.querySelector('button[type="button"]');
+        cancelBtn.addEventListener('click', () => modal.remove());
+        
+        // Close on ESC key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+        
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        });
+        
         document.body.appendChild(modal);
+        
+        // Focus management
+        const firstInput = modal.querySelector('textarea');
+        if (firstInput) firstInput.focus();
     }
 </script>
 </body>
