@@ -323,7 +323,7 @@ const sellerInfo = document.getElementById('selectedSellerInfo');
 searchInput.addEventListener('input', function() {
     const query = this.value.toLowerCase();
     
-    if (query.length < 2) {
+    if (query.length === 0) {
         dropdown.classList.remove('show');
         return;
     }
@@ -350,6 +350,13 @@ searchInput.addEventListener('input', function() {
     }
     
     dropdown.classList.add('show');
+});
+
+// Focus on search input to show dropdown
+searchInput.addEventListener('focus', function() {
+    if (this.value.length > 0) {
+        searchInput.dispatchEvent(new Event('input'));
+    }
 });
 
 // Add click handler for seller options
