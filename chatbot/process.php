@@ -82,7 +82,7 @@ function findFAQAnswer($question, $pdo) {
             $params[] = "%$keyword%";
         }
         
-        $sql = "SELECT answer FROM faq WHERE is_active = 1 AND (" . implode(' OR ', $conditions) . ") ORDER BY id DESC LIMIT 1";
+        $sql = "SELECT answer FROM chatbot_faq WHERE is_active = 1 AND (" . implode(' OR ', $conditions) . ") ORDER BY id DESC LIMIT 1";
         
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
