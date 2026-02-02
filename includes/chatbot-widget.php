@@ -476,8 +476,17 @@ if (isset($_SESSION['admin_name'])) {
                 body: JSON.stringify({ message, userType, userId })
             });
             
+            if (!response.ok) {
+                throw new Error('Server error: ' + response.status);
+            }
+            
             const data = await response.json();
             typingIndicator.style.display = 'none';
+            
+            // Validate response structure
+            if (!data || typeof data.response !== 'string') {
+                throw new Error('Invalid response format');
+            }
             
             if (data.success) {
                 addMessage(data.response, 'bot');
@@ -486,6 +495,7 @@ if (isset($_SESSION['admin_name'])) {
             }
         } catch (error) {
             typingIndicator.style.display = 'none';
+            console.error('Chatbot error:', error);
             addMessage('I\'m having trouble connecting. Please check back later.', 'bot');
         }
     });
