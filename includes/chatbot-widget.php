@@ -6,7 +6,7 @@
  */
 
 // Ensure this is included from a valid session
-if (!isset($_SESSION)) {
+if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
@@ -15,6 +15,16 @@ $user_type = 'guest';
 $user_id = 0;
 $user_name = 'Guest';
 
+// Debug logging (only in development - remove or disable in production)
+if (defined('DEBUG') && DEBUG === true) {
+    error_log('Chatbot Widget - Session Debug: ' . json_encode([
+        'has_admin' => isset($_SESSION['admin_name']),
+        'has_seller_id' => isset($_SESSION['seller_id']),
+        'has_seller_name' => isset($_SESSION['seller_name']),
+        'has_user_id' => isset($_SESSION['user_id'])
+    ]));
+}
+
 if (isset($_SESSION['admin_name'])) {
     $user_type = 'admin';
     $user_name = $_SESSION['admin_name'];
@@ -22,6 +32,9 @@ if (isset($_SESSION['admin_name'])) {
     $user_type = 'seller';
     $user_id = $_SESSION['seller_id'];
     $user_name = $_SESSION['seller_name'] ?? 'Seller';
+    if (defined('DEBUG') && DEBUG === true) {
+        error_log('Chatbot Widget - Seller detected: ID=' . $user_id . ', Name=' . $user_name);
+    }
 } elseif (isset($_SESSION['user_id'])) {
     $user_type = 'user';
     $user_id = $_SESSION['user_id'];
@@ -30,7 +43,7 @@ if (isset($_SESSION['admin_name'])) {
 ?>
 
 <!-- AI Chatbot Widget -->
-<div id="chatbot-widget" class="chatbot-widget" style="display: none;">
+<div id="chatbot-widget" class="chatbot-widget">
     <div class="chatbot-header">
         <div class="chatbot-title">
             <i class="bi bi-robot"></i>
@@ -136,10 +149,14 @@ if (isset($_SESSION['admin_name'])) {
     background: var(--bg-secondary, #ffffff);
     border-radius: 16px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    display: flex;
+    display: none;
     flex-direction: column;
     z-index: 9998;
     animation: slideUp 0.3s ease-out;
+}
+
+.chatbot-widget.active {
+    display: flex;
 }
 
 @keyframes slideUp {
@@ -441,18 +458,18 @@ if (isset($_SESSION['admin_name'])) {
     
     // Toggle chatbot
     trigger.addEventListener('click', () => {
-        widget.style.display = widget.style.display === 'none' ? 'flex' : 'none';
-        if (widget.style.display === 'flex') {
+        widget.classList.toggle('active');
+        if (widget.classList.contains('active')) {
             input.focus();
         }
     });
     
     closeBtn.addEventListener('click', () => {
-        widget.style.display = 'none';
+        widget.classList.remove('active');
     });
     
     minimizeBtn.addEventListener('click', () => {
-        widget.style.display = 'none';
+        widget.classList.remove('active');
     });
     
     // Handle form submission
@@ -470,30 +487,47 @@ if (isset($_SESSION['admin_name'])) {
         
         // Send to chatbot API
         try {
-            const response = await fetch('<?php echo htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8'); ?>/chatbot/process.php', {
+            const apiUrl = '<?php echo htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8'); ?>/chatbot/process.php';
+            console.log('Sending to chatbot API:', apiUrl, { message, userType, userId });
+            
+            const response = await fetch(apiUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify({ message, userType, userId })
             });
             
+            console.log('Response status:', response.status);
+            
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Server error response:', errorText);
                 throw new Error('Server error: ' + response.status);
             }
             
             const data = await response.json();
+            console.log('Chatbot response:', data);
+            
             typingIndicator.style.display = 'none';
             
             // Validate response structure
-            if (!data || !data.success || typeof data.response !== 'string') {
+            if (!data || !data.success) {
                 console.error('Invalid response format:', data);
-                throw new Error('Invalid response format from server');
+                throw new Error(data.error || 'Invalid response format from server');
+            }
+            
+            if (typeof data.response !== 'string' || data.response.trim() === '') {
+                console.error('Empty or invalid response:', data);
+                throw new Error('Received empty response from server');
             }
             
             addMessage(data.response, 'bot');
         } catch (error) {
             typingIndicator.style.display = 'none';
             console.error('Chatbot error:', error);
-            addMessage('I\'m having trouble connecting. Please check back later.', 'bot');
+            addMessage('I\'m having trouble connecting. Please check back later. Error: ' + error.message, 'bot');
         }
     });
     

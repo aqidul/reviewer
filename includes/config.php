@@ -5,6 +5,9 @@ error_reporting(E_ALL);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
+// Debug mode (set to false in production)
+const DEBUG = false;
+
 // Database Configuration
 const DB_HOST = 'localhost';
 const DB_USER = 'reviewflow_user';
