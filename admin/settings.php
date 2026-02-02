@@ -56,10 +56,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
     }
     
     // Notification Settings
-    $update_settings['email_enabled'] = isset($_POST['email_enabled']) ? '1' : '0';
-    $update_settings['sms_enabled'] = isset($_POST['sms_enabled']) ? '1' : '0';
-    $update_settings['whatsapp_enabled'] = isset($_POST['whatsapp_enabled']) ? '1' : '0';
-    $update_settings['push_enabled'] = isset($_POST['push_enabled']) ? '1' : '0';
+    if (isset($_POST['active_tab']) && $_POST['active_tab'] === 'notifications') { $update_settings['email_enabled'] = isset($_POST['email_enabled']) ? '1' : '0'; }
+    if (isset($_POST['active_tab']) && $_POST['active_tab'] === 'notifications') { $update_settings['sms_enabled'] = isset($_POST['sms_enabled']) ? '1' : '0'; }
+    if (isset($_POST['active_tab']) && $_POST['active_tab'] === 'notifications') { $update_settings['whatsapp_enabled'] = isset($_POST['whatsapp_enabled']) ? '1' : '0'; }
+    if (isset($_POST['active_tab']) && $_POST['active_tab'] === 'notifications') { $update_settings['push_enabled'] = isset($_POST['push_enabled']) ? '1' : '0'; }
     
     // Task Settings
     if (isset($_POST['default_deadline_days'])) {
@@ -76,8 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
     if (isset($_POST['session_timeout'])) {
         $update_settings['session_timeout'] = max(300, intval($_POST['session_timeout']));
     }
-    $update_settings['registration_enabled'] = isset($_POST['registration_enabled']) ? '1' : '0';
-    $update_settings['maintenance_mode'] = isset($_POST['maintenance_mode']) ? '1' : '0';
+    if (isset($_POST['active_tab']) && $_POST['active_tab'] === 'security') { $update_settings['registration_enabled'] = isset($_POST['registration_enabled']) ? '1' : '0'; $update_settings['maintenance_mode'] = isset($_POST['maintenance_mode']) ? '1' : '0'; }
     
     // Payment Settings
     if (isset($_POST['razorpay_key_id'])) {
@@ -86,8 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
     if (isset($_POST['razorpay_key_secret'])) {
         $update_settings['razorpay_key_secret'] = sanitizeInput($_POST['razorpay_key_secret']);
     }
-    $update_settings['razorpay_enabled'] = isset($_POST['razorpay_enabled']) ? '1' : '0';
-    $update_settings['razorpay_test_mode'] = isset($_POST['razorpay_test_mode']) ? '1' : '0';
+    if (isset($_POST['active_tab']) && $_POST['active_tab'] === 'payment') { $update_settings['razorpay_enabled'] = isset($_POST['razorpay_enabled']) ? '1' : '0'; }
+    if (isset($_POST['active_tab']) && $_POST['active_tab'] === 'payment') { $update_settings['razorpay_test_mode'] = isset($_POST['razorpay_test_mode']) ? '1' : '0'; }
     
     if (isset($_POST['payumoney_merchant_key'])) {
         $update_settings['payumoney_merchant_key'] = sanitizeInput($_POST['payumoney_merchant_key']);
@@ -95,8 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
     if (isset($_POST['payumoney_merchant_salt'])) {
         $update_settings['payumoney_merchant_salt'] = sanitizeInput($_POST['payumoney_merchant_salt']);
     }
-    $update_settings['payumoney_enabled'] = isset($_POST['payumoney_enabled']) ? '1' : '0';
-    $update_settings['payumoney_test_mode'] = isset($_POST['payumoney_test_mode']) ? '1' : '0';
+    if (isset($_POST['active_tab']) && $_POST['active_tab'] === 'payment') { $update_settings['payumoney_enabled'] = isset($_POST['payumoney_enabled']) ? '1' : '0'; }
+    if (isset($_POST['active_tab']) && $_POST['active_tab'] === 'payment') { $update_settings['payumoney_test_mode'] = isset($_POST['payumoney_test_mode']) ? '1' : '0'; }
     
     if (isset($_POST['admin_commission_per_review'])) {
         $update_settings['admin_commission_per_review'] = max(0, floatval($_POST['admin_commission_per_review']));
