@@ -10,10 +10,22 @@ echo "=== ReviewFlow Chatbot Tables Migration ===\n\n";
 
 try {
     // Read the migration SQL file
-    $sql = file_get_contents(__DIR__ . '/migrations/chatbot_tables.sql');
+    $migrationFile = __DIR__ . '/migrations/chatbot_tables.sql';
+    
+    // Verify file exists and is readable
+    if (!file_exists($migrationFile) || !is_readable($migrationFile)) {
+        die("ERROR: Migration file not found or not readable\n");
+    }
+    
+    $sql = file_get_contents($migrationFile);
     
     if ($sql === false) {
         die("ERROR: Could not read migration file\n");
+    }
+    
+    // Basic SQL injection protection - check for suspicious patterns
+    if (preg_match('/;\s*(DROP\s+DATABASE|DELETE\s+FROM\s+users|TRUNCATE|ALTER\s+USER)/i', $sql)) {
+        die("ERROR: Migration file contains potentially dangerous SQL commands\n");
     }
     
     // Split into individual statements (remove the final SELECT for verification)

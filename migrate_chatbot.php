@@ -137,11 +137,23 @@
             $migrationRun = true;
             
             try {
-                // Read and parse SQL
-                $sql = file_get_contents(__DIR__ . '/migrations/chatbot_tables.sql');
+                // Read and validate SQL file
+                $migrationFile = __DIR__ . '/migrations/chatbot_tables.sql';
                 
+                // Verify file exists and is readable
+                if (!file_exists($migrationFile) || !is_readable($migrationFile)) {
+                    throw new Exception("Migration file not found or not readable");
+                }
+                
+                // Verify file hasn't been tampered with (basic check)
+                $sql = file_get_contents($migrationFile);
                 if ($sql === false) {
                     throw new Exception("Could not read migration file");
+                }
+                
+                // Basic SQL injection protection - check for suspicious patterns
+                if (preg_match('/;\s*(DROP\s+DATABASE|DELETE\s+FROM\s+users|TRUNCATE|ALTER\s+USER)/i', $sql)) {
+                    throw new Exception("Migration file contains potentially dangerous SQL commands");
                 }
                 
                 // Split into individual statements
@@ -280,7 +292,7 @@
         
         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">
             <strong>ReviewFlow</strong> - Chatbot Migration Tool<br>
-            <a href="<?= htmlspecialchars(APP_URL) ?>">← Back to Dashboard</a>
+            <a href="<?= defined('APP_URL') ? htmlspecialchars(APP_URL) : '/' ?>">← Back to Dashboard</a>
         </div>
     </div>
 </body>
