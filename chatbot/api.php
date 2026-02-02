@@ -269,6 +269,7 @@ class Chatbot {
                 $wallet = getWalletDetails($this->user_id);
                 
                 if (!is_array($wallet)) {
+                    error_log("Chatbot: getWalletDetails returned non-array for user_id: {$this->user_id}");
                     $wallet = ['total_earned' => 0, 'total_withdrawn' => 0];
                 }
                 
@@ -291,6 +292,7 @@ class Chatbot {
             $stats = getUserStats($this->user_id);
             
             if (!is_array($stats)) {
+                error_log("Chatbot: getUserStats returned non-array for user_id: {$this->user_id}");
                 $stats = ['tasks_completed' => 0, 'tasks_pending' => 0, 'total_earnings' => 0, 'level' => 1];
             }
             
@@ -330,6 +332,7 @@ class Chatbot {
             $stats = getReferralStats($this->user_id);
             
             if (!is_array($stats)) {
+                error_log("Chatbot: getReferralStats returned non-array for user_id: {$this->user_id}");
                 $stats = ['total' => 0, 'completed' => 0, 'pending' => 0, 'earnings' => 0];
             }
             

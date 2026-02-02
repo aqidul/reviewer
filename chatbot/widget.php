@@ -406,6 +406,10 @@ $user_name = $_SESSION['user_name'] ?? 'Guest';
 
 <script>
 (function() {
+    // Configuration constants
+    const MAX_MESSAGE_LENGTH = 500;
+    const MAX_SUGGESTION_LENGTH = 100;
+    
     const chatToggle = document.getElementById('chatToggle');
     const chatWindow = document.getElementById('chatWindow');
     const chatMessages = document.getElementById('chatMessages');
@@ -431,8 +435,8 @@ $user_name = $_SESSION['user_name'] ?? 'Guest';
         if (!message || isTyping) return;
         
         // Validate message length (max 500 chars)
-        if (message.length > 500) {
-            addMessage("Message is too long. Please keep it under 500 characters.", 'bot');
+        if (message.length > MAX_MESSAGE_LENGTH) {
+            addMessage(`Message is too long. Please keep it under ${MAX_MESSAGE_LENGTH} characters.`, 'bot');
             return;
         }
         
@@ -582,7 +586,7 @@ $user_name = $_SESSION['user_name'] ?? 'Guest';
             // Validate and sanitize each suggestion
             if (typeof text === 'string' && text.trim()) {
                 const btn = document.createElement('button');
-                btn.textContent = text.substring(0, 100); // Limit length
+                btn.textContent = text.substring(0, MAX_SUGGESTION_LENGTH); // Limit length
                 btn.onclick = () => sendSuggestion(text);
                 suggestionsDiv.appendChild(btn);
             }
