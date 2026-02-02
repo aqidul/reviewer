@@ -406,6 +406,10 @@ $user_name = $_SESSION['user_name'] ?? 'Guest';
 
 <script>
 (function() {
+    // Configuration constants
+    const MAX_MESSAGE_LENGTH = 500;
+    const MAX_SUGGESTION_LENGTH = 100;
+    
     const chatToggle = document.getElementById('chatToggle');
     const chatWindow = document.getElementById('chatWindow');
     const chatMessages = document.getElementById('chatMessages');
@@ -430,6 +434,12 @@ $user_name = $_SESSION['user_name'] ?? 'Guest';
         const message = chatInput.value.trim();
         if (!message || isTyping) return;
         
+        // Validate message length (max 500 chars)
+        if (message.length > MAX_MESSAGE_LENGTH) {
+            addMessage(`Message is too long. Please keep it under ${MAX_MESSAGE_LENGTH} characters.`, 'bot');
+            return;
+        }
+        
         // Add user message
         addMessage(message, 'user');
         chatInput.value = '';
@@ -448,19 +458,31 @@ $user_name = $_SESSION['user_name'] ?? 'Guest';
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message: message })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Server error: ' + response.status);
+            }
+            return response.json();
+        })
         .then(data => {
             hideTyping();
+            
+            // Validate response structure
+            if (!data || typeof data.response !== 'string') {
+                throw new Error('Invalid response format');
+            }
+            
             addMessage(data.response, 'bot');
             
-            // Show suggestions if available
-            if (data.suggestions && data.suggestions.length > 0) {
+            // Show suggestions if available and valid
+            if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
                 showSuggestions(data.suggestions);
             }
         })
         .catch(error => {
             hideTyping();
-            addMessage("Sorry, I'm having trouble connecting. Please try again.", 'bot');
+            console.error('Chatbot error:', error);
+            addMessage("Connection error. Please try again.", 'bot');
         });
     };
     
@@ -478,18 +500,48 @@ $user_name = $_SESSION['user_name'] ?? 'Guest';
         const avatar = type === 'bot' ? '🤖' : '👤';
         const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
         
-        // Parse markdown-like formatting
-        text = text
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\n/g, '<br>');
+        // Create message bubble and safely set content
+        const messageBubble = document.createElement('div');
+        messageBubble.className = 'message-bubble';
         
-        messageDiv.innerHTML = `
-            <div class="message-avatar">${avatar}</div>
-            <div class="message-content">
-                <div class="message-bubble">${text}</div>
-                <div class="message-time">${time}</div>
-            </div>
-        `;
+        // For bot messages, parse markdown-like formatting safely
+        if (type === 'bot') {
+            // Escape HTML first
+            const escaped = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+            
+            // Then apply markdown formatting
+            const formatted = escaped
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+            
+            messageBubble.innerHTML = formatted;
+        } else {
+            // For user messages, use textContent (no HTML)
+            messageBubble.textContent = text;
+        }
+        
+        // Create message structure
+        const avatarDiv = document.createElement('div');
+        avatarDiv.className = 'message-avatar';
+        avatarDiv.textContent = avatar;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-time';
+        timeDiv.textContent = time;
+        
+        contentDiv.appendChild(messageBubble);
+        contentDiv.appendChild(timeDiv);
+        
+        messageDiv.appendChild(avatarDiv);
+        messageDiv.appendChild(contentDiv);
         
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -522,18 +574,29 @@ $user_name = $_SESSION['user_name'] ?? 'Guest';
     
     // Show suggestions
     function showSuggestions(suggestions) {
+        // Validate suggestions array
+        if (!Array.isArray(suggestions) || suggestions.length === 0) {
+            return;
+        }
+        
         const suggestionsDiv = document.createElement('div');
         suggestionsDiv.className = 'quick-suggestions';
         
         suggestions.forEach(text => {
-            const btn = document.createElement('button');
-            btn.textContent = text;
-            btn.onclick = () => sendSuggestion(text);
-            suggestionsDiv.appendChild(btn);
+            // Validate and sanitize each suggestion
+            if (typeof text === 'string' && text.trim()) {
+                const btn = document.createElement('button');
+                btn.textContent = text.substring(0, MAX_SUGGESTION_LENGTH); // Limit length
+                btn.onclick = () => sendSuggestion(text);
+                suggestionsDiv.appendChild(btn);
+            }
         });
         
-        chatMessages.appendChild(suggestionsDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        // Only append if we have buttons
+        if (suggestionsDiv.children.length > 0) {
+            chatMessages.appendChild(suggestionsDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
     }
     
     // Enter key to send

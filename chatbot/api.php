@@ -55,11 +55,19 @@ if (!checkRateLimit('chatbot_' . $session_id, 30, 1)) {
 $user_id = $_SESSION['user_id'] ?? null;
 $user_name = $_SESSION['user_name'] ?? 'Guest';
 
-// Initialize Chatbot
-$chatbot = new Chatbot($pdo, $user_id, $user_name);
-$response = $chatbot->getResponse($message, $context);
-
-echo json_encode($response);
+// Initialize Chatbot and get response with error handling
+try {
+    $chatbot = new Chatbot($pdo, $user_id, $user_name);
+    $response = $chatbot->getResponse($message, $context);
+    echo json_encode($response);
+} catch (Exception $e) {
+    error_log("Chatbot API Error: " . $e->getMessage() . " | Trace: " . $e->getTraceAsString());
+    http_response_code(500);
+    echo json_encode([
+        'response' => "I'm having trouble processing your request. Please try again in a moment.",
+        'type' => 'error'
+    ]);
+}
 
 /**
  * Chatbot Class
@@ -200,7 +208,7 @@ class Chatbot {
             "Hey {$this->user_name}! 👋 Great to see you. How may I assist you today?"
         ];
         
-        $response = $greetings[array_rand($greetings)];
+        $response = !empty($greetings) ? $greetings[array_rand($greetings)] : "Hello {$this->user_name}! 👋";
         
         return [
             'response' => $response,
@@ -226,7 +234,7 @@ class Chatbot {
         ];
         
         return [
-            'response' => $responses[array_rand($responses)],
+            'response' => !empty($responses) ? $responses[array_rand($responses)] : "You're welcome!",
             'type' => 'thanks'
         ];
     }
@@ -243,7 +251,7 @@ class Chatbot {
         ];
         
         return [
-            'response' => $responses[array_rand($responses)],
+            'response' => !empty($responses) ? $responses[array_rand($responses)] : "Goodbye!",
             'type' => 'goodbye'
         ];
     }
@@ -252,24 +260,30 @@ class Chatbot {
      * Check user-specific queries
      */
     private function checkUserQueries(string $message): ?array {
-        // Wallet balance query
-        if (preg_match('/(my|mera|check|show|what).*(balance|wallet|paisa|money|earning)/i', $message) ||
-            preg_match('/(balance|wallet|earning).*(kitna|how much|kya)/i', $message)) {
-            
-            $balance = getWalletBalance($this->user_id);
-            $wallet = getWalletDetails($this->user_id);
-            
-            return [
-                'response' => "💰 **Your Wallet Summary:**\n\n" .
-                             "• Current Balance: **₹" . number_format($balance, 2) . "**\n" .
-                             "• Total Earned: ₹" . number_format($wallet['total_earned'] ?? 0, 2) . "\n" .
-                             "• Total Withdrawn: ₹" . number_format($wallet['total_withdrawn'] ?? 0, 2) . "\n\n" .
-                             "Would you like to withdraw or check your transactions?",
-                'type' => 'wallet_info',
-                'data' => ['balance' => $balance],
-                'suggestions' => ['How to withdraw?', 'Show my transactions', 'Minimum withdrawal amount?']
-            ];
-        }
+        try {
+            // Wallet balance query
+            if (preg_match('/(my|mera|check|show|what).*(balance|wallet|paisa|money|earning)/i', $message) ||
+                preg_match('/(balance|wallet|earning).*(kitna|how much|kya)/i', $message)) {
+                
+                $balance = getWalletBalance($this->user_id);
+                $wallet = getWalletDetails($this->user_id);
+                
+                if (!is_array($wallet)) {
+                    error_log("Chatbot: getWalletDetails returned non-array for user_id: {$this->user_id}");
+                    $wallet = ['total_earned' => 0, 'total_withdrawn' => 0];
+                }
+                
+                return [
+                    'response' => "💰 **Your Wallet Summary:**\n\n" .
+                                 "• Current Balance: **₹" . number_format($balance, 2) . "**\n" .
+                                 "• Total Earned: ₹" . number_format($wallet['total_earned'] ?? 0, 2) . "\n" .
+                                 "• Total Withdrawn: ₹" . number_format($wallet['total_withdrawn'] ?? 0, 2) . "\n\n" .
+                                 "Would you like to withdraw or check your transactions?",
+                    'type' => 'wallet_info',
+                    'data' => ['balance' => $balance],
+                    'suggestions' => ['How to withdraw?', 'Show my transactions', 'Minimum withdrawal amount?']
+                ];
+            }
         
         // Task status query
         if (preg_match('/(my|mera|show|check).*(task|work|job|order)/i', $message) ||
@@ -277,12 +291,17 @@ class Chatbot {
             
             $stats = getUserStats($this->user_id);
             
+            if (!is_array($stats)) {
+                error_log("Chatbot: getUserStats returned non-array for user_id: {$this->user_id}");
+                $stats = ['tasks_completed' => 0, 'tasks_pending' => 0, 'total_earnings' => 0, 'level' => 1];
+            }
+            
             return [
                 'response' => "📋 **Your Task Summary:**\n\n" .
-                             "• Tasks Completed: **{$stats['tasks_completed']}**\n" .
-                             "• Tasks Pending: **{$stats['tasks_pending']}**\n" .
+                             "• Tasks Completed: **" . ($stats['tasks_completed'] ?? 0) . "**\n" .
+                             "• Tasks Pending: **" . ($stats['tasks_pending'] ?? 0) . "**\n" .
                              "• Total Earnings: ₹" . number_format($stats['total_earnings'] ?? 0, 2) . "\n" .
-                             "• Your Level: Level {$stats['level']}\n\n" .
+                             "• Your Level: Level " . ($stats['level'] ?? 1) . "\n\n" .
                              "Keep completing tasks to earn more! 💪",
                 'type' => 'task_info',
                 'data' => $stats,
@@ -312,16 +331,24 @@ class Chatbot {
         if (preg_match('/(referral|refer).*(earning|bonus|status|stat)/i', $message)) {
             $stats = getReferralStats($this->user_id);
             
+            if (!is_array($stats)) {
+                error_log("Chatbot: getReferralStats returned non-array for user_id: {$this->user_id}");
+                $stats = ['total' => 0, 'completed' => 0, 'pending' => 0, 'earnings' => 0];
+            }
+            
             return [
                 'response' => "📊 **Your Referral Stats:**\n\n" .
-                             "• Total Referrals: **{$stats['total']}**\n" .
-                             "• Completed: {$stats['completed']}\n" .
-                             "• Pending: {$stats['pending']}\n" .
-                             "• Total Earned: ₹" . number_format($stats['earnings'], 2) . "\n\n" .
+                             "• Total Referrals: **" . ($stats['total'] ?? 0) . "**\n" .
+                             "• Completed: " . ($stats['completed'] ?? 0) . "\n" .
+                             "• Pending: " . ($stats['pending'] ?? 0) . "\n" .
+                             "• Total Earned: ₹" . number_format($stats['earnings'] ?? 0, 2) . "\n\n" .
                              "Keep sharing to earn more! 🚀",
                 'type' => 'referral_stats',
                 'data' => $stats
             ];
+        }
+        } catch (Exception $e) {
+            error_log("Chatbot checkUserQueries Error: " . $e->getMessage());
         }
         
         return null;
@@ -340,20 +367,27 @@ class Chatbot {
             $best_score = 0;
             
             foreach ($faqs as $faq) {
+                // Skip if essential fields are NULL or empty
+                if (empty($faq['question']) || empty($faq['answer'])) {
+                    continue;
+                }
+                
                 // Check exact keyword match
-                $keywords = array_map('trim', explode(',', strtolower($faq['keywords'])));
-                foreach ($keywords as $keyword) {
-                    if (!empty($keyword) && strpos($message, $keyword) !== false) {
-                        $score = strlen($keyword) / strlen($message);
-                        if ($score > $best_score) {
-                            $best_score = $score;
-                            $best_match = $faq;
+                if (!empty($faq['keywords'])) {
+                    $keywords = array_map('trim', explode(',', strtolower((string)$faq['keywords'])));
+                    foreach ($keywords as $keyword) {
+                        if (!empty($keyword) && !empty($message) && strpos($message, $keyword) !== false) {
+                            $score = strlen($keyword) / max(1, strlen($message));
+                            if ($score > $best_score) {
+                                $best_score = $score;
+                                $best_match = $faq;
+                            }
                         }
                     }
                 }
                 
                 // Check question similarity
-                $question_lower = strtolower($faq['question']);
+                $question_lower = strtolower((string)$faq['question']);
                 $similarity = $this->calculateSimilarity($message, $question_lower);
                 if ($similarity > $best_score) {
                     $best_score = $similarity;
@@ -367,19 +401,21 @@ class Chatbot {
                 $stmt->execute([$best_match['id']]);
                 
                 // Parse response for variables
-                $response = $this->parseResponse($best_match['answer']);
+                $response = $this->parseResponse((string)$best_match['answer']);
                 
                 return [
                     'response' => $response,
                     'type' => 'faq',
                     'faq_id' => $best_match['id'],
                     'confidence' => round($best_score, 2),
-                    'category' => $best_match['category']
+                    'category' => $best_match['category'] ?? 'general'
                 ];
             }
             
         } catch (PDOException $e) {
             error_log("Chatbot FAQ Error: " . $e->getMessage());
+        } catch (Exception $e) {
+            error_log("Chatbot FAQ Unexpected Error: " . $e->getMessage());
         }
         
         return null;
@@ -630,7 +666,7 @@ class Chatbot {
         ];
         
         return [
-            'response' => $responses[array_rand($responses)],
+            'response' => !empty($responses) ? $responses[array_rand($responses)] : "I'm not sure I understand that.",
             'type' => 'fallback',
             'suggestions' => [
                 'How do tasks work?',
