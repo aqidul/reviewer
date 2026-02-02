@@ -55,11 +55,19 @@ if (!checkRateLimit('chatbot_' . $session_id, 30, 1)) {
 $user_id = $_SESSION['user_id'] ?? null;
 $user_name = $_SESSION['user_name'] ?? 'Guest';
 
-// Initialize Chatbot
-$chatbot = new Chatbot($pdo, $user_id, $user_name);
-$response = $chatbot->getResponse($message, $context);
-
-echo json_encode($response);
+// Initialize Chatbot and get response with error handling
+try {
+    $chatbot = new Chatbot($pdo, $user_id, $user_name);
+    $response = $chatbot->getResponse($message, $context);
+    echo json_encode($response);
+} catch (Exception $e) {
+    error_log("Chatbot API Error: " . $e->getMessage() . " | Trace: " . $e->getTraceAsString());
+    http_response_code(500);
+    echo json_encode([
+        'response' => "I'm having trouble processing your request. Please try again in a moment.",
+        'type' => 'error'
+    ]);
+}
 
 /**
  * Chatbot Class
@@ -340,20 +348,27 @@ class Chatbot {
             $best_score = 0;
             
             foreach ($faqs as $faq) {
+                // Skip if essential fields are NULL or empty
+                if (empty($faq['question']) || empty($faq['answer'])) {
+                    continue;
+                }
+                
                 // Check exact keyword match
-                $keywords = array_map('trim', explode(',', strtolower($faq['keywords'])));
-                foreach ($keywords as $keyword) {
-                    if (!empty($keyword) && strpos($message, $keyword) !== false) {
-                        $score = strlen($keyword) / strlen($message);
-                        if ($score > $best_score) {
-                            $best_score = $score;
-                            $best_match = $faq;
+                if (!empty($faq['keywords'])) {
+                    $keywords = array_map('trim', explode(',', strtolower((string)$faq['keywords'])));
+                    foreach ($keywords as $keyword) {
+                        if (!empty($keyword) && strpos($message, $keyword) !== false) {
+                            $score = strlen($keyword) / strlen($message);
+                            if ($score > $best_score) {
+                                $best_score = $score;
+                                $best_match = $faq;
+                            }
                         }
                     }
                 }
                 
                 // Check question similarity
-                $question_lower = strtolower($faq['question']);
+                $question_lower = strtolower((string)$faq['question']);
                 $similarity = $this->calculateSimilarity($message, $question_lower);
                 if ($similarity > $best_score) {
                     $best_score = $similarity;
@@ -367,19 +382,21 @@ class Chatbot {
                 $stmt->execute([$best_match['id']]);
                 
                 // Parse response for variables
-                $response = $this->parseResponse($best_match['answer']);
+                $response = $this->parseResponse((string)$best_match['answer']);
                 
                 return [
                     'response' => $response,
                     'type' => 'faq',
                     'faq_id' => $best_match['id'],
                     'confidence' => round($best_score, 2),
-                    'category' => $best_match['category']
+                    'category' => $best_match['category'] ?? 'general'
                 ];
             }
             
         } catch (PDOException $e) {
             error_log("Chatbot FAQ Error: " . $e->getMessage());
+        } catch (Exception $e) {
+            error_log("Chatbot FAQ Unexpected Error: " . $e->getMessage());
         }
         
         return null;
