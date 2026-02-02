@@ -17,6 +17,11 @@ if (!$seller || $seller['status'] !== 'active') {
     exit;
 }
 
+// Ensure seller_name is set in session for chatbot
+if (!isset($_SESSION['seller_name'])) {
+    $_SESSION['seller_name'] = $seller['name'];
+}
+
 $current_page = basename($_SERVER['PHP_SELF'], '.php');
 ?>
 <!DOCTYPE html>

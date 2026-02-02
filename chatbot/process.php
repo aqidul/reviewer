@@ -132,14 +132,96 @@ function generateContextualResponse($message, $userType) {
     
     // Seller responses
     if ($userType === 'seller') {
+        // Review requests
         if (strpos($message, 'review') !== false || strpos($message, 'request') !== false) {
-            return "To request reviews:\n1. Go to 'New Request' in the sidebar\n2. Fill in product details (name, link, platform)\n3. Enter number of reviews needed\n4. Make payment\n5. Admin will approve your request\n\nOnce approved, reviewers will be assigned to your product.";
+            return "**How to Request Reviews:**\n\n" .
+                   "1. Click 'New Request' in the sidebar\n" .
+                   "2. Enter product details:\n" .
+                   "   • Product link (Amazon/Flipkart)\n" .
+                   "   • Product name and brand\n" .
+                   "   • Product price\n" .
+                   "   • Number of reviews needed\n" .
+                   "3. Review the cost calculation\n" .
+                   "4. Make payment securely\n" .
+                   "5. Wait for admin approval\n\n" .
+                   "Once approved, reviewers will be assigned to your product automatically!";
         }
-        if (strpos($message, 'wallet') !== false || strpos($message, 'recharge') !== false) {
-            return "To recharge your wallet:\n1. Go to 'Wallet' in the sidebar\n2. Click 'Recharge Wallet'\n3. Enter amount and transfer details\n4. Upload bank transfer screenshot\n5. Submit request\n\nAdmin will verify and credit your wallet within 24 hours.";
+        
+        // Wallet and recharge
+        if (strpos($message, 'wallet') !== false || strpos($message, 'recharge') !== false || strpos($message, 'balance') !== false) {
+            return "**Wallet & Recharge Guide:**\n\n" .
+                   "To recharge your wallet:\n" .
+                   "1. Go to 'Wallet' in the sidebar\n" .
+                   "2. Click 'Recharge Wallet' button\n" .
+                   "3. Enter the amount you want to add\n" .
+                   "4. Choose payment method\n" .
+                   "5. Complete the payment\n\n" .
+                   "Your wallet balance will be updated instantly!\n\n" .
+                   "You can also add money during checkout when creating a new review request.";
         }
-        if (strpos($message, 'invoice') !== false) {
-            return "To view invoices:\n1. Go to 'Invoices' in the sidebar\n2. All your invoices are listed there\n3. Click 'View' to see invoice details\n4. Click 'Download' to get PDF\n\nInvoices are generated after each successful payment.";
+        
+        // Invoices
+        if (strpos($message, 'invoice') !== false || strpos($message, 'bill') !== false || strpos($message, 'receipt') !== false) {
+            return "**View & Download Invoices:**\n\n" .
+                   "1. Go to 'Invoices' in the sidebar\n" .
+                   "2. You'll see all your invoices listed\n" .
+                   "3. Click 'View' to see invoice details\n" .
+                   "4. Click 'Download' to save PDF\n\n" .
+                   "Invoices include:\n" .
+                   "• Order details\n" .
+                   "• GST breakdown (18%)\n" .
+                   "• Payment information\n" .
+                   "• SAC code for services\n\n" .
+                   "Invoices are generated automatically after payment.";
+        }
+        
+        // Payment and pricing
+        if (strpos($message, 'payment') !== false || strpos($message, 'pay') !== false || strpos($message, 'cost') !== false || strpos($message, 'price') !== false) {
+            return "**Payment & Pricing:**\n\n" .
+                   "Review pricing:\n" .
+                   "• ₹50 per review (base commission)\n" .
+                   "• Plus 18% GST\n" .
+                   "• Example: 10 reviews = ₹500 + ₹90 GST = ₹590\n\n" .
+                   "Payment methods:\n" .
+                   "• Razorpay (UPI, Cards, Net Banking)\n" .
+                   "• Wallet balance\n\n" .
+                   "All payments are secure and encrypted!";
+        }
+        
+        // Order status and tracking
+        if (strpos($message, 'order') !== false || strpos($message, 'status') !== false || strpos($message, 'track') !== false) {
+            return "**Track Your Orders:**\n\n" .
+                   "1. Go to 'Orders' in the sidebar\n" .
+                   "2. See all your review requests\n" .
+                   "3. Filter by status:\n" .
+                   "   • Pending - Awaiting admin approval\n" .
+                   "   • Approved - In progress\n" .
+                   "   • Completed - All reviews done\n" .
+                   "   • Rejected - See reason in details\n\n" .
+                   "Click 'View' on any order to see:\n" .
+                   "• Product details\n" .
+                   "• Review progress\n" .
+                   "• Payment status\n" .
+                   "• Timeline";
+        }
+        
+        // Getting started / help
+        if (strpos($message, 'start') !== false || strpos($message, 'begin') !== false || strpos($message, 'first') !== false || strpos($message, 'new') !== false) {
+            return "**Getting Started as a Seller:**\n\n" .
+                   "Welcome! Here's how to get reviews for your products:\n\n" .
+                   "1. **Create a Review Request**\n" .
+                   "   • Click 'New Request'\n" .
+                   "   • Enter your product details\n" .
+                   "   • Choose number of reviews\n\n" .
+                   "2. **Make Payment**\n" .
+                   "   • Review the cost\n" .
+                   "   • Pay securely via Razorpay\n\n" .
+                   "3. **Wait for Approval**\n" .
+                   "   • Admin reviews your request (usually within 24 hours)\n\n" .
+                   "4. **Track Progress**\n" .
+                   "   • Monitor reviews in 'Orders'\n" .
+                   "   • Get notifications on completion\n\n" .
+                   "Need help? Contact support anytime!";
         }
     }
     
@@ -157,6 +239,14 @@ function generateContextualResponse($message, $userType) {
     }
     
     // Generic helpful response
-    return "Thank you for your message! I'm here to help. Could you please be more specific about what you need assistance with?\n\nCommon topics:\n• How to complete tasks\n• Payment and withdrawals\n• Account issues\n• Technical problems\n\nYou can also contact our support team for personalized assistance.";
+    return "Thank you for your message! I'm here to help. Could you please be more specific about what you need assistance with?\n\n" .
+           "**Common topics I can help with:**\n" .
+           "• How to request reviews\n" .
+           "• Wallet and recharges\n" .
+           "• Order status and tracking\n" .
+           "• Payment and pricing\n" .
+           "• Invoices and receipts\n" .
+           "• Getting started guide\n\n" .
+           "Just ask me anything about these topics, or contact our support team for personalized assistance!";
 }
 ?>
