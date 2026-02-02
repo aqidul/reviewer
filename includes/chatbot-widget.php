@@ -470,7 +470,7 @@ if (isset($_SESSION['admin_name'])) {
         
         // Send to chatbot API
         try {
-            const response = await fetch('/chatbot/process.php', {
+            const response = await fetch('<?php echo APP_URL; ?>/chatbot/process.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message, userType, userId })
