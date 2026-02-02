@@ -597,9 +597,9 @@ class Chatbot {
                 $stmt = $this->pdo->prepare("
                     UPDATE chatbot_unanswered 
                     SET asked_count = asked_count + 1, 
+                        occurrence_count = asked_count + 1,
                         last_asked_at = NOW(),
-                        updated_at = NOW(),
-                        occurrence_count = asked_count + 1
+                        updated_at = NOW()
                     WHERE id = ?
                 ");
                 $stmt->execute([$existing['id']]);
