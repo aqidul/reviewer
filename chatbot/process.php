@@ -238,15 +238,43 @@ function generateContextualResponse($message, $userType) {
         }
     }
     
-    // Generic helpful response
+    // Generic helpful response - dynamic based on user type
+    $topics = [];
+    if ($userType === 'seller') {
+        $topics = [
+            '• How to request reviews',
+            '• Wallet and recharges',
+            '• Order status and tracking',
+            '• Payment and pricing',
+            '• Invoices and receipts',
+            '• Getting started guide'
+        ];
+    } elseif ($userType === 'admin') {
+        $topics = [
+            '• How to approve requests',
+            '• Assign tasks to users',
+            '• Export data',
+            '• Manage settings',
+            '• View reports'
+        ];
+    } elseif ($userType === 'user') {
+        $topics = [
+            '• How to complete tasks',
+            '• Withdrawals and payments',
+            '• Referral program',
+            '• Account management'
+        ];
+    } else {
+        $topics = [
+            '• How to register',
+            '• Platform features',
+            '• Getting started'
+        ];
+    }
+    
     return "Thank you for your message! I'm here to help. Could you please be more specific about what you need assistance with?\n\n" .
            "**Common topics I can help with:**\n" .
-           "• How to request reviews\n" .
-           "• Wallet and recharges\n" .
-           "• Order status and tracking\n" .
-           "• Payment and pricing\n" .
-           "• Invoices and receipts\n" .
-           "• Getting started guide\n\n" .
+           implode("\n", $topics) . "\n\n" .
            "Just ask me anything about these topics, or contact our support team for personalized assistance!";
 }
 ?>

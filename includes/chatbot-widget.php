@@ -15,14 +15,15 @@ $user_type = 'guest';
 $user_id = 0;
 $user_name = 'Guest';
 
-// Debug logging (remove in production)
-error_log('Chatbot Widget - Session Debug: ' . json_encode([
-    'has_admin' => isset($_SESSION['admin_name']),
-    'has_seller_id' => isset($_SESSION['seller_id']),
-    'has_seller_name' => isset($_SESSION['seller_name']),
-    'has_user_id' => isset($_SESSION['user_id']),
-    'session_vars' => array_keys($_SESSION)
-]));
+// Debug logging (only in development - remove or disable in production)
+if (defined('DEBUG') && DEBUG === true) {
+    error_log('Chatbot Widget - Session Debug: ' . json_encode([
+        'has_admin' => isset($_SESSION['admin_name']),
+        'has_seller_id' => isset($_SESSION['seller_id']),
+        'has_seller_name' => isset($_SESSION['seller_name']),
+        'has_user_id' => isset($_SESSION['user_id'])
+    ]));
+}
 
 if (isset($_SESSION['admin_name'])) {
     $user_type = 'admin';
@@ -31,7 +32,9 @@ if (isset($_SESSION['admin_name'])) {
     $user_type = 'seller';
     $user_id = $_SESSION['seller_id'];
     $user_name = $_SESSION['seller_name'] ?? 'Seller';
-    error_log('Chatbot Widget - Seller detected: ID=' . $user_id . ', Name=' . $user_name);
+    if (defined('DEBUG') && DEBUG === true) {
+        error_log('Chatbot Widget - Seller detected: ID=' . $user_id . ', Name=' . $user_name);
+    }
 } elseif (isset($_SESSION['user_id'])) {
     $user_type = 'user';
     $user_id = $_SESSION['user_id'];
