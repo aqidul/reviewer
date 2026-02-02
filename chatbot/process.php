@@ -365,7 +365,7 @@ function ensureTablesExist($pdo) {
                     question TEXT NOT NULL,
                     answer TEXT NOT NULL,
                     category VARCHAR(50) DEFAULT 'general',
-                    user_type ENUM('all', 'user', 'seller', 'admin') DEFAULT 'all',
+                    user_type ENUM('guest', 'user', 'seller', 'admin', 'all') DEFAULT 'all',
                     is_active TINYINT(1) DEFAULT 1,
                     view_count INT DEFAULT 0,
                     helpful_count INT DEFAULT 0,
@@ -378,15 +378,59 @@ function ensureTablesExist($pdo) {
             ");
             error_log('Chatbot: Created faq table');
             
-            // Insert default FAQs for sellers
-            $pdo->exec("
-                INSERT INTO faq (question, answer, category, user_type) VALUES
-                ('How do I request reviews?', 'To request reviews: 1. Click \"New Request\" in the sidebar, 2. Enter product details (link, name, price), 3. Choose number of reviews needed, 4. Make payment, 5. Wait for admin approval. Once approved, reviewers will be assigned automatically!', 'reviews', 'seller'),
-                ('How do I recharge my wallet?', 'To recharge wallet: 1. Go to \"Wallet\" in sidebar, 2. Click \"Recharge Wallet\", 3. Enter amount, 4. Choose payment method (Razorpay supports UPI, Cards, Net Banking), 5. Complete payment. Your balance updates instantly!', 'wallet', 'seller'),
-                ('How do I view my invoices?', 'To view invoices: 1. Go to \"Invoices\" in sidebar, 2. See all your invoices listed, 3. Click \"View\" for details, 4. Click \"Download\" to save PDF. Invoices include GST breakdown and are generated automatically after payment.', 'billing', 'seller'),
-                ('What is the cost per review?', 'Review pricing: Base commission is ₹50 per review, plus 18% GST. Example: 10 reviews = ₹500 + ₹90 GST = ₹590 total. You can pay via Razorpay (UPI/Cards/Net Banking) or wallet balance.', 'pricing', 'seller'),
-                ('How long does admin approval take?', 'Admin typically reviews and approves requests within 24 hours. You will receive a notification once your request is approved. You can track the status in the \"Orders\" section.', 'reviews', 'seller')
+            // Default FAQs for sellers
+            $defaultFAQs = [
+                [
+                    'question' => 'How do I request reviews?',
+                    'answer' => 'To request reviews: 1. Click "New Request" in the sidebar, 2. Enter product details (link, name, price), 3. Choose number of reviews needed, 4. Make payment, 5. Wait for admin approval. Once approved, reviewers will be assigned automatically!',
+                    'category' => 'reviews',
+                    'user_type' => 'seller'
+                ],
+                [
+                    'question' => 'How do I recharge my wallet?',
+                    'answer' => 'To recharge wallet: 1. Go to "Wallet" in sidebar, 2. Click "Recharge Wallet", 3. Enter amount, 4. Choose payment method (Razorpay supports UPI, Cards, Net Banking), 5. Complete payment. Your balance updates instantly!',
+                    'category' => 'wallet',
+                    'user_type' => 'seller'
+                ],
+                [
+                    'question' => 'How do I view my invoices?',
+                    'answer' => 'To view invoices: 1. Go to "Invoices" in sidebar, 2. See all your invoices listed, 3. Click "View" for details, 4. Click "Download" to save PDF. Invoices include GST breakdown and are generated automatically after payment.',
+                    'category' => 'billing',
+                    'user_type' => 'seller'
+                ],
+                [
+                    'question' => 'What is the cost per review?',
+                    'answer' => 'Review pricing: Base commission is ₹50 per review, plus 18% GST. Example: 10 reviews = ₹500 + ₹90 GST = ₹590 total. You can pay via Razorpay (UPI/Cards/Net Banking) or wallet balance.',
+                    'category' => 'pricing',
+                    'user_type' => 'seller'
+                ],
+                [
+                    'question' => 'How long does admin approval take?',
+                    'answer' => 'Admin typically reviews and approves requests within 24 hours. You will receive a notification once your request is approved. You can track the status in the "Orders" section.',
+                    'category' => 'reviews',
+                    'user_type' => 'seller'
+                ]
+            ];
+            
+            // Insert default FAQs
+            $stmt = $pdo->prepare("
+                INSERT INTO faq (question, answer, category, user_type) 
+                VALUES (?, ?, ?, ?)
             ");
+            
+            foreach ($defaultFAQs as $faq) {
+                try {
+                    $stmt->execute([
+                        $faq['question'],
+                        $faq['answer'],
+                        $faq['category'],
+                        $faq['user_type']
+                    ]);
+                } catch (PDOException $insertError) {
+                    error_log('Chatbot: Error inserting FAQ: ' . $insertError->getMessage());
+                }
+            }
+            
             error_log('Chatbot: Inserted default FAQs');
         }
     } catch (PDOException $e) {
