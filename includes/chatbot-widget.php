@@ -485,7 +485,8 @@ if (isset($_SESSION['admin_name'])) {
             
             // Validate response structure
             if (!data || !data.success || typeof data.response !== 'string') {
-                throw new Error('Invalid response format');
+                console.error('Invalid response format:', data);
+                throw new Error('Invalid response format from server');
             }
             
             addMessage(data.response, 'bot');
