@@ -470,22 +470,29 @@ if (isset($_SESSION['admin_name'])) {
         
         // Send to chatbot API
         try {
-            const response = await fetch('/chatbot/process.php', {
+            const response = await fetch('<?php echo htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8'); ?>/chatbot/process.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message, userType, userId })
             });
             
+            if (!response.ok) {
+                throw new Error('Server error: ' + response.status);
+            }
+            
             const data = await response.json();
             typingIndicator.style.display = 'none';
             
-            if (data.success) {
-                addMessage(data.response, 'bot');
-            } else {
-                addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+            // Validate response structure
+            if (!data || !data.success || typeof data.response !== 'string') {
+                console.error('Invalid response format:', data);
+                throw new Error('Invalid response format from server');
             }
+            
+            addMessage(data.response, 'bot');
         } catch (error) {
             typingIndicator.style.display = 'none';
+            console.error('Chatbot error:', error);
             addMessage('I\'m having trouble connecting. Please check back later.', 'bot');
         }
     });
