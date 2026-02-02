@@ -5,23 +5,24 @@
  */
 
 declare(strict_types=1);
-session_start();
 
+// Include dependencies first (config.php will start session and set security headers)
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
+
+// Set API-specific headers after includes
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+header('Cache-Control: no-cache, no-store, must-revalidate');
 
 // Handle preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
-header('Cache-Control: no-cache, no-store, must-revalidate');
-
-require_once __DIR__ . '/../includes/config.php';
-require_once __DIR__ . '/../includes/security.php';
-require_once __DIR__ . '/../includes/functions.php';
 
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -584,7 +585,7 @@ class Chatbot {
         try {
             // Check if similar question already logged
             $stmt = $this->pdo->prepare("
-                SELECT id, occurrence_count FROM chatbot_unanswered 
+                SELECT id, asked_count FROM chatbot_unanswered 
                 WHERE question = ? OR SOUNDEX(question) = SOUNDEX(?)
                 LIMIT 1
             ");
@@ -592,16 +593,25 @@ class Chatbot {
             $existing = $stmt->fetch();
             
             if ($existing) {
-                // Increment count
-                $stmt = $this->pdo->prepare("UPDATE chatbot_unanswered SET occurrence_count = occurrence_count + 1, updated_at = NOW() WHERE id = ?");
+                // Increment count and update timestamps
+                $stmt = $this->pdo->prepare("
+                    UPDATE chatbot_unanswered 
+                    SET asked_count = asked_count + 1, 
+                        occurrence_count = asked_count + 1,
+                        last_asked_at = NOW(),
+                        updated_at = NOW()
+                    WHERE id = ?
+                ");
                 $stmt->execute([$existing['id']]);
             } else {
-                // Insert new
+                // Insert new unanswered question
                 $stmt = $this->pdo->prepare("
-                    INSERT INTO chatbot_unanswered (question, user_id, occurrence_count, created_at)
-                    VALUES (?, ?, 1, NOW())
+                    INSERT INTO chatbot_unanswered 
+                    (question, user_id, user_name, occurrence_count, asked_count, 
+                     is_resolved, first_asked_at, last_asked_at, created_at, updated_at)
+                    VALUES (?, ?, ?, 1, 1, 0, NOW(), NOW(), NOW(), NOW())
                 ");
-                $stmt->execute([$message, $this->user_id]);
+                $stmt->execute([$message, $this->user_id, $this->user_name]);
             }
         } catch (PDOException $e) {
             error_log("Chatbot Log Error: " . $e->getMessage());

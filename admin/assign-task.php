@@ -51,6 +51,15 @@ try {
     error_log("Fetch users error: " . $e->getMessage());
 }
 
+// Fetch all brands for dropdown
+$brands = [];
+try {
+    $stmt = $pdo->query("SELECT DISTINCT brand_name FROM brands ORDER BY brand_name ASC");
+    $brands = $stmt->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {
+    error_log("Fetch brands error: " . $e->getMessage());
+}
+
 // Handle BULK task assignment
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_assign'])) {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -59,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_assign'])) {
     
     $selected_users = $_POST['selected_users'] ?? [];
     $product_link = sanitizeInput($_POST['product_link'] ?? '');
+    $brand_name = sanitizeInput($_POST['brand_name'] ?? '');
     $commission = floatval($_POST['commission'] ?? 0);
     $deadline = $_POST['deadline'] ?? null;
     $priority = $_POST['priority'] ?? 'medium';
@@ -88,13 +98,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_assign'])) {
                 
                 // Insert task
                 $stmt = $pdo->prepare("
-                    INSERT INTO tasks (user_id, product_link, task_status, commission, deadline, priority, admin_notes, assigned_by, created_at)
-                    VALUES (:user_id, :product_link, 'pending', :commission, :deadline, :priority, :notes, :admin, NOW())
+                    INSERT INTO tasks (user_id, product_link, brand_name, task_status, commission, deadline, priority, admin_notes, assigned_by, created_at)
+                    VALUES (:user_id, :product_link, :brand_name, 'pending', :commission, :deadline, :priority, :notes, :admin, NOW())
                 ");
                 
                 $stmt->execute([
                     ':user_id' => $uid,
                     ':product_link' => $product_link,
+                    ':brand_name' => !empty($brand_name) ? $brand_name : null,
                     ':commission' => $commission,
                     ':deadline' => !empty($deadline) ? $deadline : null,
                     ':priority' => $priority,
@@ -196,6 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['single_assign'])) {
     }
     
     $product_link = sanitizeInput($_POST['product_link'] ?? '');
+    $brand_name = sanitizeInput($_POST['brand_name'] ?? '');
     $commission = floatval($_POST['commission'] ?? 0);
     $deadline = $_POST['deadline'] ?? null;
     $priority = $_POST['priority'] ?? 'medium';
@@ -219,13 +231,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['single_assign'])) {
             
             // Insert task
             $stmt = $pdo->prepare("
-                INSERT INTO tasks (user_id, product_link, task_status, commission, deadline, priority, admin_notes, assigned_by, created_at)
-                VALUES (:user_id, :product_link, 'pending', :commission, :deadline, :priority, :notes, :admin, NOW())
+                INSERT INTO tasks (user_id, product_link, brand_name, task_status, commission, deadline, priority, admin_notes, assigned_by, created_at)
+                VALUES (:user_id, :product_link, :brand_name, 'pending', :commission, :deadline, :priority, :notes, :admin, NOW())
             ");
             
             $stmt->execute([
                 ':user_id' => $user_id,
                 ':product_link' => $product_link,
+                ':brand_name' => !empty($brand_name) ? $brand_name : null,
                 ':commission' => $commission,
                 ':deadline' => !empty($deadline) ? $deadline : null,
                 ':priority' => $priority,
@@ -910,6 +923,20 @@ $csrf_token = generateCSRFToken();
                         <p class="form-text">Paste the full product URL where user should purchase and submit review</p>
                     </div>
                     
+                    <div class="form-group">
+                        <label for="brand_name">Brand Name</label>
+                        <input type="text" id="brand_name" name="brand_name" class="form-control" 
+                               placeholder="Enter brand name (e.g., Samsung, Nike, etc.)" 
+                               list="brandsList"
+                               value="<?php echo escape($_POST['brand_name'] ?? ''); ?>">
+                        <datalist id="brandsList">
+                            <?php foreach ($brands as $brand): ?>
+                                <option value="<?php echo escape($brand); ?>">
+                            <?php endforeach; ?>
+                        </datalist>
+                        <p class="form-text">Optional - helps in brand-wise filtering and reports</p>
+                    </div>
+                    
                     <div class="form-row">
                         <div class="form-group">
                             <label for="commission">Commission Amount (₹)</label>
@@ -1016,6 +1043,19 @@ $csrf_token = generateCSRFToken();
                         <label>Product Link (Amazon/Flipkart) *</label>
                         <input type="url" name="product_link" class="form-control" 
                                placeholder="https://www.amazon.in/dp/XXXXXXXXXX" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Brand Name</label>
+                        <input type="text" name="brand_name" class="form-control" 
+                               placeholder="Enter brand name (e.g., Samsung, Nike, etc.)" 
+                               list="brandsList">
+                        <datalist id="brandsList">
+                            <?php foreach ($brands as $brand): ?>
+                                <option value="<?php echo escape($brand); ?>">
+                            <?php endforeach; ?>
+                        </datalist>
+                        <p class="form-text">Optional - helps in brand-wise filtering and reports</p>
                     </div>
                     
                     <div class="form-row">
