@@ -5,7 +5,18 @@
  */
 
 session_start();
-require_once __DIR__ . '/../includes/config.php';
+
+// Try to load config, but handle failures gracefully
+$pdo = null;
+$configLoaded = false;
+
+try {
+    require_once __DIR__ . '/../includes/config.php';
+    $configLoaded = true;
+} catch (Exception $e) {
+    error_log('Chatbot: Failed to load config: ' . $e->getMessage());
+    // We'll handle this below
+}
 
 header('Content-Type: application/json');
 
@@ -28,6 +39,17 @@ if (empty($message)) {
 }
 
 try {
+    // Check if config loaded and database is available
+    if (!$configLoaded || !isset($pdo) || !($pdo instanceof PDO)) {
+        error_log('Chatbot: Database not available, using fallback responses');
+        $response = generateContextualResponse($message, $userType);
+        echo json_encode([
+            'success' => true,
+            'response' => $response
+        ]);
+        exit;
+    }
+    
     // Ensure database tables exist
     ensureTablesExist($pdo);
     
