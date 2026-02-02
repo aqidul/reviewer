@@ -5,23 +5,24 @@
  */
 
 declare(strict_types=1);
-session_start();
 
+// Include dependencies first (config.php will start session and set security headers)
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
+
+// Set API-specific headers after includes
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+header('Cache-Control: no-cache, no-store, must-revalidate');
 
 // Handle preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
-header('Cache-Control: no-cache, no-store, must-revalidate');
-
-require_once __DIR__ . '/../includes/config.php';
-require_once __DIR__ . '/../includes/security.php';
-require_once __DIR__ . '/../includes/functions.php';
 
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
