@@ -57,6 +57,15 @@ if (!isset($pending_kyc)) {
     }
 }
 
+if (!isset($pending_proofs)) {
+    try {
+        $stmt = $pdo->query("SELECT COUNT(*) FROM task_proofs WHERE status = 'pending'");
+        $pending_proofs = (int)$stmt->fetchColumn();
+    } catch (PDOException $e) {
+        $pending_proofs = 0;
+    }
+}
+
 // Set current page if not set
 if (!isset($current_page)) {
     $current_page = basename($_SERVER['PHP_SELF'], '.php');
@@ -99,6 +108,7 @@ if (!isset($current_page)) {
             </ul>
         </li>
         <li><a href="<?php echo ADMIN_URL; ?>/task-rejected.php" class="<?= $current_page === 'task-rejected' ? 'active' : '' ?>">❌ Rejected Tasks</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/verify-proofs.php" class="<?= in_array($current_page, ['verify-proofs', 'proof-view']) ? 'active' : '' ?>">✅ Verify Proofs <?php if($pending_proofs > 0): ?><span class="badge"><?php echo $pending_proofs; ?></span><?php endif; ?></a></li>
         
         <!-- Finance Section -->
         <div class="sidebar-divider"></div>
@@ -111,31 +121,51 @@ if (!isset($current_page)) {
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>🏪 Sellers</span></li>
         <li><a href="<?php echo ADMIN_URL; ?>/sellers.php" class="<?= $current_page === 'sellers' ? 'active' : '' ?>">All Sellers</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/review-requests.php" class="<?= $current_page === 'review-requests' ? 'active' : '' ?>">📝 Seller Requests <?php if($pending_review_requests > 0): ?><span class="badge"><?php echo $pending_review_requests; ?></span><?php endif; ?></a></li>
+        
+        <!-- Referrals (Phase 2) -->
+        <div class="sidebar-divider"></div>
+        <li class="menu-section-label"><span>🔗 Referrals</span></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/referral-settings.php" class="<?= $current_page === 'referral-settings' ? 'active' : '' ?>">⚙️ Referral Settings</a></li>
+        
+        <!-- Gamification (Phase 2) -->
+        <div class="sidebar-divider"></div>
+        <li class="menu-section-label"><span>🎮 Gamification</span></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/gamification-settings.php" class="<?= $current_page === 'gamification-settings' ? 'active' : '' ?>">⚙️ Gamification Settings</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/leaderboard.php" class="<?= $current_page === 'leaderboard' ? 'active' : '' ?>">🏆 Leaderboard</a></li>
+        
+        <!-- Support (Phase 2) -->
+        <div class="sidebar-divider"></div>
+        <li class="menu-section-label"><span>💬 Support</span></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/support-chat.php" class="<?= $current_page === 'support-chat' ? 'active' : '' ?>">💬 Support Chat</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/faq-manager.php" class="<?= $current_page === 'faq-manager' ? 'active' : '' ?>">❓ Chatbot FAQ</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/chatbot-unanswered.php" class="<?= $current_page === 'chatbot-unanswered' ? 'active' : '' ?>">📝 Unanswered Questions <?php if($unanswered_questions > 0): ?><span class="badge"><?php echo $unanswered_questions; ?></span><?php endif; ?></a></li>
+        
+        <!-- Analytics (Phase 1) -->
+        <div class="sidebar-divider"></div>
+        <li class="menu-section-label"><span>📊 Analytics</span></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/analytics.php" class="<?= $current_page === 'analytics' ? 'active' : '' ?>">📈 Analytics Dashboard</a></li>
         
         <!-- Reports & Export Section -->
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>📊 Reports & Export</span></li>
-        <li><a href="<?php echo ADMIN_URL; ?>/analytics.php" class="<?= $current_page === 'analytics' ? 'active' : '' ?>">📈 Analytics Dashboard</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/reports.php" class="<?= $current_page === 'reports' ? 'active' : '' ?>">📈 Reports</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/export-data.php" class="<?= $current_page === 'export-data' ? 'active' : '' ?>">📥 Export Review Data</a></li>
+        
+        <!-- Notifications (Phase 1) -->
+        <div class="sidebar-divider"></div>
+        <li class="menu-section-label"><span>📧 Notifications</span></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/notification-templates.php" class="<?= $current_page === 'notification-templates' ? 'active' : '' ?>">📧 Notification Templates</a></li>
         
         <!-- Settings Section -->
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>⚙️ Settings</span></li>
-        <li><a href="<?php echo ADMIN_URL; ?>/settings.php" class="<?= $current_page === 'settings' ? 'active' : '' ?>">General Settings</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/settings.php" class="<?= $current_page === 'settings' ? 'active' : '' ?>">⚙️ General Settings</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/gst-settings.php" class="<?= $current_page === 'gst-settings' ? 'active' : '' ?>">💰 GST Settings</a></li>
-        <li><a href="<?php echo ADMIN_URL; ?>/notification-templates.php" class="<?= $current_page === 'notification-templates' ? 'active' : '' ?>">📧 Notification Templates</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/features.php" class="<?= $current_page === 'features' ? 'active' : '' ?>">✨ Features</a></li>
         
-        <!-- Chatbot Section -->
+        <!-- Additional Features -->
         <div class="sidebar-divider"></div>
-        <li class="menu-section-label"><span>🤖 Chatbot</span></li>
-        <li><a href="<?php echo ADMIN_URL; ?>/faq-manager.php" class="<?= $current_page === 'faq-manager' ? 'active' : '' ?>">FAQ Manager</a></li>
-        <li><a href="<?php echo ADMIN_URL; ?>/chatbot-unanswered.php" class="<?= $current_page === 'chatbot-unanswered' ? 'active' : '' ?>">❓ Unanswered Questions <?php if($unanswered_questions > 0): ?><span class="badge"><?php echo $unanswered_questions; ?></span><?php endif; ?></a></li>
-        
-        <!-- Other Items -->
-        <div class="sidebar-divider"></div>
-        <li><a href="<?php echo ADMIN_URL; ?>/review-requests.php" class="<?= $current_page === 'review-requests' ? 'active' : '' ?>">📝 Review Requests <?php if($pending_review_requests > 0): ?><span class="badge"><?php echo $pending_review_requests; ?></span><?php endif; ?></a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/suspicious-users.php" class="<?= $current_page === 'suspicious-users' ? 'active' : '' ?>">🚨 Suspicious Users</a></li>
         
         <!-- Logout -->
