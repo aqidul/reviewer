@@ -39,8 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $status = empty($schedule_at) ? 'sent' : 'scheduled';
                     $sent_at = empty($schedule_at) ? date('Y-m-d H:i:s') : null;
                     
-                    $stmt = $pdo->prepare("INSERT INTO broadcasts (title, message, channel, target_type, target_role, status, schedule_at, sent_at, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-                    $stmt->execute([$title, $message, $channel, $target_type, $target_role, $status, $schedule_at, $sent_at, $admin_id]);
+                    $stmt = $pdo->prepare("INSERT INTO broadcast_messages (subject, message, channel, target_users, status, scheduled_at, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+                    $stmt->execute([$title, $message, $channel, $target_type, $status, $schedule_at, $admin_id]);
                     
                     $broadcast_id = $pdo->lastInsertId();
                     
@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = (int)($_POST['id'] ?? 0);
             if ($id > 0) {
                 try {
-                    $stmt = $pdo->prepare("DELETE FROM broadcasts WHERE id = ?");
+                    $stmt = $pdo->prepare("DELETE FROM broadcast_messages WHERE id = ?");
                     $stmt->execute([$id]);
                     $success = 'Broadcast deleted successfully';
                 } catch (PDOException $e) {
@@ -98,11 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $broadcasts = [];
 $stats = ['total' => 0, 'sent' => 0, 'scheduled' => 0, 'failed' => 0];
 try {
-    $stmt = $pdo->query("SELECT * FROM broadcasts ORDER BY created_at DESC LIMIT 50");
+    $stmt = $pdo->query("SELECT * FROM broadcast_messages ORDER BY created_at DESC LIMIT 50");
     $broadcasts = $stmt->fetchAll();
     
     // Get stats
-    $stmt = $pdo->query("SELECT COUNT(*) as total, SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as sent, SUM(CASE WHEN status = 'scheduled' THEN 1 ELSE 0 END) as scheduled, SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed FROM broadcasts");
+    $stmt = $pdo->query("SELECT COUNT(*) as total, SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as sent, SUM(CASE WHEN status = 'scheduled' THEN 1 ELSE 0 END) as scheduled, SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed FROM broadcast_messages");
     $stats_row = $stmt->fetch();
     $stats['total'] = (int)$stats_row['total'];
     $stats['sent'] = (int)$stats_row['sent'];
@@ -283,8 +283,8 @@ $current_page = 'broadcast';
                                 <td><strong><?php echo escape($bc['title']); ?></strong></td>
                                 <td><div class="text-truncate"><?php echo escape($bc['message']); ?></div></td>
                                 <td><span class="badge info"><?php echo escape($bc['channel']); ?></span></td>
-                                <td><?php echo escape($bc['target_type'] === 'role' ? $bc['target_role'] : 'All'); ?></td>
-                                <td><?php echo $bc['sent_at'] ? date('M d, Y H:i', strtotime($bc['sent_at'])) : ($bc['schedule_at'] ? date('M d, Y H:i', strtotime($bc['schedule_at'])) : 'N/A'); ?></td>
+                                <td><?php echo escape($bc['target_users'] ?? 'All'); ?></td>
+                                <td><?php echo $bc['sent_at'] ? date('M d, Y H:i', strtotime($bc['sent_at'])) : ($bc['scheduled_at'] ? date('M d, Y H:i', strtotime($bc['scheduled_at'])) : 'N/A'); ?></td>
                                 <td><?php echo number_format($bc['sent_count']); ?> sent<?php if($bc['failed_count'] > 0): ?>, <?php echo $bc['failed_count']; ?> failed<?php endif; ?></td>
                                 <td>
                                     <?php if ($bc['status'] === 'sent'): ?>

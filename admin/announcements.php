@@ -27,15 +27,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $title = trim($_POST['title'] ?? '');
             $message = trim($_POST['message'] ?? '');
             $audience = $_POST['audience'] ?? 'all';
-            $expires_at = $_POST['expires_at'] ?? null;
+            $start_date = $_POST['start_date'] ?? null;
+            $end_date = $_POST['end_date'] ?? null;
             $is_active = isset($_POST['is_active']) ? 1 : 0;
             
             if (empty($title) || empty($message)) {
                 $error = 'Title and message are required';
             } else {
                 try {
-                    $stmt = $pdo->prepare("INSERT INTO announcements (title, message, target_audience, is_active, expires_at, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
-                    $stmt->execute([$title, $message, $audience, $is_active, $expires_at, $admin_id]);
+                    $stmt = $pdo->prepare("INSERT INTO announcements (title, message, target_audience, is_active, start_date, end_date, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+                    $stmt->execute([$title, $message, $audience, $is_active, $start_date, $end_date, $admin_id]);
                     $success = 'Announcement created successfully';
                 } catch (PDOException $e) {
                     $error = 'Failed to create announcement';
@@ -46,15 +47,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $title = trim($_POST['title'] ?? '');
             $message = trim($_POST['message'] ?? '');
             $audience = $_POST['audience'] ?? 'all';
-            $expires_at = $_POST['expires_at'] ?? null;
+            $start_date = $_POST['start_date'] ?? null;
+            $end_date = $_POST['end_date'] ?? null;
             $is_active = isset($_POST['is_active']) ? 1 : 0;
             
             if (empty($title) || empty($message) || $id <= 0) {
                 $error = 'Invalid data';
             } else {
                 try {
-                    $stmt = $pdo->prepare("UPDATE announcements SET title = ?, message = ?, target_audience = ?, is_active = ?, expires_at = ?, updated_at = NOW() WHERE id = ?");
-                    $stmt->execute([$title, $message, $audience, $is_active, $expires_at, $id]);
+                    $stmt = $pdo->prepare("UPDATE announcements SET title = ?, message = ?, target_audience = ?, is_active = ?, start_date = ?, end_date = ?, updated_at = NOW() WHERE id = ?");
+                    $stmt->execute([$title, $message, $audience, $is_active, $start_date, $end_date, $id]);
                     $success = 'Announcement updated successfully';
                 } catch (PDOException $e) {
                     $error = 'Failed to update announcement';
@@ -113,7 +115,7 @@ try {
     $stats['total'] = (int)$stats_row['total'];
     $stats['active'] = (int)$stats_row['active'];
     
-    $stmt = $pdo->query("SELECT COUNT(*) FROM announcements WHERE expires_at IS NOT NULL AND expires_at < NOW()");
+    $stmt = $pdo->query("SELECT COUNT(*) FROM announcements WHERE end_date IS NOT NULL AND end_date < CURDATE()");
     $stats['expired'] = (int)$stmt->fetchColumn();
     
     $stmt = $pdo->query("SELECT COUNT(*) FROM announcements WHERE target_audience = 'all'");
@@ -255,7 +257,7 @@ $current_page = 'announcements';
                                 <td><div class="text-truncate"><?php echo escape($ann['message']); ?></div></td>
                                 <td><span class="badge info"><?php echo escape($ann['target_audience']); ?></span></td>
                                 <td><?php echo date('M d, Y', strtotime($ann['created_at'])); ?></td>
-                                <td><?php echo $ann['expires_at'] ? date('M d, Y', strtotime($ann['expires_at'])) : 'Never'; ?></td>
+                                <td><?php echo $ann['end_date'] ? date('M d, Y', strtotime($ann['end_date'])) : 'Never'; ?></td>
                                 <td>
                                     <?php if ($ann['is_active']): ?>
                                         <span class="badge success">Active</span>
@@ -314,8 +316,12 @@ $current_page = 'announcements';
                 </div>
                 
                 <div class="form-group">
-                    <label>Expires At (Optional)</label>
-                    <input type="datetime-local" name="expires_at" id="expires_at" class="form-control">
+                    <label>Start Date</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>End Date</label>
+                    <input type="date" name="end_date" id="end_date" class="form-control">
                 </div>
                 
                 <div class="form-group">
@@ -350,7 +356,8 @@ function editAnnouncement(ann) {
     document.getElementById('title').value = ann.title;
     document.getElementById('message').value = ann.message;
     document.getElementById('audience').value = ann.target_audience;
-    document.getElementById('expires_at').value = ann.expires_at ? ann.expires_at.replace(' ', 'T').slice(0, 16) : '';
+    document.getElementById('start_date').value = ann.start_date || '';
+    document.getElementById('end_date').value = ann.end_date || '';
     document.getElementById('is_active').checked = ann.is_active == 1;
     document.getElementById('announcementModal').classList.add('show');
 }

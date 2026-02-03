@@ -55,10 +55,11 @@ try {
     ORDER BY pt.created_at DESC
     LIMIT 20
 ")->fetchAll(PDO::FETCH_ASSOC);
-
-// Set current page for sidebar
-$current_page = 'gamification-settings';
-$csrf_token = generateCSRFToken();
+} catch (PDOException $e) {
+    $message = 'Database error';
+    $total_users = $total_points = $total_badges = 0;
+    $level_dist = $level_settings = $all_badges = $recent_transactions = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

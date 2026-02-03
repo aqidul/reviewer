@@ -141,6 +141,17 @@ if (!isset($current_page)) {
         <li><a href="<?php echo ADMIN_URL; ?>/faq-manager.php" class="<?= $current_page === 'faq-manager' ? 'active' : '' ?>">❓ Chatbot FAQ</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/chatbot-unanswered.php" class="<?= $current_page === 'chatbot-unanswered' ? 'active' : '' ?>">📝 Unanswered Questions <?php if($unanswered_questions > 0): ?><span class="badge"><?php echo $unanswered_questions; ?></span><?php endif; ?></a></li>
         
+        <!-- Phase 4: Communication & Announcements -->
+        <div class="sidebar-divider"></div>
+        <li class="menu-section-label"><span>📢 Communication</span></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/announcements.php" class="<?= $current_page === 'announcements' ? 'active' : '' ?>">📢 Announcements</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/broadcast.php" class="<?= $current_page === 'broadcast' ? 'active' : '' ?>">📡 Broadcast Messages</a></li>
+        
+        <!-- Phase 4: Task Management -->
+        <div class="sidebar-divider"></div>
+        <li class="menu-section-label"><span>🏷️ Task Management</span></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/task-categories.php" class="<?= $current_page === 'task-categories' ? 'active' : '' ?>">🏷️ Task Categories</a></li>
+        
         <!-- Analytics (Phase 1) -->
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>📊 Analytics</span></li>
@@ -151,11 +162,18 @@ if (!isset($current_page)) {
         <li class="menu-section-label"><span>📊 Reports & Export</span></li>
         <li><a href="<?php echo ADMIN_URL; ?>/reports.php" class="<?= $current_page === 'reports' ? 'active' : '' ?>">📈 Reports</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/export-data.php" class="<?= $current_page === 'export-data' ? 'active' : '' ?>">📥 Export Review Data</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/export-reports.php" class="<?= $current_page === 'export-reports' ? 'active' : '' ?>">📊 Export Reports</a></li>
         
         <!-- Notifications (Phase 1) -->
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>📧 Notifications</span></li>
         <li><a href="<?php echo ADMIN_URL; ?>/notification-templates.php" class="<?= $current_page === 'notification-templates' ? 'active' : '' ?>">📧 Notification Templates</a></li>
+        
+        <!-- Phase 4: Security & Audit -->
+        <div class="sidebar-divider"></div>
+        <li class="menu-section-label"><span>🔒 Security</span></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/security-logs.php" class="<?= $current_page === 'security-logs' ? 'active' : '' ?>">🔒 Security Logs</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/suspicious-users.php" class="<?= $current_page === 'suspicious-users' ? 'active' : '' ?>">🚨 Suspicious Users</a></li>
         
         <!-- Settings Section -->
         <div class="sidebar-divider"></div>
@@ -163,10 +181,6 @@ if (!isset($current_page)) {
         <li><a href="<?php echo ADMIN_URL; ?>/settings.php" class="<?= $current_page === 'settings' ? 'active' : '' ?>">⚙️ General Settings</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/gst-settings.php" class="<?= $current_page === 'gst-settings' ? 'active' : '' ?>">💰 GST Settings</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/features.php" class="<?= $current_page === 'features' ? 'active' : '' ?>">✨ Features</a></li>
-        
-        <!-- Additional Features -->
-        <div class="sidebar-divider"></div>
-        <li><a href="<?php echo ADMIN_URL; ?>/suspicious-users.php" class="<?= $current_page === 'suspicious-users' ? 'active' : '' ?>">🚨 Suspicious Users</a></li>
         
         <!-- Logout -->
         <div class="sidebar-divider"></div>

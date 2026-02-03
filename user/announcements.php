@@ -187,9 +187,22 @@ foreach ($announcements as $announcement) {
         <div class="announcements-grid">
             <?php foreach ($announcements as $announcement): 
                 $is_viewed = in_array($announcement['id'], $viewed_announcements);
-                $start_date = $announcement['start_date'] ? date('M d, Y', strtotime($announcement['start_date'])) : 'Not set';
-                $end_date = $announcement['end_date'] ? date('M d, Y', strtotime($announcement['end_date'])) : 'No end date';
-                $created_at = date('M d, Y \a\t g:i A', strtotime($announcement['created_at']));
+                $start_date = 'Not set';
+                $end_date = 'No end date';
+                $created_at = 'Unknown';
+                
+                if ($announcement['start_date']) {
+                    $start_timestamp = strtotime($announcement['start_date']);
+                    $start_date = $start_timestamp !== false ? date('M d, Y', $start_timestamp) : 'Invalid date';
+                }
+                if ($announcement['end_date']) {
+                    $end_timestamp = strtotime($announcement['end_date']);
+                    $end_date = $end_timestamp !== false ? date('M d, Y', $end_timestamp) : 'Invalid date';
+                }
+                if ($announcement['created_at']) {
+                    $created_timestamp = strtotime($announcement['created_at']);
+                    $created_at = $created_timestamp !== false ? date('M d, Y \a\t g:i A', $created_timestamp) : 'Unknown';
+                }
             ?>
                 <div class="announcement-card <?php echo !$is_viewed ? 'unviewed' : ''; ?>">
                     <div class="announcement-header">
