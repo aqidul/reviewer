@@ -4,9 +4,9 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/security.php';
 
 if (!isset($_SESSION['admin_name'])) {
-    header('Location: ' . ADMIN_URL);
+    header('Location: /reviewer/admin/');
     exit;
 }
 
-header('Location: ' . ADMIN_URL . '/kyc-verification.php');
+header('Location: /reviewer/admin/kyc-verification.php');
 exit;
