@@ -39,24 +39,28 @@ try {
 
 // Handle actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['approve'])) {
-        try {
-            approveProof($pdo, $proof_id, $admin_id);
-            header('Location: verify-proofs.php?msg=approved');
-            exit;
-        } catch (PDOException $e) {
-            // Handle error
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request';
+    } else {
+        if (isset($_POST['approve'])) {
+            try {
+                approveProof($pdo, $proof_id, $admin_id);
+                header('Location: verify-proofs.php?msg=approved');
+                exit;
+            } catch (PDOException $e) {
+                $error = 'Database error occurred';
+            }
         }
-    }
-    
-    if (isset($_POST['reject'])) {
-        $reason = filter_input(INPUT_POST, 'reason', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        try {
-            rejectProof($pdo, $proof_id, $admin_id, $reason);
-            header('Location: verify-proofs.php?msg=rejected');
-            exit;
-        } catch (PDOException $e) {
-            // Handle error
+        
+        if (isset($_POST['reject'])) {
+            $reason = $_POST['reason'] ?? '';
+            try {
+                rejectProof($pdo, $proof_id, $admin_id, $reason);
+                header('Location: verify-proofs.php?msg=rejected');
+                exit;
+            } catch (PDOException $e) {
+                $error = 'Database error occurred';
+            }
         }
     }
 }

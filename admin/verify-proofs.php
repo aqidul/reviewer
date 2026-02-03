@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if (isset($_POST['reject_proof'])) {
             $proof_id = filter_input(INPUT_POST, 'proof_id', FILTER_SANITIZE_NUMBER_INT);
-            $reason = filter_input(INPUT_POST, 'rejection_reason', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $reason = $_POST['rejection_reason'] ?? '';
             try {
                 $result = rejectProof($pdo, $proof_id, $admin_id, $reason);
                 if ($result['success']) {
