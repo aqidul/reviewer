@@ -52,23 +52,6 @@ $proofs = getUserProofs($db, $user_id, 20);
 // Set current page for sidebar
 $current_page = 'submit-proof';
 
-// Get badge counts for sidebar
-try {
-    $stmt = $db->prepare("SELECT COUNT(*) FROM tasks WHERE user_id = ? AND task_status = 'pending'");
-    $stmt->execute([$user_id]);
-    $pending_tasks_count = (int)$stmt->fetchColumn();
-} catch (PDOException $e) {
-    $pending_tasks_count = 0;
-}
-
-try {
-    $stmt = $db->prepare("SELECT COUNT(*) FROM chat_messages WHERE user_id = ? AND is_read = 0 AND sender = 'admin'");
-    $stmt->execute([$user_id]);
-    $unread_messages = (int)$stmt->fetchColumn();
-} catch (PDOException $e) {
-    $unread_messages = 0;
-}
-
 include '../includes/header.php';
 ?>
 
