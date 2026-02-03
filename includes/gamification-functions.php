@@ -321,7 +321,7 @@ function getLeaderboard($db, $period = 'all_time', $limit = 100) {
         JOIN user_points up ON u.id = up.user_id
         LEFT JOIN point_transactions pt ON u.id = pt.user_id $where_clause
         LEFT JOIN user_badges ub ON u.id = ub.user_id
-        WHERE u.role = 'user'
+        WHERE u.user_type = 'user'
         GROUP BY u.id, u.username, up.points, up.level, up.streak_days
         ORDER BY up.points DESC
         LIMIT ?
