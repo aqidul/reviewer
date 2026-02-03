@@ -16,20 +16,22 @@ $error = '';
 
 // Handle config update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_config'])) {
-    $csrf_token = generateCSRFToken();
-    
-    try {
-        foreach ($_POST['config'] as $key => $value) {
-            $stmt = $pdo->prepare("
-                INSERT INTO payment_config (config_key, config_value, is_active) 
-                VALUES (?, ?, 1)
-                ON DUPLICATE KEY UPDATE config_value = ?
-            ");
-            $stmt->execute([$key, $value, $value]);
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request';
+    } else {
+        try {
+            foreach ($_POST['config'] as $key => $value) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO payment_config (config_key, config_value, is_active) 
+                    VALUES (?, ?, 1)
+                    ON DUPLICATE KEY UPDATE config_value = ?
+                ");
+                $stmt->execute([$key, $value, $value]);
+            }
+            $message = 'Payment settings updated successfully!';
+        } catch (PDOException $e) {
+            $error = 'Failed to update settings';
         }
-        $message = 'Payment settings updated successfully!';
-    } catch (PDOException $e) {
-        $error = 'Failed to update settings';
     }
 }
 

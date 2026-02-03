@@ -17,34 +17,36 @@ $error = '';
 
 // Handle proof approval/rejection
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $csrf_token = generateCSRFToken();
-    
-    if (isset($_POST['approve_proof'])) {
-        $proof_id = filter_input(INPUT_POST, 'proof_id', FILTER_SANITIZE_NUMBER_INT);
-        try {
-            $result = approveProof($pdo, $proof_id, $admin_id);
-            if ($result['success']) {
-                $message = $result['message'];
-            } else {
-                $error = $result['message'];
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request';
+    } else {
+        if (isset($_POST['approve_proof'])) {
+            $proof_id = filter_input(INPUT_POST, 'proof_id', FILTER_SANITIZE_NUMBER_INT);
+            try {
+                $result = approveProof($pdo, $proof_id, $admin_id);
+                if ($result['success']) {
+                    $message = $result['message'];
+                } else {
+                    $error = $result['message'];
+                }
+            } catch (PDOException $e) {
+                $error = 'Database error occurred';
             }
-        } catch (PDOException $e) {
-            $error = 'Database error occurred';
         }
-    }
-    
-    if (isset($_POST['reject_proof'])) {
-        $proof_id = filter_input(INPUT_POST, 'proof_id', FILTER_SANITIZE_NUMBER_INT);
-        $reason = filter_input(INPUT_POST, 'rejection_reason', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        try {
-            $result = rejectProof($pdo, $proof_id, $admin_id, $reason);
-            if ($result['success']) {
-                $message = $result['message'];
-            } else {
-                $error = $result['message'];
+        
+        if (isset($_POST['reject_proof'])) {
+            $proof_id = filter_input(INPUT_POST, 'proof_id', FILTER_SANITIZE_NUMBER_INT);
+            $reason = filter_input(INPUT_POST, 'rejection_reason', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            try {
+                $result = rejectProof($pdo, $proof_id, $admin_id, $reason);
+                if ($result['success']) {
+                    $message = $result['message'];
+                } else {
+                    $error = $result['message'];
+                }
+            } catch (PDOException $e) {
+                $error = 'Database error occurred';
             }
-        } catch (PDOException $e) {
-            $error = 'Database error occurred';
         }
     }
 }

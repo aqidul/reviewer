@@ -56,13 +56,19 @@ try {
     LIMIT 20
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-include '../includes/header.php';
-
 // Set current page for sidebar
 $current_page = 'gamification-settings';
+$csrf_token = generateCSRFToken();
 ?>
-
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamification Settings - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
 /* Admin Layout */
 .admin-layout{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
 

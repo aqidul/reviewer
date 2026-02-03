@@ -16,28 +16,30 @@ $error = '';
 
 // Handle template creation/update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_template'])) {
-    $csrf_token = generateCSRFToken();
-    
-    $id = $_POST['template_id'] ?? null;
-    $name = $_POST['name'];
-    $platform = $_POST['platform'];
-    $category = $_POST['category'];
-    $template_text = $_POST['template_text'];
-    $rating_default = $_POST['rating_default'];
-    $is_active = isset($_POST['is_active']) ? 1 : 0;
-    
-    try {
-        if ($id) {
-            $stmt = $pdo->prepare("UPDATE review_templates SET name=?, platform=?, category=?, template_text=?, rating_default=?, is_active=? WHERE id=?");
-            $stmt->execute([$name, $platform, $category, $template_text, $rating_default, $is_active, $id]);
-            $message = 'Template updated successfully!';
-        } else {
-            $stmt = $pdo->prepare("INSERT INTO review_templates (name, platform, category, template_text, rating_default, is_active, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$name, $platform, $category, $template_text, $rating_default, $is_active, $admin_id]);
-            $message = 'Template created successfully!';
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request';
+    } else {
+        $id = $_POST['template_id'] ?? null;
+        $name = $_POST['name'];
+        $platform = $_POST['platform'];
+        $category = $_POST['category'];
+        $template_text = $_POST['template_text'];
+        $rating_default = $_POST['rating_default'];
+        $is_active = isset($_POST['is_active']) ? 1 : 0;
+        
+        try {
+            if ($id) {
+                $stmt = $pdo->prepare("UPDATE review_templates SET name=?, platform=?, category=?, template_text=?, rating_default=?, is_active=? WHERE id=?");
+                $stmt->execute([$name, $platform, $category, $template_text, $rating_default, $is_active, $id]);
+                $message = 'Template updated successfully!';
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO review_templates (name, platform, category, template_text, rating_default, is_active, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $platform, $category, $template_text, $rating_default, $is_active, $admin_id]);
+                $message = 'Template created successfully!';
+            }
+        } catch (PDOException $e) {
+            $error = 'Failed to save template';
         }
-    } catch (PDOException $e) {
-        $error = 'Failed to save template';
     }
 }
 

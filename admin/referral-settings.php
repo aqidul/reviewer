@@ -52,8 +52,6 @@ try {
 }
 
 $csrf_token = generateCSRFToken();
-
-$csrf_token = generateCSRFToken();
 ?>
 <!DOCTYPE html>
 <html lang="en">

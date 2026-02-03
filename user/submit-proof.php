@@ -36,26 +36,28 @@ try {
 
 // Handle proof submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_proof'])) {
-    $csrf_token = generateCSRFToken();
-    
-    $task_id = filter_input(INPUT_POST, 'task_id', FILTER_SANITIZE_NUMBER_INT);
-    $proof_type = filter_input(INPUT_POST, 'proof_type', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $proof_text = filter_input(INPUT_POST, 'proof_text', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    
-    $proof_file = null;
-    if (isset($_FILES['proof_file']) && $_FILES['proof_file']['error'] === UPLOAD_ERR_OK) {
-        $proof_file = $_FILES['proof_file'];
-    }
-    
-    try {
-        $result = submitProof($pdo, $user_id, $task_id, $proof_type, $proof_file, $proof_text);
-        if ($result['success']) {
-            $message = $result['message'];
-        } else {
-            $error = $result['message'];
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request';
+    } else {
+        $task_id = filter_input(INPUT_POST, 'task_id', FILTER_SANITIZE_NUMBER_INT);
+        $proof_type = filter_input(INPUT_POST, 'proof_type', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $proof_text = $_POST['proof_text'] ?? '';
+        
+        $proof_file = null;
+        if (isset($_FILES['proof_file']) && $_FILES['proof_file']['error'] === UPLOAD_ERR_OK) {
+            $proof_file = $_FILES['proof_file'];
         }
-    } catch (PDOException $e) {
-        $error = 'Database error occurred';
+        
+        try {
+            $result = submitProof($pdo, $user_id, $task_id, $proof_type, $proof_file, $proof_text);
+            if ($result['success']) {
+                $message = $result['message'];
+            } else {
+                $error = $result['message'];
+            }
+        } catch (PDOException $e) {
+            $error = 'Database error occurred';
+        }
     }
 }
 
