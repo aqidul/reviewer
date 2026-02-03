@@ -219,36 +219,7 @@ try {
 </head>
 <body>
 <div class="admin-layout">
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h2>⚙️ <?php echo APP_NAME; ?></h2>
-        </div>
-        <ul class="sidebar-menu">
-            <li><a href="<?php echo ADMIN_URL; ?>/dashboard.php">📊 Dashboard</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/reviewers.php">👥 Users</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/assign-task.php">➕ Assign Task</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/task-pending.php">📋 Pending Tasks <?php if($pending_tasks > 0): ?><span class="badge"><?php echo $pending_tasks; ?></span><?php endif; ?></a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/task-completed.php">✅ Completed Tasks</a></li>
-            <div class="sidebar-divider"></div>
-            <li><a href="<?php echo ADMIN_URL; ?>/kyc-verification.php" class="active">🆔 KYC Verification <?php if($pending_kyc > 0): ?><span class="badge"><?php echo $pending_kyc; ?></span><?php endif; ?></a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/withdrawals.php">💸 Withdrawals <?php if($pending_withdrawals > 0): ?><span class="badge"><?php echo $pending_withdrawals; ?></span><?php endif; ?></a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/wallet-requests.php">💳 Wallet Recharges <?php if($pending_wallet_recharges > 0): ?><span class="badge"><?php echo $pending_wallet_recharges; ?></span><?php endif; ?></a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/messages.php">💬 Messages <?php if($unread_messages > 0): ?><span class="badge"><?php echo $unread_messages; ?></span><?php endif; ?></a></li>
-            <div class="sidebar-divider"></div>
-            <li><a href="<?php echo ADMIN_URL; ?>/faq-manager.php">🤖 Chatbot FAQ</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/chatbot-unanswered.php">❓ Unanswered Q's <?php if($unanswered_questions > 0): ?><span class="badge"><?php echo $unanswered_questions; ?></span><?php endif; ?></a></li>
-            <div class="sidebar-divider"></div>
-            <li><a href="<?php echo ADMIN_URL; ?>/reports.php">📈 Reports</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/settings.php">⚙️ Settings</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/gst-settings.php">💰 GST Settings</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/sellers.php">🏪 Sellers</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/features.php">✨ Features</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/review-requests.php">📝 Review Requests</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/suspicious-users.php">🚨 Suspicious Users</a></li>
-            <div class="sidebar-divider"></div>
-            <li><a href="<?php echo APP_URL; ?>/logout.php" class="logout">🚪 Logout</a></li>
-        </ul>
-    </div>
+    <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
     
     <div class="main-content">
         <div class="page-header">

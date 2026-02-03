@@ -18,9 +18,31 @@ $conversations = getAllConversations($db, $status_filter, 100);
 $stats = getChatStatistics($db, null, true);
 
 include '../includes/header.php';
+
+// Set current page for sidebar
+$current_page = 'support-chat';
 ?>
 
 <style>
+/* Admin Layout */
+.admin-layout{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+
+/* Sidebar styles */
+.sidebar{background:linear-gradient(180deg,#2c3e50 0%,#1a252f 100%);color:#fff;padding:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-header{padding:25px 20px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.sidebar-header h2{font-size:20px;display:flex;align-items:center;gap:10px}
+.sidebar-menu{list-style:none;padding:15px 0}
+.sidebar-menu li{margin-bottom:5px}
+.sidebar-menu a{display:flex;align-items:center;gap:12px;padding:12px 20px;color:#94a3b8;text-decoration:none;transition:all 0.2s;border-left:3px solid transparent}
+.sidebar-menu a:hover,.sidebar-menu a.active{background:rgba(255,255,255,0.05);color:#fff;border-left-color:#667eea}
+.sidebar-menu .badge{background:#e74c3c;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;margin-left:auto}
+.sidebar-divider{height:1px;background:rgba(255,255,255,0.1);margin:15px 20px}
+.menu-section-label{padding:8px 20px;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.5px}
+.sidebar-menu a.logout{color:#e74c3c}
+
+/* Main Content */
+.main-content{padding:25px;overflow-x:hidden}
+
 .conversation-item {
     cursor: pointer;
     transition: background-color 0.2s;
@@ -34,31 +56,10 @@ include '../includes/header.php';
 }
 </style>
 
-<div class="container-fluid mt-4">
-    <div class="row">
-        <!-- Admin Sidebar -->
-        <div class="col-md-2">
-            <div class="list-group">
-                <a href="dashboard.php" class="list-group-item list-group-item-action">
-                    <i class="bi bi-speedometer2"></i> Dashboard
-                </a>
-                <a href="referral-settings.php" class="list-group-item list-group-item-action">
-                    <i class="bi bi-people"></i> Referral Settings
-                </a>
-                <a href="verify-proofs.php" class="list-group-item list-group-item-action">
-                    <i class="bi bi-file-earmark-check"></i> Verify Proofs
-                </a>
-                <a href="gamification-settings.php" class="list-group-item list-group-item-action">
-                    <i class="bi bi-trophy"></i> Gamification
-                </a>
-                <a href="support-chat.php" class="list-group-item list-group-item-action active">
-                    <i class="bi bi-chat-dots"></i> Support Chat
-                </a>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="col-md-10">
+<div class="admin-layout">
+    <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
+    
+    <div class="main-content">
             <h2 class="mb-4"><i class="bi bi-chat-dots-fill"></i> Support Chat Dashboard</h2>
 
             <!-- Statistics -->

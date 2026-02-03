@@ -457,16 +457,7 @@ foreach ($users as $user) {
     
     <div class="container">
         <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <ul class="sidebar-menu">
-                <li><a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                <li><a href="users.php" class="active"><i class="fas fa-users"></i> Reviewers</a></li>
-                <li><a href="assign_task.php"><i class="fas fa-tasks"></i> Assign Task</a></li>
-                <li><a href="pending_tasks.php"><i class="fas fa-clock"></i> Task Pending</a></li>
-                <li><a href="completed_tasks.php"><i class="fas fa-check-circle"></i> Task Completed</a></li>
-                <li><a href="../index.php"><i class="fas fa-home"></i> Main Site</a></li>
-            </ul>
-        </div>
+        <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
         
         <!-- Main Content -->
         <div class="main-content">

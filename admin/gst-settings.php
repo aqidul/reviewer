@@ -180,34 +180,7 @@ try {
 <body>
     <div class="admin-layout">
         <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>⚡ <?php echo APP_NAME; ?></h2>
-                <p style="font-size:12px;color:#94a3b8;margin-top:5px">Admin Panel</p>
-            </div>
-            <ul class="sidebar-menu">
-                <li><a href="dashboard.php">📊 Dashboard</a></li>
-                <li><a href="users.php">👥 Users</a></li>
-                <li><a href="reviewers.php">⭐ Reviewers</a></li>
-                <li><a href="sellers.php">🏪 Sellers</a></li>
-                <li><a href="review-requests.php">📝 Review Requests</a></li>
-                <li><a href="task-pending.php">⏳ Pending Tasks<?php if($pending_tasks>0)echo"<span class='badge'>$pending_tasks</span>";?></a></li>
-                <li><a href="task-completed.php">✅ Completed Tasks</a></li>
-                <li><a href="task-rejected.php">❌ Rejected Tasks</a></li>
-                <li><a href="withdrawals.php">💰 Withdrawals<?php if($pending_withdrawals>0)echo"<span class='badge'>$pending_withdrawals</span>";?></a></li>
-                <li><a href="messages.php">💬 Messages<?php if($unread_messages>0)echo"<span class='badge'>$unread_messages</span>";?></a></li>
-                <li><a href="suspicious-users.php">🚨 Suspicious Users</a></li>
-                <div class="sidebar-divider"></div>
-                <li><a href="features.php">🎯 Features</a></li>
-                <li><a href="faq-manager.php">❓ FAQ Manager</a></li>
-                <li><a href="chatbot-unanswered.php">🤖 Chatbot<?php if($unanswered_questions>0)echo"<span class='badge'>$unanswered_questions</span>";?></a></li>
-                <li><a href="reports.php">📈 Reports</a></li>
-                <li><a href="gst-settings.php" class="active">🧾 GST Settings</a></li>
-                <li><a href="settings.php">⚙️ Settings</a></li>
-                <div class="sidebar-divider"></div>
-                <li><a href="logout.php" class="logout">🚪 Logout</a></li>
-            </ul>
-        </aside>
+        <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
         
         <!-- Main Content -->
         <main class="main-content">
