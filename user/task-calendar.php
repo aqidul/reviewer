@@ -17,6 +17,19 @@ $user_name = $_SESSION['user_name'] ?? 'User';
 $month = isset($_GET['month']) ? intval($_GET['month']) : date('n');
 $year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
 
+// Handle iCal export before any output
+if (isset($_GET['export']) && $_GET['export'] === 'ical') {
+    $start_date = "$year-" . str_pad($month, 2, '0', STR_PAD_LEFT) . "-01";
+    $end_date = date('Y-m-t', strtotime($start_date));
+    $ical = exportCalendarToICal($pdo, $user_id, $start_date, $end_date);
+    
+    header('Content-Type: text/calendar; charset=utf-8');
+    header('Content-Disposition: attachment; filename="tasks_' . $year . '_' . $month . '.ics"');
+    
+    echo $ical;
+    exit;
+}
+
 // Get calendar data
 $start_date = "$year-" . str_pad($month, 2, '0', STR_PAD_LEFT) . "-01";
 $end_date = date('Y-m-t', strtotime($start_date));
@@ -207,16 +220,3 @@ $current_page = 'task-calendar';
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-<?php
-// Handle iCal export
-if (isset($_GET['export']) && $_GET['export'] === 'ical') {
-    $ical = exportCalendarToICal($pdo, $user_id, $start_date, $end_date);
-    
-    header('Content-Type: text/calendar; charset=utf-8');
-    header('Content-Disposition: attachment; filename="tasks_' . $year . '_' . $month . '.ics"');
-    
-    echo $ical;
-    exit;
-}
-?>

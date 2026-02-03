@@ -10,6 +10,13 @@ if (!isset($_SESSION['admin_name'])) {
     exit;
 }
 
+// Handle test webhook before any output
+if (isset($_GET['action']) && $_GET['action'] === 'test' && isset($_GET['id'])) {
+    testWebhook($pdo, intval($_GET['id']));
+    header('Location: webhooks.php');
+    exit;
+}
+
 $admin_name = $_SESSION['admin_name'];
 $message = '';
 
@@ -215,12 +222,3 @@ $current_page = 'webhooks';
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-<?php
-// Handle test webhook
-if (isset($_GET['action']) && $_GET['action'] === 'test' && isset($_GET['id'])) {
-    testWebhook($pdo, intval($_GET['id']));
-    header('Location: webhooks.php');
-    exit;
-}
-?>

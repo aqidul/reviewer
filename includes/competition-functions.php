@@ -104,15 +104,16 @@ function updateCompetitionLeaderboard($db, $competition_id) {
             return false;
         }
         
-        $metric_query = buildMetricQuery($competition['competition_type'], $competition);
+        $metric_data = buildMetricQuery($competition['competition_type'], $competition);
         
-        if (!$metric_query) {
+        if (!$metric_data) {
             return false;
         }
         
         // Get scores for all participants
-        $stmt = $db->prepare($metric_query);
-        $stmt->execute([$competition_id]);
+        $stmt = $db->prepare($metric_data['query']);
+        $params = array_merge($metric_data['params'], [$competition_id]);
+        $stmt->execute($params);
         $scores = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Update leaderboard
@@ -157,70 +158,86 @@ function updateCompetitionLeaderboard($db, $competition_id) {
  * Build metric query based on competition type
  */
 function buildMetricQuery($type, $competition) {
+    // Return array with query and parameters
     $start = $competition['start_date'];
     $end = $competition['end_date'];
     
     switch ($type) {
         case 'tasks':
-            return "
-                SELECT cp.user_id, COUNT(t.id) as metric_value
-                FROM competition_participants cp
-                LEFT JOIN tasks t ON cp.user_id = t.user_id 
-                    AND t.status = 'completed'
-                    AND t.completed_at BETWEEN '$start' AND '$end'
-                WHERE cp.competition_id = ?
-                GROUP BY cp.user_id
-                ORDER BY metric_value DESC
-            ";
+            return [
+                'query' => "
+                    SELECT cp.user_id, COUNT(t.id) as metric_value
+                    FROM competition_participants cp
+                    LEFT JOIN tasks t ON cp.user_id = t.user_id 
+                        AND t.status = 'completed'
+                        AND t.completed_at BETWEEN ? AND ?
+                    WHERE cp.competition_id = ?
+                    GROUP BY cp.user_id
+                    ORDER BY metric_value DESC
+                ",
+                'params' => [$start, $end]
+            ];
             
         case 'earnings':
-            return "
-                SELECT cp.user_id, COALESCE(SUM(t.commission_amount), 0) as metric_value
-                FROM competition_participants cp
-                LEFT JOIN tasks t ON cp.user_id = t.user_id 
-                    AND t.status = 'completed'
-                    AND t.completed_at BETWEEN '$start' AND '$end'
-                WHERE cp.competition_id = ?
-                GROUP BY cp.user_id
-                ORDER BY metric_value DESC
-            ";
+            return [
+                'query' => "
+                    SELECT cp.user_id, COALESCE(SUM(t.commission_amount), 0) as metric_value
+                    FROM competition_participants cp
+                    LEFT JOIN tasks t ON cp.user_id = t.user_id 
+                        AND t.status = 'completed'
+                        AND t.completed_at BETWEEN ? AND ?
+                    WHERE cp.competition_id = ?
+                    GROUP BY cp.user_id
+                    ORDER BY metric_value DESC
+                ",
+                'params' => [$start, $end]
+            ];
             
         case 'quality':
-            return "
-                SELECT cp.user_id, COALESCE(AVG(t.rating), 0) as metric_value
-                FROM competition_participants cp
-                LEFT JOIN tasks t ON cp.user_id = t.user_id 
-                    AND t.status = 'completed'
-                    AND t.rating > 0
-                    AND t.completed_at BETWEEN '$start' AND '$end'
-                WHERE cp.competition_id = ?
-                GROUP BY cp.user_id
-                ORDER BY metric_value DESC
-            ";
+            return [
+                'query' => "
+                    SELECT cp.user_id, COALESCE(AVG(t.rating), 0) as metric_value
+                    FROM competition_participants cp
+                    LEFT JOIN tasks t ON cp.user_id = t.user_id 
+                        AND t.status = 'completed'
+                        AND t.rating > 0
+                        AND t.completed_at BETWEEN ? AND ?
+                    WHERE cp.competition_id = ?
+                    GROUP BY cp.user_id
+                    ORDER BY metric_value DESC
+                ",
+                'params' => [$start, $end]
+            ];
             
         case 'referrals':
-            return "
-                SELECT cp.user_id, COUNT(r.id) as metric_value
-                FROM competition_participants cp
-                LEFT JOIN referrals r ON cp.user_id = r.referrer_id 
-                    AND r.created_at BETWEEN '$start' AND '$end'
-                WHERE cp.competition_id = ?
-                GROUP BY cp.user_id
-                ORDER BY metric_value DESC
-            ";
+            return [
+                'query' => "
+                    SELECT cp.user_id, COUNT(r.id) as metric_value
+                    FROM competition_participants cp
+                    LEFT JOIN referrals r ON cp.user_id = r.referrer_id 
+                        AND r.created_at BETWEEN ? AND ?
+                    WHERE cp.competition_id = ?
+                    GROUP BY cp.user_id
+                    ORDER BY metric_value DESC
+                ",
+                'params' => [$start, $end]
+            ];
             
         case 'speed':
-            return "
-                SELECT cp.user_id, 
-                    COALESCE(AVG(TIMESTAMPDIFF(HOUR, t.created_at, t.completed_at)), 999) as metric_value
-                FROM competition_participants cp
-                LEFT JOIN tasks t ON cp.user_id = t.user_id 
-                    AND t.status = 'completed'
-                    AND t.completed_at BETWEEN '$start' AND '$end'
-                WHERE cp.competition_id = ?
-                GROUP BY cp.user_id
-                ORDER BY metric_value ASC
-            ";
+            return [
+                'query' => "
+                    SELECT cp.user_id, 
+                        COALESCE(AVG(TIMESTAMPDIFF(HOUR, t.created_at, t.completed_at)), 999) as metric_value
+                    FROM competition_participants cp
+                    LEFT JOIN tasks t ON cp.user_id = t.user_id 
+                        AND t.status = 'completed'
+                        AND t.completed_at BETWEEN ? AND ?
+                    WHERE cp.competition_id = ?
+                    GROUP BY cp.user_id
+                    ORDER BY metric_value ASC
+                ",
+                'params' => [$start, $end]
+            ];
             
         default:
             return null;
@@ -362,20 +379,22 @@ function updateCompetitionStatuses($db) {
         $now = date('Y-m-d H:i:s');
         
         // Set to active
-        $db->query("
+        $stmt1 = $db->prepare("
             UPDATE competitions 
             SET status = 'active' 
             WHERE status = 'upcoming' 
-            AND start_date <= '$now'
+            AND start_date <= ?
         ");
+        $stmt1->execute([$now]);
         
         // Set to ended
-        $db->query("
+        $stmt2 = $db->prepare("
             UPDATE competitions 
             SET status = 'ended' 
             WHERE status = 'active' 
-            AND end_date <= '$now'
+            AND end_date <= ?
         ");
+        $stmt2->execute([$now]);
         
         return true;
     } catch (Exception $e) {

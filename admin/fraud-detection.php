@@ -10,6 +10,13 @@ if (!isset($_SESSION['admin_name'])) {
     exit;
 }
 
+// Handle batch scanning before any output
+if (isset($_GET['action']) && $_GET['action'] === 'scan') {
+    runBatchFraudDetection($pdo, 50);
+    header('Location: fraud-detection.php');
+    exit;
+}
+
 $admin_name = $_SESSION['admin_name'];
 
 // Get high-risk users
@@ -202,12 +209,3 @@ $current_page = 'fraud-detection';
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-<?php
-// Handle batch scanning
-if (isset($_GET['action']) && $_GET['action'] === 'scan') {
-    runBatchFraudDetection($pdo, 50);
-    header('Location: fraud-detection.php');
-    exit;
-}
-?>
