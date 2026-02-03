@@ -15,7 +15,7 @@ $admin_name = $_SESSION['admin_name'];
 
 // Handle quick actions (approve/reject)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['kyc_id'], $_POST['csrf_token'])) {
-    if (validateCSRFToken($_POST['csrf_token'])) {
+    if (verifyCSRFToken($_POST['csrf_token'])) {
         $kyc_id = (int)$_POST['kyc_id'];
         $action = $_POST['action'];
         

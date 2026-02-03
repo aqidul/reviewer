@@ -33,7 +33,7 @@ if (!$kyc) {
 
 // Handle POST request for approval/rejection
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['csrf_token'])) {
-    if (validateCSRFToken($_POST['csrf_token'])) {
+    if (verifyCSRFToken($_POST['csrf_token'])) {
         $action = $_POST['action'];
         
         if ($action === 'approve') {
