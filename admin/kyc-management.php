@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/security.php';
 
 if (!isset($_SESSION['admin_name'])) {
-    header('Location: index.php');
+    header('Location: /reviewer/admin/index.php');
     exit;
 }
 
