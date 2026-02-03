@@ -24,7 +24,7 @@ All Phase 2 advanced features have been successfully implemented for the ReviewF
 - Monitor total earnings and pending commissions
 
 **Files:**
-- `user/referrals.php` - User dashboard
+- `user/referral.php` - User dashboard
 - `admin/referral-settings.php` - Admin settings
 - `includes/referral-functions.php` - 20+ helper functions
 - `migrations/phase2_referrals.sql` - Database schema
@@ -142,7 +142,7 @@ chmod 755 uploads/proofs uploads/chat
 Add these menu items to your user sidebar (usually in `includes/header.php` or similar):
 
 ```php
-<a href="referrals.php">
+<a href="referral.php">
     <i class="bi bi-people"></i> Referrals
 </a>
 <a href="submit-proof.php">

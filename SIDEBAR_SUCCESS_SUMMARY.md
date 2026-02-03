@@ -67,7 +67,7 @@ Screenshots showed that **every page had a DIFFERENT sidebar**:
 
 **6 User Pages Updated** to use this ONE sidebar:
 - dashboard.php
-- referrals.php ⭐
+- referral.php ⭐
 - rewards.php ⭐
 - leaderboard.php ⭐
 - chat.php ⭐
@@ -173,7 +173,7 @@ Maintenance: SIMPLE (update 1 file, changes everywhere)
 - [ ] Visit admin/gamification-settings.php - verify same sidebar
 - [ ] Visit admin/verify-proofs.php - verify same sidebar
 - [ ] Visit user/dashboard.php - verify sidebar has 13 items
-- [ ] Visit user/referrals.php - verify same sidebar
+- [ ] Visit user/referral.php - verify same sidebar
 - [ ] Visit user/rewards.php - verify same sidebar
 - [ ] Click each menu item - verify all pages load
 - [ ] Check badge counters display correctly

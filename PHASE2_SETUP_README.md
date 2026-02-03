@@ -94,7 +94,7 @@ chmod 755 uploads/proofs uploads/chat
 5. Commission auto-credited to wallet
 
 **Files:**
-- User: `user/referrals.php`
+- User: `user/referral.php`
 - Admin: `admin/referral-settings.php`
 - Functions: `includes/referral-functions.php`
 
@@ -232,7 +232,7 @@ if (isLoggedIn()) {
 Add new menu items to user sidebar:
 
 ```php
-<a href="referrals.php">
+<a href="referral.php">
     <i class="bi bi-people"></i> Referrals
 </a>
 <a href="rewards.php">
