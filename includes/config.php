@@ -38,6 +38,9 @@ const REFERRAL_BONUS = 50;
 const FIRST_TASK_BONUS = 25;
 const DEFAULT_ADMIN_COMMISSION_PER_REVIEW = 5;
 
+// Task Steps Configuration
+const TASK_STEPS = ['Order Placed', 'Delivery Received', 'Review Submitted', 'Refund Requested'];
+
 // WhatsApp Settings
 const WHATSAPP_API_URL = 'https://api.whatsapp.com/send';
 const WHATSAPP_SUPPORT = '919876543210';

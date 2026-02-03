@@ -61,31 +61,32 @@ try {
         throw new Exception('Unable to open CSV file');
     }
 
-    // Read header row
-    $headers = fgetcsv($handle);
-    if ($headers === false) {
-        throw new Exception('Invalid CSV format - unable to read headers');
-    }
-
-    // Normalize headers (trim and lowercase)
-    $headers = array_map(function($h) {
-        return strtolower(trim($h));
-    }, $headers);
-
-    // Validate required headers
-    $required_fields = ['brand_name', 'product_name', 'product_url', 'reward_amount'];
-    $optional_fields = ['amazon_link', 'order_id', 'seller_id', 'seller_name', 'reviewer_mobile', 'reviewer_email', 'task_description'];
-    
-    foreach ($required_fields as $field) {
-        if (!in_array($field, $headers)) {
-            throw new Exception("Missing required column: $field");
+    try {
+        // Read header row
+        $headers = fgetcsv($handle);
+        if ($headers === false) {
+            throw new Exception('Invalid CSV format - unable to read headers');
         }
-    }
 
-    $row_number = 1; // Start from 1 (data rows)
+        // Normalize headers (trim and lowercase)
+        $headers = array_map(function($h) {
+            return strtolower(trim($h));
+        }, $headers);
 
-    // Process each row
-    while (($data = fgetcsv($handle)) !== false) {
+        // Validate required headers
+        $required_fields = ['brand_name', 'product_name', 'product_url', 'reward_amount'];
+        $optional_fields = ['amazon_link', 'order_id', 'seller_id', 'seller_name', 'reviewer_mobile', 'reviewer_email', 'task_description'];
+        
+        foreach ($required_fields as $field) {
+            if (!in_array($field, $headers)) {
+                throw new Exception("Missing required column: $field");
+            }
+        }
+
+        $row_number = 1; // Start from 1 (data rows)
+
+        // Process each row
+        while (($data = fgetcsv($handle)) !== false) {
         $row_number++;
         $total_rows++;
 
@@ -183,8 +184,7 @@ try {
             $task_id = $pdo->lastInsertId();
 
             // Create task steps
-            $steps = ['Order Placed', 'Delivery Received', 'Review Submitted', 'Refund Requested'];
-            foreach ($steps as $index => $step) {
+            foreach (TASK_STEPS as $index => $step) {
                 $stmt = $pdo->prepare("
                     INSERT INTO task_steps (task_id, step_number, step_name, step_status, created_at)
                     VALUES (?, ?, ?, 'pending', NOW())
@@ -220,9 +220,10 @@ try {
                 'error' => 'Database error: ' . $e->getMessage()
             ];
         }
+    } finally {
+        // Ensure file handle is always closed
+        fclose($handle);
     }
-
-    fclose($handle);
 
     // Update upload history
     $error_log = !empty($errors) ? json_encode($errors) : null;
@@ -403,29 +404,12 @@ function findOrCreateUser(PDO $pdo, array $row): ?int {
             return (int)$user['id'];
         }
 
-        // User not found - optionally create new user
-        // For now, we'll skip if user doesn't exist
-        // Uncomment below to auto-create users
+        // User not found - we don't auto-create users for security reasons
+        // If auto-creation is needed, uncomment the code below and ensure:
+        // 1. Both email AND mobile are provided
+        // 2. A secure mechanism to send credentials to users is implemented
+        // 3. Users are notified via email/SMS with their login details
         
-        /*
-        // Create new user
-        if (empty($email) || empty($mobile)) {
-            return null; // Need both email and mobile to create user
-        }
-
-        $name = isset($row['reviewer_name']) ? trim($row['reviewer_name']) : 'User';
-        $password = bin2hex(random_bytes(8)); // Random password
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-        $stmt = $pdo->prepare("
-            INSERT INTO users (name, email, mobile, password, user_type, status, created_at)
-            VALUES (?, ?, ?, ?, 'user', 'active', NOW())
-        ");
-        $stmt->execute([$name, $email, $mobile, $hashed_password]);
-
-        return (int)$pdo->lastInsertId();
-        */
-
         return null;
 
     } catch (PDOException $e) {

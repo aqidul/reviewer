@@ -114,8 +114,8 @@ try {
                     <p class="page-subtitle">Upload CSV/Excel files to assign multiple tasks at once</p>
                 </div>
                 <div class="header-actions">
-                    <a href="<?= APP_URL ?>/templates/bulk-task-template.csv" 
-                       class="header-btn secondary" download>
+                    <a href="download-template.php" 
+                       class="header-btn secondary">
                         <i class="bi bi-download"></i> Download Template
                     </a>
                 </div>
