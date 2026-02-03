@@ -277,6 +277,7 @@ $current_page = 'verify-proofs';
                     <?php endif; ?>
                 </div>
             </div>
+        </div>
     </div>
 </div>
 

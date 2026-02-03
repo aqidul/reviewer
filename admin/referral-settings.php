@@ -65,7 +65,7 @@ $current_page = 'referral-settings';
 <div class="admin-layout">
     <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
     
-    <div class="main-content"
+    <div class="main-content">
             <h2 class="mb-4"><i class="bi bi-gear-fill"></i> Referral System Settings</h2>
 
             <?php if ($message): ?>

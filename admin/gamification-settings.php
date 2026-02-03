@@ -79,7 +79,7 @@ $current_page = 'gamification-settings';
     <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
     
     <div class="main-content">
-            <h2 class="mb-4"><i class="bi bi-trophy-fill"></i> Gamification System</h2>
+        <h2 class="mb-4"><i class="bi bi-trophy-fill"></i> Gamification System</h2>
 
             <?php if ($message): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -233,6 +233,7 @@ $current_page = 'gamification-settings';
                     </div>
                 </div>
             </div>
+        </div>
     </div>
 </div>
 

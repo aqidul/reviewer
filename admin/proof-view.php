@@ -311,6 +311,7 @@ $current_page = 'proof-view';
                     <?php endif; ?>
                 </div>
             </div>
+        </div>
     </div>
 </div>
 
