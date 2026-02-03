@@ -48,6 +48,15 @@ if (!isset($pending_review_requests)) {
     }
 }
 
+if (!isset($pending_kyc)) {
+    try {
+        $stmt = $pdo->query("SELECT COUNT(*) FROM user_kyc WHERE status = 'pending'");
+        $pending_kyc = (int)$stmt->fetchColumn();
+    } catch (PDOException $e) {
+        $pending_kyc = 0;
+    }
+}
+
 // Set current page if not set
 if (!isset($current_page)) {
     $current_page = basename($_SERVER['PHP_SELF'], '.php');
@@ -66,11 +75,13 @@ if (!isset($current_page)) {
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>👥 Users</span></li>
         <li><a href="<?php echo ADMIN_URL; ?>/reviewers.php" class="<?= $current_page === 'reviewers' ? 'active' : '' ?>">All Reviewers</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/kyc-verification.php" class="<?= in_array($current_page, ['kyc-verification', 'kyc-view']) ? 'active' : '' ?>">🔐 KYC Verification <?php if($pending_kyc > 0): ?><span class="badge"><?php echo $pending_kyc; ?></span><?php endif; ?></a></li>
         
         <!-- Tasks Section -->
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>📋 Tasks</span></li>
         <li><a href="<?php echo ADMIN_URL; ?>/assign-task.php" class="<?= $current_page === 'assign-task' ? 'active' : '' ?>">➕ Assign Task</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/bulk-upload.php" class="<?= $current_page === 'bulk-upload' ? 'active' : '' ?>">📤 Bulk Upload</a></li>
         <li>
             <a href="<?php echo ADMIN_URL; ?>/task-pending.php" class="<?= in_array($current_page, ['task-pending', 'task-pending-brandwise']) ? 'active' : '' ?>">
                 ⏳ Pending Tasks <?php if($pending_tasks > 0): ?><span class="badge"><?php echo $pending_tasks; ?></span><?php endif; ?>
@@ -104,6 +115,7 @@ if (!isset($current_page)) {
         <!-- Reports & Export Section -->
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>📊 Reports & Export</span></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/analytics.php" class="<?= $current_page === 'analytics' ? 'active' : '' ?>">📈 Analytics Dashboard</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/reports.php" class="<?= $current_page === 'reports' ? 'active' : '' ?>">📈 Reports</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/export-data.php" class="<?= $current_page === 'export-data' ? 'active' : '' ?>">📥 Export Review Data</a></li>
         
@@ -112,6 +124,7 @@ if (!isset($current_page)) {
         <li class="menu-section-label"><span>⚙️ Settings</span></li>
         <li><a href="<?php echo ADMIN_URL; ?>/settings.php" class="<?= $current_page === 'settings' ? 'active' : '' ?>">General Settings</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/gst-settings.php" class="<?= $current_page === 'gst-settings' ? 'active' : '' ?>">💰 GST Settings</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/notification-templates.php" class="<?= $current_page === 'notification-templates' ? 'active' : '' ?>">📧 Notification Templates</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/features.php" class="<?= $current_page === 'features' ? 'active' : '' ?>">✨ Features</a></li>
         
         <!-- Chatbot Section -->

@@ -116,8 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_assign'])) {
                 $task_id = $pdo->lastInsertId();
                 
                 // Create task steps
-                $steps = ['Order Placed', 'Delivery Received', 'Review Submitted', 'Refund Requested'];
-                foreach ($steps as $index => $step) {
+                foreach (TASK_STEPS as $index => $step) {
                     $stmt = $pdo->prepare("
                         INSERT INTO task_steps (task_id, step_number, step_name, step_status, created_at)
                         VALUES (?, ?, ?, 'pending', NOW())
@@ -249,8 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['single_assign'])) {
             $task_id = $pdo->lastInsertId();
             
             // Create task steps
-            $steps = ['Order Placed', 'Delivery Received', 'Review Submitted', 'Refund Requested'];
-            foreach ($steps as $index => $step) {
+            foreach (TASK_STEPS as $index => $step) {
                 $stmt = $pdo->prepare("
                     INSERT INTO task_steps (task_id, step_number, step_name, step_status, created_at)
                     VALUES (?, ?, ?, 'pending', NOW())
