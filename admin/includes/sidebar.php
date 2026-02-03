@@ -71,6 +71,7 @@ if (!isset($current_page)) {
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>📋 Tasks</span></li>
         <li><a href="<?php echo ADMIN_URL; ?>/assign-task.php" class="<?= $current_page === 'assign-task' ? 'active' : '' ?>">➕ Assign Task</a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/bulk-upload.php" class="<?= $current_page === 'bulk-upload' ? 'active' : '' ?>">📤 Bulk Upload</a></li>
         <li>
             <a href="<?php echo ADMIN_URL; ?>/task-pending.php" class="<?= in_array($current_page, ['task-pending', 'task-pending-brandwise']) ? 'active' : '' ?>">
                 ⏳ Pending Tasks <?php if($pending_tasks > 0): ?><span class="badge"><?php echo $pending_tasks; ?></span><?php endif; ?>
