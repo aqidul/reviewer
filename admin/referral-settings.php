@@ -1,0 +1,255 @@
+<?php
+require_once '../includes/config.php';
+require_once '../includes/referral-functions.php';
+
+if (!isLoggedIn() || !isAdmin()) {
+    redirect('../index.php');
+}
+
+$message = '';
+$error = '';
+
+// Handle settings update
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
+    foreach ($_POST['levels'] as $level => $data) {
+        $commission = floatval($data['commission']);
+        $is_active = isset($data['active']) ? 1 : 0;
+        updateReferralSettings($db, $level, $commission, $is_active);
+    }
+    $message = 'Referral settings updated successfully!';
+}
+
+// Get current settings
+$settings = getReferralSettings($db);
+
+// Get referral statistics
+$total_referrals_stmt = $db->query("SELECT COUNT(*) FROM referrals WHERE level = 1");
+$total_referrals = $total_referrals_stmt->fetchColumn();
+
+$active_referrals_stmt = $db->query("SELECT COUNT(*) FROM referrals WHERE level = 1 AND status = 'active'");
+$active_referrals = $active_referrals_stmt->fetchColumn();
+
+$total_earnings_stmt = $db->query("SELECT COALESCE(SUM(amount), 0) FROM referral_earnings WHERE status = 'credited'");
+$total_earnings = $total_earnings_stmt->fetchColumn();
+
+$pending_earnings_stmt = $db->query("SELECT COALESCE(SUM(amount), 0) FROM referral_earnings WHERE status = 'pending'");
+$pending_earnings = $pending_earnings_stmt->fetchColumn();
+
+include '../includes/header.php';
+?>
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Admin Sidebar -->
+        <div class="col-md-2">
+            <div class="list-group">
+                <a href="dashboard.php" class="list-group-item list-group-item-action">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+                <a href="referral-settings.php" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-people"></i> Referral Settings
+                </a>
+                <a href="verify-proofs.php" class="list-group-item list-group-item-action">
+                    <i class="bi bi-file-earmark-check"></i> Verify Proofs
+                </a>
+                <a href="gamification-settings.php" class="list-group-item list-group-item-action">
+                    <i class="bi bi-trophy"></i> Gamification
+                </a>
+                <a href="support-chat.php" class="list-group-item list-group-item-action">
+                    <i class="bi bi-chat-dots"></i> Support Chat
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10">
+            <h2 class="mb-4"><i class="bi bi-gear-fill"></i> Referral System Settings</h2>
+
+            <?php if ($message): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <?php echo htmlspecialchars($message); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($error): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <?php echo htmlspecialchars($error); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+
+            <!-- Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h3><?php echo $total_referrals; ?></h3>
+                            <p class="mb-0">Total Referrals</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h3><?php echo $active_referrals; ?></h3>
+                            <p class="mb-0">Active Referrals</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h3>₹<?php echo number_format($total_earnings, 2); ?></h3>
+                            <p class="mb-0">Total Earnings Paid</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h3>₹<?php echo number_format($pending_earnings, 2); ?></h3>
+                            <p class="mb-0">Pending Earnings</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Commission Settings Form -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-percent"></i> Commission Rate Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Level</th>
+                                        <th>Commission (%)</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($settings as $setting): ?>
+                                    <tr>
+                                        <td><strong>Level <?php echo $setting['level']; ?></strong></td>
+                                        <td>
+                                            <div class="input-group" style="width: 150px;">
+                                                <input type="number" step="0.01" min="0" max="100"
+                                                       class="form-control" 
+                                                       name="levels[<?php echo $setting['level']; ?>][commission]"
+                                                       value="<?php echo $setting['commission_percent']; ?>" required>
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <?php if ($setting['level'] == 1): ?>
+                                                Direct referrals (users directly referred by referrer)
+                                            <?php elseif ($setting['level'] == 2): ?>
+                                                Second level (referrals from your direct referrals)
+                                            <?php else: ?>
+                                                Third level (referrals from second level referrals)
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="levels[<?php echo $setting['level']; ?>][active]"
+                                                       <?php echo $setting['is_active'] ? 'checked' : ''; ?>>
+                                                <label class="form-check-label">Active</label>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>How it works:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>When a user completes a task, their referrers earn commission based on these rates</li>
+                                <li>Commission is calculated as a percentage of the task amount</li>
+                                <li>Commissions are automatically credited to referrer's wallet</li>
+                                <li>You can disable any level by unchecking the "Active" status</li>
+                            </ul>
+                        </div>
+
+                        <button type="submit" name="update_settings" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save Settings
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Recent Referrals -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-clock-history"></i> Recent Referrals</h5>
+                </div>
+                <div class="card-body">
+                    <?php
+                    $recent_stmt = $db->query("
+                        SELECT 
+                            r.*,
+                            u1.username as referrer_name,
+                            u2.username as referee_name,
+                            u2.email as referee_email
+                        FROM referrals r
+                        JOIN users u1 ON r.referrer_id = u1.id
+                        JOIN users u2 ON r.referee_id = u2.id
+                        WHERE r.level = 1
+                        ORDER BY r.created_at DESC
+                        LIMIT 20
+                    ");
+                    $recent_referrals = $recent_stmt->fetchAll(PDO::FETCH_ASSOC);
+                    ?>
+
+                    <?php if (count($recent_referrals) > 0): ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Referrer</th>
+                                    <th>Referee</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($recent_referrals as $ref): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($ref['referrer_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($ref['referee_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($ref['referee_email']); ?></td>
+                                    <td>
+                                        <?php if ($ref['status'] == 'active'): ?>
+                                            <span class="badge bg-success">Active</span>
+                                        <?php elseif ($ref['status'] == 'pending'): ?>
+                                            <span class="badge bg-warning">Pending</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?php echo date('M d, Y', strtotime($ref['created_at'])); ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php else: ?>
+                    <div class="text-center py-4">
+                        <p class="text-muted">No referrals yet</p>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php include '../includes/footer.php'; ?>

@@ -1,0 +1,284 @@
+<?php
+require_once '../includes/config.php';
+require_once '../includes/proof-functions.php';
+
+if (!isLoggedIn() || isAdmin()) {
+    redirect('../index.php');
+}
+
+$user_id = $_SESSION['user_id'];
+$message = '';
+$error = '';
+
+// Get user's tasks that need proof submission
+$tasks_query = "
+    SELECT DISTINCT t.id, t.title, t.amount, t.assigned_date
+    FROM tasks t
+    JOIN orders o ON t.id = o.task_id
+    WHERE t.user_id = ? 
+    AND o.step3_status = 'approved'
+    AND NOT EXISTS (
+        SELECT 1 FROM task_proofs tp WHERE tp.task_id = t.id AND tp.user_id = ?
+    )
+    ORDER BY t.assigned_date DESC
+";
+$tasks_stmt = $db->prepare($tasks_query);
+$tasks_stmt->execute([$user_id, $user_id]);
+$available_tasks = $tasks_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Handle proof submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_proof'])) {
+    $task_id = filter_input(INPUT_POST, 'task_id', FILTER_SANITIZE_NUMBER_INT);
+    $proof_type = filter_input(INPUT_POST, 'proof_type', FILTER_SANITIZE_STRING);
+    $proof_text = filter_input(INPUT_POST, 'proof_text', FILTER_SANITIZE_STRING);
+    
+    $proof_file = null;
+    if (isset($_FILES['proof_file']) && $_FILES['proof_file']['error'] === UPLOAD_ERR_OK) {
+        $proof_file = $_FILES['proof_file'];
+    }
+    
+    $result = submitProof($db, $user_id, $task_id, $proof_type, $proof_file, $proof_text);
+    
+    if ($result['success']) {
+        $message = $result['message'];
+    } else {
+        $error = $result['message'];
+    }
+}
+
+// Get user's submitted proofs
+$proofs = getUserProofs($db, $user_id, 20);
+
+include '../includes/header.php';
+?>
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2">
+            <div class="list-group">
+                <a href="dashboard.php" class="list-group-item list-group-item-action">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+                <a href="tasks.php" class="list-group-item list-group-item-action">
+                    <i class="bi bi-list-task"></i> My Tasks
+                </a>
+                <a href="submit-proof.php" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-file-earmark-check"></i> Submit Proof
+                </a>
+                <a href="referrals.php" class="list-group-item list-group-item-action">
+                    <i class="bi bi-people"></i> Referrals
+                </a>
+                <a href="rewards.php" class="list-group-item list-group-item-action">
+                    <i class="bi bi-trophy"></i> Rewards
+                </a>
+                <a href="chat.php" class="list-group-item list-group-item-action">
+                    <i class="bi bi-chat-dots"></i> Chat Support
+                </a>
+                <a href="wallet.php" class="list-group-item list-group-item-action">
+                    <i class="bi bi-wallet2"></i> Wallet
+                </a>
+                <a href="profile.php" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person"></i> Profile
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10">
+            <h2 class="mb-4"><i class="bi bi-file-earmark-check"></i> Submit Task Proof</h2>
+
+            <?php if ($message): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <?php echo htmlspecialchars($message); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($error): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <?php echo htmlspecialchars($error); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+
+            <!-- Submit Proof Form -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-upload"></i> Upload New Proof</h5>
+                </div>
+                <div class="card-body">
+                    <?php if (count($available_tasks) > 0): ?>
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="task_id" class="form-label">Select Task *</label>
+                                <select class="form-select" id="task_id" name="task_id" required>
+                                    <option value="">Choose a task...</option>
+                                    <?php foreach ($available_tasks as $task): ?>
+                                    <option value="<?php echo $task['id']; ?>">
+                                        <?php echo htmlspecialchars($task['title']); ?> (₹<?php echo $task['amount']; ?>)
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="proof_type" class="form-label">Proof Type *</label>
+                                <select class="form-select" id="proof_type" name="proof_type" required onchange="toggleProofFields()">
+                                    <option value="">Choose type...</option>
+                                    <option value="screenshot">Screenshot</option>
+                                    <option value="order_id">Order ID</option>
+                                    <option value="review_link">Review Link</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="fileUploadDiv" style="display: none;">
+                            <label for="proof_file" class="form-label">Upload Screenshot *</label>
+                            <input type="file" class="form-control" id="proof_file" name="proof_file" accept="image/*">
+                            <div class="form-text">Accepted formats: JPG, PNG, WEBP. Max size: 5MB</div>
+                        </div>
+
+                        <div class="mb-3" id="textInputDiv" style="display: none;">
+                            <label for="proof_text" class="form-label">Enter Details *</label>
+                            <textarea class="form-control" id="proof_text" name="proof_text" rows="3" 
+                                placeholder="Enter Order ID or Review Link"></textarea>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>Note:</strong> 
+                            Submit clear proof of task completion. Screenshots should show order details, review submission, or refund status.
+                        </div>
+
+                        <button type="submit" name="submit_proof" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Submit Proof
+                        </button>
+                    </form>
+                    <?php else: ?>
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> No tasks available for proof submission. 
+                            Complete review submission step first.
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Submitted Proofs -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-clock-history"></i> Submitted Proofs</h5>
+                </div>
+                <div class="card-body">
+                    <?php if (count($proofs) > 0): ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Proof Type</th>
+                                    <th>Submitted Date</th>
+                                    <th>AI Score</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($proofs as $proof): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($proof['task_title']); ?></td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            <?php echo ucfirst($proof['proof_type']); ?>
+                                        </span>
+                                    </td>
+                                    <td><?php echo date('M d, Y H:i', strtotime($proof['created_at'])); ?></td>
+                                    <td>
+                                        <?php if ($proof['ai_score']): ?>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar <?php 
+                                                    echo $proof['ai_score'] >= 80 ? 'bg-success' : 
+                                                        ($proof['ai_score'] >= 50 ? 'bg-warning' : 'bg-danger'); 
+                                                ?>" role="progressbar" 
+                                                    style="width: <?php echo $proof['ai_score']; ?>%">
+                                                    <?php echo number_format($proof['ai_score'], 1); ?>%
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-muted">N/A</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        $badge_class = 'secondary';
+                                        $status_text = ucfirst(str_replace('_', ' ', $proof['status']));
+                                        
+                                        if ($proof['status'] == 'approved' || $proof['status'] == 'auto_approved') {
+                                            $badge_class = 'success';
+                                        } elseif ($proof['status'] == 'rejected') {
+                                            $badge_class = 'danger';
+                                        } elseif ($proof['status'] == 'manual_review') {
+                                            $badge_class = 'warning';
+                                        }
+                                        ?>
+                                        <span class="badge bg-<?php echo $badge_class; ?>">
+                                            <?php echo $status_text; ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <?php if ($proof['proof_file']): ?>
+                                            <a href="../<?php echo htmlspecialchars($proof['proof_file']); ?>" 
+                                               target="_blank" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        <?php endif; ?>
+                                        <?php if ($proof['rejection_reason']): ?>
+                                            <button class="btn btn-sm btn-outline-danger" 
+                                                    onclick="alert('Rejection Reason: <?php echo addslashes($proof['rejection_reason']); ?>')">
+                                                <i class="bi bi-info-circle"></i> Reason
+                                            </button>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php else: ?>
+                        <div class="text-center py-5">
+                            <i class="bi bi-file-earmark-x" style="font-size: 4rem; color: #ccc;"></i>
+                            <h4 class="mt-3">No Proofs Submitted</h4>
+                            <p class="text-muted">Submit proof after completing tasks to get verified and paid!</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleProofFields() {
+    const proofType = document.getElementById('proof_type').value;
+    const fileDiv = document.getElementById('fileUploadDiv');
+    const textDiv = document.getElementById('textInputDiv');
+    const fileInput = document.getElementById('proof_file');
+    const textInput = document.getElementById('proof_text');
+    
+    // Reset
+    fileDiv.style.display = 'none';
+    textDiv.style.display = 'none';
+    fileInput.required = false;
+    textInput.required = false;
+    
+    if (proofType === 'screenshot') {
+        fileDiv.style.display = 'block';
+        fileInput.required = true;
+    } else if (proofType === 'order_id' || proofType === 'review_link') {
+        textDiv.style.display = 'block';
+        textInput.required = true;
+    }
+}
+</script>
+
+<?php include '../includes/footer.php'; ?>
