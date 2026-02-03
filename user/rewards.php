@@ -14,46 +14,125 @@ updateLoginStreak($db, $user_id);
 // Get dashboard data
 $dashboard_data = getGamificationDashboard($db, $user_id);
 
+// Set current page for sidebar
+$current_page = 'rewards';
+
+// Get badge counts for sidebar
+try {
+    $stmt = $db->prepare("SELECT COUNT(*) FROM tasks WHERE user_id = ? AND task_status = 'pending'");
+    $stmt->execute([$user_id]);
+    $pending_tasks_count = (int)$stmt->fetchColumn();
+} catch (PDOException $e) {
+    $pending_tasks_count = 0;
+}
+
+try {
+    $stmt = $db->prepare("SELECT COUNT(*) FROM chat_messages WHERE user_id = ? AND is_read = 0 AND sender = 'admin'");
+    $stmt->execute([$user_id]);
+    $unread_messages = (int)$stmt->fetchColumn();
+} catch (PDOException $e) {
+    $unread_messages = 0;
+}
+
 include '../includes/header.php';
 ?>
 
-<div class="container-fluid mt-4">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-2">
-            <div class="list-group">
-                <a href="dashboard.php" class="list-group-item list-group-item-action">
-                    <i class="bi bi-speedometer2"></i> Dashboard
-                </a>
-                <a href="tasks.php" class="list-group-item list-group-item-action">
-                    <i class="bi bi-list-task"></i> My Tasks
-                </a>
-                <a href="submit-proof.php" class="list-group-item list-group-item-action">
-                    <i class="bi bi-file-earmark-check"></i> Submit Proof
-                </a>
-                <a href="referrals.php" class="list-group-item list-group-item-action">
-                    <i class="bi bi-people"></i> Referrals
-                </a>
-                <a href="rewards.php" class="list-group-item list-group-item-action active">
-                    <i class="bi bi-trophy"></i> Rewards
-                </a>
-                <a href="leaderboard.php" class="list-group-item list-group-item-action">
-                    <i class="bi bi-bar-chart"></i> Leaderboard
-                </a>
-                <a href="chat.php" class="list-group-item list-group-item-action">
-                    <i class="bi bi-chat-dots"></i> Chat Support
-                </a>
-                <a href="wallet.php" class="list-group-item list-group-item-action">
-                    <i class="bi bi-wallet2"></i> Wallet
-                </a>
-                <a href="profile.php" class="list-group-item list-group-item-action">
-                    <i class="bi bi-person"></i> Profile
-                </a>
-            </div>
-        </div>
+<style>
+    /* Sidebar Styles */
+    .sidebar {
+        width: 260px;
+        position: fixed;
+        left: 0;
+        top: 60px;
+        height: calc(100vh - 60px);
+        background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        overflow-y: auto;
+        transition: all 0.3s ease;
+        z-index: 999;
+    }
+    .sidebar-header {
+        padding: 20px;
+        background: rgba(255,255,255,0.05);
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .sidebar-header h2 {
+        color: #fff;
+        font-size: 18px;
+        margin: 0;
+    }
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .sidebar-menu li {
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .sidebar-menu li a {
+        display: block;
+        padding: 15px 20px;
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+        transition: all 0.3s;
+        font-size: 14px;
+    }
+    .sidebar-menu li a:hover {
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+        padding-left: 25px;
+    }
+    .sidebar-menu li a.active {
+        background: linear-gradient(90deg, rgba(66,153,225,0.2) 0%, transparent 100%);
+        color: #4299e1;
+        border-left: 3px solid #4299e1;
+    }
+    .sidebar-menu li a.logout {
+        color: #fc8181;
+    }
+    .sidebar-divider {
+        height: 1px;
+        background: rgba(255,255,255,0.1);
+        margin: 10px 0;
+    }
+    .menu-section-label {
+        padding: 15px 20px 5px;
+        color: rgba(255,255,255,0.5);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .badge {
+        background: #e53e3e;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        margin-left: 8px;
+    }
+    .admin-layout {
+        margin-left: 260px;
+        padding: 20px;
+        min-height: calc(100vh - 60px);
+    }
+    @media (max-width: 768px) {
+        .sidebar {
+            left: -260px;
+        }
+        .sidebar.active {
+            left: 0;
+        }
+        .admin-layout {
+            margin-left: 0;
+        }
+    }
+</style>
 
-        <!-- Main Content -->
-        <div class="col-md-10">
+<?php require_once __DIR__ . '/includes/sidebar.php'; ?>
+
+<div class="admin-layout">
+    <div class="container-fluid mt-4">
             <h2 class="mb-4"><i class="bi bi-trophy-fill"></i> Rewards & Gamification</h2>
 
             <!-- User Level Card -->
@@ -247,7 +326,6 @@ include '../includes/header.php';
                     <?php endif; ?>
                 </div>
             </div>
-        </div>
     </div>
 </div>
 

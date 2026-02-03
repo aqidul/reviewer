@@ -44,19 +44,126 @@ $pending_orders = $orders_stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>User Dashboard - ReviewFlow</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Sidebar Styles */
+        .sidebar {
+            width: 260px;
+            position: fixed;
+            left: 0;
+            top: 60px;
+            height: calc(100vh - 60px);
+            background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            z-index: 999;
+        }
+        .sidebar-header {
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar-header h2 {
+            color: #fff;
+            font-size: 18px;
+            margin: 0;
+        }
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar-menu li {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .sidebar-menu li a {
+            display: block;
+            padding: 15px 20px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .sidebar-menu li a:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            padding-left: 25px;
+        }
+        .sidebar-menu li a.active {
+            background: linear-gradient(90deg, rgba(66,153,225,0.2) 0%, transparent 100%);
+            color: #4299e1;
+            border-left: 3px solid #4299e1;
+        }
+        .sidebar-menu li a.logout {
+            color: #fc8181;
+        }
+        .sidebar-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+            margin: 10px 0;
+        }
+        .menu-section-label {
+            padding: 15px 20px 5px;
+            color: rgba(255,255,255,0.5);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .badge {
+            background: #e53e3e;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+        .main-content {
+            margin-left: 260px;
+            padding: 20px;
+            min-height: calc(100vh - 60px);
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                left: -260px;
+            }
+            .sidebar.active {
+                left: 0;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
 </head>
 <body class="light-mode">
-    <?php include '../includes/header.php'; ?>
+    <?php 
+    include '../includes/header.php'; 
     
-    <div class="sidebar">
-        <ul class="sidebar-menu">
-            <li><a href="dashboard.php" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="tasks.php"><i class="fas fa-tasks"></i> My Tasks</a></li>
-            <li><a href="submit_order.php"><i class="fas fa-shopping-cart"></i> Submit Order</a></li>
-            <li><a href="profile.php"><i class="fas fa-user"></i> Profile</a></li>
-            <li><a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
-    </div>
+    // Set current page and get badge counts for sidebar
+    $current_page = 'dashboard';
+    
+    // Get pending tasks count
+    try {
+        $stmt = $db->prepare("SELECT COUNT(*) FROM tasks WHERE user_id = ? AND task_status = 'pending'");
+        $stmt->execute([$user_id]);
+        $pending_tasks_count = (int)$stmt->fetchColumn();
+    } catch (PDOException $e) {
+        $pending_tasks_count = 0;
+    }
+    
+    // Get unread messages count
+    try {
+        $stmt = $db->prepare("SELECT COUNT(*) FROM chat_messages WHERE user_id = ? AND is_read = 0 AND sender = 'admin'");
+        $stmt->execute([$user_id]);
+        $unread_messages = (int)$stmt->fetchColumn();
+    } catch (PDOException $e) {
+        $unread_messages = 0;
+    }
+    
+    // Include unified sidebar
+    require_once __DIR__ . '/includes/sidebar.php';
+    ?>
     
     <div class="main-content">
         <div class="card">
