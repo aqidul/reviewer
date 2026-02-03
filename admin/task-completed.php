@@ -61,19 +61,7 @@ try {
 </head>
 <body>
 <div class="wrapper">
-    <div class="sidebar">
-        <h3>⚙️ Admin</h3>
-        <ul>
-            <li><a href="<?php echo ADMIN_URL; ?>/dashboard.php">📊 Dashboard</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/reviewers.php">👥 Reviewers</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/task-pending.php">📋 Pending Tasks</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/task-completed.php" class="active">✓ Completed Tasks</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/faq-manager.php">🤖 Chatbot FAQ</a></li>
-            <li style="margin-top:30px;border-top:1px solid rgba(255,255,255,0.1);padding-top:20px">
-                <a href="<?php echo APP_URL; ?>/logout.php" style="color:#e74c3c">🚪 Logout</a>
-            </li>
-        </ul>
-    </div>
+    <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
     <div class="content">
         <div class="page-title">✓ Completed Tasks (Refunds Sent)</div>
         

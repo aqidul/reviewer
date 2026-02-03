@@ -131,24 +131,7 @@ $total_wallet = array_sum(array_column($users, "wallet_balance"));
 </head>
 <body>
 <div class="wrapper">
-    <div class="sidebar">
-        <h3>⚙️ Admin</h3>
-        <ul>
-            <li><a href="<?php echo ADMIN_URL; ?>/dashboard.php">📊 Dashboard</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/reviewers.php" class="active">👥 Users</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/assign-task.php">➕ Assign Task</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/task-pending.php">📋 Pending Tasks</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/task-completed.php">✅ Completed Tasks</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/withdrawals.php">💸 Withdrawals</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/messages.php">💬 Messages</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/faq-manager.php">🤖 Chatbot FAQ</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/chatbot-unanswered.php">❓ Unanswered Q</a></li>
-            <li><a href="<?php echo ADMIN_URL; ?>/settings.php">⚙️ Settings</a></li>
-            <li style="margin-top:30px;border-top:1px solid rgba(255,255,255,0.1);padding-top:20px;">
-                <a href="<?php echo APP_URL; ?>/logout.php" style="color:#e74c3c;">🚪 Logout</a>
-            </li>
-        </ul>
-    </div>
+    <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
     
     <div class="content">
         <h1 style="margin-bottom:25px;color:#2c3e50;">👥 All Users</h1>
