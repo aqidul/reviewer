@@ -23,15 +23,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $short_code = substr(md5(uniqid($affiliate_id, true)), 0, 8);
                 
                 $stmt = $pdo->prepare("
-                    INSERT INTO affiliate_links (affiliate_id, link_name, destination_url, short_code, campaign, created_at)
-                    VALUES (?, ?, ?, ?, ?, NOW())
+                    INSERT INTO affiliate_links (affiliate_id, name, destination_url, short_code, created_at)
+                    VALUES (?, ?, ?, ?, NOW())
                 ");
                 $stmt->execute([
                     $affiliate_id,
                     $link_name,
                     $destination_url,
-                    $short_code,
-                    $campaign
+                    $short_code
                 ]);
                 
                 $success_message = 'Tracking link created successfully';
@@ -39,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif ($action === 'delete_link') {
                 $stmt = $pdo->prepare("
                     UPDATE affiliate_links 
-                    SET status = 'inactive', updated_at = NOW()
+                    SET is_active = 0
                     WHERE id = ? AND affiliate_id = ?
                 ");
                 $stmt->execute([$_POST['link_id'], $affiliate_id]);
@@ -63,19 +62,16 @@ try {
     $stmt = $pdo->prepare("
         SELECT 
             al.id,
-            al.link_name,
+            al.name as link_name,
             al.destination_url,
             al.short_code,
-            al.campaign,
             al.created_at,
-            COUNT(DISTINCT alc.id) as total_clicks,
-            COUNT(DISTINCT CASE WHEN alc.converted = 1 THEN alc.id END) as conversions,
-            COUNT(DISTINCT CASE WHEN DATE(alc.clicked_at) = CURDATE() THEN alc.id END) as today_clicks,
-            ROUND(COUNT(DISTINCT CASE WHEN alc.converted = 1 THEN alc.id END) * 100.0 / NULLIF(COUNT(DISTINCT alc.id), 0), 2) as conversion_rate
+            al.click_count as total_clicks,
+            al.conversion_count as conversions,
+            0 as today_clicks,
+            ROUND(al.conversion_count * 100.0 / NULLIF(al.click_count, 0), 2) as conversion_rate
         FROM affiliate_links al
-        LEFT JOIN affiliate_link_clicks alc ON alc.link_id = al.id
-        WHERE al.affiliate_id = ? AND al.status = 'active'
-        GROUP BY al.id
+        WHERE al.affiliate_id = ? AND al.is_active = 1
         ORDER BY al.created_at DESC
     ");
     $stmt->execute([$affiliate_id]);
@@ -85,11 +81,10 @@ try {
     $stmt = $pdo->prepare("
         SELECT 
             COUNT(DISTINCT al.id) as total_links,
-            COUNT(DISTINCT alc.id) as total_clicks,
-            COUNT(DISTINCT CASE WHEN alc.converted = 1 THEN alc.id END) as total_conversions
+            SUM(al.click_count) as total_clicks,
+            SUM(al.conversion_count) as total_conversions
         FROM affiliate_links al
-        LEFT JOIN affiliate_link_clicks alc ON alc.link_id = al.id
-        WHERE al.affiliate_id = ? AND al.status = 'active'
+        WHERE al.affiliate_id = ? AND al.is_active = 1
     ");
     $stmt->execute([$affiliate_id]);
     $stats = $stmt->fetch();
@@ -224,11 +219,7 @@ $base_url = BASE_URL . '/l/';
                                 </div>
                             </td>
                             <td>
-                                <?php if ($link['campaign']): ?>
-                                <span class="badge bg-info"><?= htmlspecialchars($link['campaign']) ?></span>
-                                <?php else: ?>
                                 <span class="text-muted">-</span>
-                                <?php endif; ?>
                             </td>
                             <td><?= number_format($link['total_clicks']) ?></td>
                             <td>
@@ -293,13 +284,6 @@ $base_url = BASE_URL . '/l/';
                         <input type="url" class="form-control" name="destination_url" 
                                placeholder="https://example.com" required>
                         <small class="text-muted">Where should this link redirect to?</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Campaign (Optional)</label>
-                        <input type="text" class="form-control" name="campaign" 
-                               placeholder="e.g., Summer Sale 2024">
-                        <small class="text-muted">Group links by campaign for better tracking</small>
                     </div>
                     
                     <div class="alert alert-info">

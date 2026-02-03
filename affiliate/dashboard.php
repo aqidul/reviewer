@@ -11,10 +11,10 @@ try {
     // Get earnings summary
     $stmt = $pdo->prepare("
         SELECT 
-            SUM(commission_amount) as total_earnings,
-            SUM(CASE WHEN status = 'pending' THEN commission_amount ELSE 0 END) as pending_earnings,
-            SUM(CASE WHEN status = 'paid' THEN commission_amount ELSE 0 END) as paid_earnings,
-            SUM(CASE WHEN DATE(created_at) >= ? AND DATE(created_at) <= ? THEN commission_amount ELSE 0 END) as period_earnings
+            SUM(amount) as total_earnings,
+            SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) as pending_earnings,
+            SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) as paid_earnings,
+            SUM(CASE WHEN DATE(created_at) >= ? AND DATE(created_at) <= ? THEN amount ELSE 0 END) as period_earnings
         FROM affiliate_commissions
         WHERE affiliate_id = ?
     ");
@@ -36,23 +36,23 @@ try {
     // Get commission breakdown by level
     $stmt = $pdo->prepare("
         SELECT 
-            commission_level,
+            level,
             COUNT(*) as count,
-            SUM(commission_amount) as total_amount
+            SUM(amount) as total_amount
         FROM affiliate_commissions
         WHERE affiliate_id = ? AND DATE(created_at) >= ? AND DATE(created_at) <= ?
-        GROUP BY commission_level
-        ORDER BY commission_level
+        GROUP BY level
+        ORDER BY level
     ");
     $stmt->execute([$affiliate_id, $start_date, $end_date]);
     $commission_breakdown = $stmt->fetchAll();
     
     // Get recent commissions
     $stmt = $pdo->prepare("
-        SELECT ac.*, ar.user_id, u.username
+        SELECT ac.*, ar.referred_user_id as user_id, u.username
         FROM affiliate_commissions ac
         LEFT JOIN affiliate_referrals ar ON ar.id = ac.referral_id
-        LEFT JOIN users u ON u.id = ar.user_id
+        LEFT JOIN users u ON u.id = ar.referred_user_id
         WHERE ac.affiliate_id = ?
         ORDER BY ac.created_at DESC
         LIMIT 10
@@ -298,9 +298,9 @@ try {
                             <td><?= date('M d, Y', strtotime($commission['created_at'])) ?></td>
                             <td><?= htmlspecialchars($commission['username'] ?? 'Direct') ?></td>
                             <td>
-                                <span class="badge bg-primary">Level <?= $commission['commission_level'] ?></span>
+                                <span class="badge bg-primary">Level <?= $commission['level'] ?></span>
                             </td>
-                            <td>₹<?= number_format($commission['commission_amount'], 2) ?></td>
+                            <td>₹<?= number_format($commission['amount'], 2) ?></td>
                             <td>
                                 <?php if ($commission['status'] === 'pending'): ?>
                                 <span class="badge bg-warning">Pending</span>

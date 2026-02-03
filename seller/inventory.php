@@ -44,17 +44,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Log inventory movement
                 $stmt = $pdo->prepare("
-                    INSERT INTO inventory_movements (product_id, seller_id, type, quantity, previous_quantity, new_quantity, reason, created_at)
+                    INSERT INTO inventory_logs (product_id, action, quantity, previous_stock, new_stock, notes, created_by, created_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
                 ");
                 $stmt->execute([
                     $product_id,
-                    $seller_id,
                     $adjustment_type,
                     $quantity,
                     $current_stock,
                     $new_stock,
-                    $reason
+                    $reason,
+                    $seller_id
                 ]);
                 
                 $pdo->commit();
@@ -102,9 +102,9 @@ try {
     
     $stmt = $pdo->prepare("
         SELECT p.*,
-               (SELECT COUNT(*) FROM inventory_movements WHERE product_id = p.id) as movement_count
+               (SELECT COUNT(*) FROM inventory_logs WHERE product_id = p.id) as movement_count
         FROM products p
-        WHERE $where_clause AND p.status = 'active'
+        WHERE $where_clause AND p.status IN ('active', 'out_of_stock')
         ORDER BY p.stock_quantity ASC, p.name ASC
     ");
     $stmt->execute($params);
@@ -118,18 +118,18 @@ try {
             SUM(CASE WHEN stock_quantity <= low_stock_threshold THEN 1 ELSE 0 END) as low_stock,
             SUM(CASE WHEN stock_quantity = 0 THEN 1 ELSE 0 END) as out_of_stock
         FROM products
-        WHERE seller_id = ? AND status = 'active'
+        WHERE seller_id = ? AND status IN ('active', 'out_of_stock')
     ");
     $stmt->execute([$seller_id]);
     $stats = $stmt->fetch();
     
     // Get recent movements
     $stmt = $pdo->prepare("
-        SELECT im.*, p.name as product_name, p.sku
-        FROM inventory_movements im
-        JOIN products p ON p.id = im.product_id
-        WHERE im.seller_id = ?
-        ORDER BY im.created_at DESC
+        SELECT il.*, p.name as product_name, p.sku
+        FROM inventory_logs il
+        JOIN products p ON p.id = il.product_id
+        WHERE p.seller_id = ?
+        ORDER BY il.created_at DESC
         LIMIT 10
     ");
     $stmt->execute([$seller_id]);
@@ -372,16 +372,16 @@ try {
                                 <br><small class="text-muted"><?= htmlspecialchars($movement['sku']) ?></small>
                             </td>
                             <td>
-                                <?php if ($movement['type'] === 'add'): ?>
+                                <?php if ($movement['action'] === 'add'): ?>
                                 <span class="badge bg-success"><i class="bi bi-arrow-up"></i> Add</span>
                                 <?php else: ?>
                                 <span class="badge bg-danger"><i class="bi bi-arrow-down"></i> Remove</span>
                                 <?php endif; ?>
                             </td>
                             <td><?= $movement['quantity'] ?></td>
-                            <td><?= $movement['previous_quantity'] ?></td>
-                            <td><?= $movement['new_quantity'] ?></td>
-                            <td><?= htmlspecialchars($movement['reason']) ?></td>
+                            <td><?= $movement['previous_stock'] ?></td>
+                            <td><?= $movement['new_stock'] ?></td>
+                            <td><?= htmlspecialchars($movement['notes']) ?></td>
                         </tr>
                         <?php endforeach; ?>
                         <?php endif; ?>

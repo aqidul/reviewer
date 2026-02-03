@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Get available balance
                 $stmt = $pdo->prepare("
                     SELECT 
-                        COALESCE(SUM(CASE WHEN status = 'pending' THEN commission_amount ELSE 0 END), 0) as available_balance
+                        COALESCE(SUM(CASE WHEN status IN ('pending', 'approved') THEN amount ELSE 0 END), 0) as available_balance
                     FROM affiliate_commissions
                     WHERE affiliate_id = ?
                 ");
@@ -85,8 +85,8 @@ try {
     // Get balance summary
     $stmt = $pdo->prepare("
         SELECT 
-            COALESCE(SUM(CASE WHEN status = 'pending' THEN commission_amount ELSE 0 END), 0) as available_balance,
-            COALESCE(SUM(CASE WHEN status = 'paid' THEN commission_amount ELSE 0 END), 0) as total_paid
+            COALESCE(SUM(CASE WHEN status IN ('pending', 'approved') THEN amount ELSE 0 END), 0) as available_balance,
+            COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as total_paid
         FROM affiliate_commissions
         WHERE affiliate_id = ?
     ");

@@ -84,7 +84,6 @@ function handleAddToQueue($pdo, $client_ip) {
             $entity_id = sanitizeInput($item['entity_id']);
             $action = sanitizeInput($item['action']);
             $data_json = json_encode($item['data'] ?? []);
-            $priority = (int)($item['priority'] ?? 5);
             
             // Check if item already exists in queue
             $stmt = $pdo->prepare("
@@ -97,13 +96,12 @@ function handleAddToQueue($pdo, $client_ip) {
                 // Update existing item
                 $stmt = $pdo->prepare("
                     UPDATE offline_sync_queue 
-                    SET action = ?, data = ?, priority = ?, updated_at = NOW()
+                    SET action_type = ?, data = ?
                     WHERE user_id = ? AND entity_type = ? AND entity_id = ? AND status = 'pending'
                 ");
                 $stmt->execute([
                     $action,
                     $data_json,
-                    $priority,
                     $user['id'],
                     $entity_type,
                     $entity_id
@@ -112,16 +110,15 @@ function handleAddToQueue($pdo, $client_ip) {
                 // Insert new item
                 $stmt = $pdo->prepare("
                     INSERT INTO offline_sync_queue 
-                    (user_id, entity_type, entity_id, action, data, priority, status, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())
+                    (user_id, entity_type, entity_id, action_type, data, status, created_at)
+                    VALUES (?, ?, ?, ?, ?, 'pending', NOW())
                 ");
                 $stmt->execute([
                     $user['id'],
                     $entity_type,
                     $entity_id,
                     $action,
-                    $data_json,
-                    $priority
+                    $data_json
                 ]);
             }
             
@@ -177,14 +174,12 @@ function handleGetPending($pdo) {
                 id,
                 entity_type,
                 entity_id,
-                action,
+                action_type as action,
                 data,
-                priority,
-                created_at,
-                retry_count
+                created_at
             FROM offline_sync_queue
             WHERE $where_clause
-            ORDER BY priority DESC, created_at ASC
+            ORDER BY created_at ASC
             LIMIT ?
         ");
         
@@ -251,29 +246,21 @@ function handleMarkComplete($pdo) {
                 // Mark as completed
                 $stmt = $pdo->prepare("
                     UPDATE offline_sync_queue 
-                    SET status = 'completed', completed_at = NOW(), updated_at = NOW()
+                    SET status = 'synced', synced_at = NOW()
                     WHERE id = ? AND user_id = ?
                 ");
                 $stmt->execute([$item_id, $user['id']]);
                 $completed_count += $stmt->rowCount();
                 
             } elseif ($status === 'failed') {
-                // Mark as failed and increment retry count
+                // Mark as failed
                 $stmt = $pdo->prepare("
                     UPDATE offline_sync_queue 
-                    SET status = 'failed', error_message = ?, retry_count = retry_count + 1, updated_at = NOW()
+                    SET status = 'failed'
                     WHERE id = ? AND user_id = ?
                 ");
-                $stmt->execute([$error_message, $item_id, $user['id']]);
-                $failed_count += $stmt->rowCount();
-                
-                // If retry count exceeds limit, mark as permanently failed
-                $stmt = $pdo->prepare("
-                    UPDATE offline_sync_queue 
-                    SET status = 'permanently_failed'
-                    WHERE id = ? AND user_id = ? AND retry_count >= 3
-                ");
                 $stmt->execute([$item_id, $user['id']]);
+                $failed_count += $stmt->rowCount();
             }
         }
         
@@ -308,8 +295,7 @@ function handleGetStatus($pdo) {
         $stmt = $pdo->prepare("
             SELECT 
                 status,
-                COUNT(*) as count,
-                MAX(updated_at) as last_updated
+                COUNT(*) as count
             FROM offline_sync_queue
             WHERE user_id = ?
             GROUP BY status
@@ -323,12 +309,10 @@ function handleGetStatus($pdo) {
                 id,
                 entity_type,
                 entity_id,
-                action,
-                error_message,
-                retry_count
+                action_type as action
             FROM offline_sync_queue
-            WHERE user_id = ? AND status = 'failed' AND retry_count < 3
-            ORDER BY priority DESC, created_at ASC
+            WHERE user_id = ? AND status = 'failed'
+            ORDER BY created_at ASC
         ");
         $stmt->execute([$user['id']]);
         $retry_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -336,9 +320,8 @@ function handleGetStatus($pdo) {
         // Calculate totals
         $totals = [
             'pending' => 0,
-            'completed' => 0,
-            'failed' => 0,
-            'permanently_failed' => 0
+            'synced' => 0,
+            'failed' => 0
         ];
         
         foreach ($status_summary as $status) {
