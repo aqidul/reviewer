@@ -33,7 +33,7 @@ This document summarizes all the Phase 2 features that have been successfully im
    - Automatic commission calculation
    - Social media sharing links
 
-3. **User Interface:** `user/referrals.php`
+3. **User Interface:** `user/referral.php`
    - Referral dashboard with statistics
    - Unique referral link and code
    - Social media share buttons (WhatsApp, Facebook, Twitter)

@@ -21,7 +21,7 @@ Fixed HTML syntax errors in **10 files** across admin and user directories.
 4. ✅ `admin/support-chat.php` - Verified, no issues found
 5. ✅ `admin/proof-view.php` - Fixed missing closing `</div>` tag
 6. ✅ `user/rewards.php` - Fixed missing closing `</div>` tag
-7. ✅ `user/referrals.php` - Fixed missing closing `</div>` tag
+7. ✅ `user/referral.php` - Fixed missing closing `</div>` tag
 8. ✅ `user/leaderboard.php` - Fixed missing closing `</div>` tag
 9. ✅ `user/chat.php` - Fixed missing closing `</div>` tag
 10. ✅ `user/submit-proof.php` - Fixed missing closing `</div>` tag
@@ -192,7 +192,7 @@ Fixed HTML syntax errors in **10 files** across admin and user directories.
   ✅ payment-history.php        - Payment history
   ✅ my-activity.php            - User activity
   ✅ rewards.php                - FIXED (Phase 2)
-  ✅ referrals.php              - FIXED (Phase 2)
+  ✅ referral.php              - FIXED (Phase 2)
   ✅ leaderboard.php            - FIXED (Phase 2)
   ✅ chat.php                   - FIXED (Phase 2)
   ✅ submit-proof.php           - FIXED (Phase 2)
@@ -285,7 +285,7 @@ Use Razorpay test credentials:
 - [ ] Visit `admin/support-chat.php` - Should load without 500 error
 - [ ] Visit `admin/proof-view.php` - Should load without 500 error
 - [ ] Visit `user/rewards.php` - Should load without 500 error
-- [ ] Visit `user/referrals.php` - Should load without 500 error
+- [ ] Visit `user/referral.php` - Should load without 500 error
 - [ ] Visit `user/leaderboard.php` - Should load without 500 error
 - [ ] Visit `user/chat.php` - Should load without 500 error
 - [ ] Visit `user/submit-proof.php` - Should load without 500 error

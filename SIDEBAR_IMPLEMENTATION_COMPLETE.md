@@ -164,7 +164,7 @@ This document details the complete implementation of unified sidebars across the
 
 **Files Updated (6 user files):**
 - dashboard.php
-- referrals.php (Phase 2)
+- referral.php (Phase 2)
 - rewards.php (Phase 2)
 - leaderboard.php (Phase 2)
 - chat.php (Phase 2)

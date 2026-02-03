@@ -38,7 +38,7 @@ This release includes 8 major phases of development, transforming ReviewFlow int
 - **Real-time Chat** - User-admin and user-seller messaging
 
 #### New Files
-- `user/referrals.php` - Referral dashboard
+- `user/referral.php` - Referral dashboard
 - `user/achievements.php` - Achievements page
 - `user/leaderboard.php` - User rankings
 - `user/chat.php` - Chat interface

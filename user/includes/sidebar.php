@@ -74,7 +74,7 @@ if (!isset($current_page)) {
         <!-- Referrals (Phase 2) -->
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>🔗 Referrals</span></li>
-        <li><a href="<?php echo APP_URL; ?>/user/referrals.php" class="<?= $current_page === 'referrals' ? 'active' : '' ?>">🔗 My Referrals</a></li>
+        <li><a href="<?php echo APP_URL; ?>/user/referral.php" class="<?= in_array($current_page, ['referral', 'referrals'], true) ? 'active' : '' ?>">🔗 My Referrals</a></li>
         
         <!-- Rewards & Gamification (Phase 2) -->
         <div class="sidebar-divider"></div>
