@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'All fields are required';
             } else {
                 try {
-                    $stmt = $pdo->prepare("INSERT INTO email_templates (name, subject, body, is_active, created_by, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
+                    $stmt = $pdo->prepare("INSERT INTO email_templates (name, subject, content, is_active, created_by, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
                     $stmt->execute([$name, $subject, $body, $is_active, $admin_id]);
                     $success = 'Template created successfully';
                 } catch (PDOException $e) {
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Invalid data';
             } else {
                 try {
-                    $stmt = $pdo->prepare("UPDATE email_templates SET name = ?, subject = ?, body = ?, is_active = ?, updated_at = NOW() WHERE id = ?");
+                    $stmt = $pdo->prepare("UPDATE email_templates SET name = ?, subject = ?, content = ?, is_active = ?, updated_at = NOW() WHERE id = ?");
                     $stmt->execute([$name, $subject, $body, $is_active, $id]);
                     $success = 'Template updated successfully';
                 } catch (PDOException $e) {
@@ -364,7 +364,7 @@ function openEditModal(template) {
     document.getElementById('edit_id').value = template.id;
     document.getElementById('edit_name').value = template.name;
     document.getElementById('edit_subject').value = template.subject;
-    document.getElementById('edit_body').value = template.body;
+    document.getElementById('edit_body').value = template.content;
     document.getElementById('edit_is_active').checked = template.is_active == 1;
     document.getElementById('editModal').classList.add('show');
 }

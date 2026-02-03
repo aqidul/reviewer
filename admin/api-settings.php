@@ -35,10 +35,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     // Generate API key
                     $api_key = 'rvw_' . bin2hex(random_bytes(32));
+                    $secret_key = bin2hex(random_bytes(32));
                     $permissions_json = json_encode($permissions);
                     
-                    $stmt = $pdo->prepare("INSERT INTO api_keys (key_name, api_key, permissions, rate_limit, expires_at, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
-                    $stmt->execute([$key_name, $api_key, $permissions_json, $rate_limit, $expires_at, $admin_id]);
+                    $stmt = $pdo->prepare("INSERT INTO api_keys (name, api_key, secret_key, permissions, rate_limit, expires_at, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+                    $stmt->execute([$key_name, $api_key, $secret_key, $permissions_json, $rate_limit, $expires_at, $admin_id]);
                     
                     $success = "API Key created: $api_key (Save this, it won't be shown again!)";
                 } catch (PDOException $e) {
@@ -100,10 +101,10 @@ $stats = ['total' => 0, 'active' => 0, 'revoked' => 0, 'expired' => 0];
 try {
     $stmt = $pdo->query("
         SELECT k.*, u.username as creator_name,
-               (SELECT COUNT(*) FROM api_logs WHERE api_key_id = k.id) as request_count,
-               (SELECT MAX(created_at) FROM api_logs WHERE api_key_id = k.id) as last_used
+               (SELECT COUNT(*) FROM api_usage_logs WHERE api_key_id = k.id) as request_count,
+               (SELECT MAX(created_at) FROM api_usage_logs WHERE api_key_id = k.id) as last_used
         FROM api_keys k
-        LEFT JOIN users u ON k.created_by = u.id
+        LEFT JOIN users u ON k.user_id = u.id
         ORDER BY k.created_at DESC
     ");
     $api_keys = $stmt->fetchAll();
@@ -128,7 +129,7 @@ try {
         SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) as today,
         SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as week,
         SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) as month
-        FROM api_logs
+        FROM api_usage_logs
     ");
     $api_stats = $stmt->fetch();
 } catch (PDOException $e) {

@@ -39,13 +39,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmt = $pdo->query("SELECT id FROM users WHERE user_type = 'user' AND status = 'active'");
                         $users = $stmt->fetchAll(PDO::FETCH_COLUMN);
                         
-                        $stmt = $pdo->prepare("INSERT INTO notification_center (user_id, title, message, type, created_at) VALUES (?, ?, ?, ?, NOW())");
+                        $stmt = $pdo->prepare("INSERT INTO push_notifications (user_id, title, body, notification_type, created_at) VALUES (?, ?, ?, ?, NOW())");
                         foreach ($users as $uid) {
                             $stmt->execute([$uid, $title, $message, $type]);
                         }
                         $success = 'Notification sent to all users';
                     } elseif ($target === 'single' && $user_id > 0) {
-                        $stmt = $pdo->prepare("INSERT INTO notification_center (user_id, title, message, type, created_at) VALUES (?, ?, ?, ?, NOW())");
+                        $stmt = $pdo->prepare("INSERT INTO push_notifications (user_id, title, body, notification_type, created_at) VALUES (?, ?, ?, ?, NOW())");
                         $stmt->execute([$user_id, $title, $message, $type]);
                         $success = 'Notification sent successfully';
                     } else {
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = (int)($_POST['id'] ?? 0);
             if ($id > 0) {
                 try {
-                    $stmt = $pdo->prepare("DELETE FROM notification_center WHERE id = ?");
+                    $stmt = $pdo->prepare("DELETE FROM push_notifications WHERE id = ?");
                     $stmt->execute([$id]);
                     $success = 'Notification deleted successfully';
                 } catch (PDOException $e) {
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } elseif ($action === 'clear_old') {
             try {
-                $stmt = $pdo->query("DELETE FROM notification_center WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY) AND is_read = 1");
+                $stmt = $pdo->query("DELETE FROM push_notifications WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY) AND is_read = 1");
                 $deleted = $stmt->rowCount();
                 $success = "Cleared $deleted old notifications";
             } catch (PDOException $e) {
@@ -87,7 +87,7 @@ $notifications = [];
 $stats = ['total' => 0, 'unread' => 0, 'read' => 0, 'info' => 0, 'success' => 0, 'warning' => 0];
 try {
     $query = "SELECT n.*, u.username, u.email as user_email
-              FROM notification_center n
+              FROM push_notifications n
               LEFT JOIN users u ON n.user_id = u.id
               WHERE 1=1";
     
@@ -97,7 +97,7 @@ try {
         $params[] = "%$user_filter%";
     }
     if ($type_filter !== 'all') {
-        $query .= " AND n.type = ?";
+        $query .= " AND n.notification_type = ?";
         $params[] = $type_filter;
     }
     
@@ -112,10 +112,10 @@ try {
         COUNT(*) as total,
         SUM(CASE WHEN is_read = 0 THEN 1 ELSE 0 END) as unread,
         SUM(CASE WHEN is_read = 1 THEN 1 ELSE 0 END) as `read`,
-        SUM(CASE WHEN type = 'info' THEN 1 ELSE 0 END) as info,
-        SUM(CASE WHEN type = 'success' THEN 1 ELSE 0 END) as success,
-        SUM(CASE WHEN type = 'warning' THEN 1 ELSE 0 END) as warning
-        FROM notification_center
+        SUM(CASE WHEN notification_type = 'info' THEN 1 ELSE 0 END) as info,
+        SUM(CASE WHEN notification_type = 'success' THEN 1 ELSE 0 END) as success,
+        SUM(CASE WHEN notification_type = 'warning' THEN 1 ELSE 0 END) as warning
+        FROM push_notifications
     ");
     $stats = $stmt->fetch();
 } catch (PDOException $e) {
@@ -282,7 +282,7 @@ $current_page = 'notification-manager';
                                 <td><?php echo htmlspecialchars($notif['username']); ?></td>
                                 <td><?php echo htmlspecialchars($notif['title']); ?></td>
                                 <td style="max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                                    <?php echo htmlspecialchars($notif['message']); ?>
+                                    <?php echo htmlspecialchars($notif['body']); ?>
                                 </td>
                                 <td>
                                     <?php
@@ -292,9 +292,9 @@ $current_page = 'notification-manager';
                                         'warning' => 'warning',
                                         'error' => 'danger'
                                     ];
-                                    $badge_class = $type_classes[$notif['type']] ?? 'info';
+                                    $badge_class = $type_classes[$notif['notification_type']] ?? 'info';
                                     ?>
-                                    <span class="badge <?php echo $badge_class; ?>"><?php echo ucfirst($notif['type']); ?></span>
+                                    <span class="badge <?php echo $badge_class; ?>"><?php echo ucfirst($notif['notification_type']); ?></span>
                                 </td>
                                 <td>
                                     <span class="badge <?php echo $notif['is_read'] ? 'success' : 'danger'; ?>">

@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Name and subject are required';
             } else {
                 try {
-                    $stmt = $pdo->prepare("INSERT INTO email_campaigns (name, subject, template_id, target_audience, status, scheduled_at, created_by, created_at) VALUES (?, ?, ?, ?, 'draft', ?, ?, NOW())");
+                    $stmt = $pdo->prepare("INSERT INTO email_campaigns (name, subject, template_id, segment_type, status, scheduled_at, created_by, created_at) VALUES (?, ?, ?, ?, 'draft', ?, ?, NOW())");
                     $stmt->execute([$name, $subject, $template_id > 0 ? $template_id : null, $audience, $scheduled_at, $admin_id]);
                     $success = 'Campaign created successfully';
                 } catch (PDOException $e) {

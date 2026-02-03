@@ -35,20 +35,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Site title is required';
             } else {
                 try {
-                    $settings = [
-                        'site_title' => $site_title,
-                        'site_description' => $site_description,
-                        'site_keywords' => $site_keywords,
-                        'og_image' => $og_image,
-                        'google_analytics_id' => $google_analytics,
-                        'google_search_console_code' => $google_search_console
+                    // Update or insert global settings as special page slugs
+                    $global_settings = [
+                        ['global_title', $site_title, $site_description, $site_keywords, $site_title, $site_description, $og_image],
+                        ['google_analytics', 'Google Analytics', $google_analytics, '', '', '', ''],
+                        ['google_search_console', 'Google Search Console', $google_search_console, '', '', '', '']
                     ];
                     
-                    foreach ($settings as $key => $value) {
-                        $stmt = $pdo->prepare("INSERT INTO seo_settings (setting_key, setting_value, updated_at) 
-                                             VALUES (?, ?, NOW()) 
-                                             ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()");
-                        $stmt->execute([$key, $value, $value]);
+                    foreach ($global_settings as $setting) {
+                        $stmt = $pdo->prepare("INSERT INTO seo_settings (page_slug, meta_title, meta_description, meta_keywords, og_title, og_description, og_image, updated_at) 
+                                             VALUES (?, ?, ?, ?, ?, ?, ?, NOW()) 
+                                             ON DUPLICATE KEY UPDATE 
+                                             meta_title = VALUES(meta_title),
+                                             meta_description = VALUES(meta_description),
+                                             meta_keywords = VALUES(meta_keywords),
+                                             og_title = VALUES(og_title),
+                                             og_description = VALUES(og_description),
+                                             og_image = VALUES(og_image),
+                                             updated_at = NOW()");
+                        $stmt->execute($setting);
                     }
                     
                     $success = 'Global SEO settings updated successfully';
@@ -66,17 +71,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Page type and title are required';
             } else {
                 try {
-                    $stmt = $pdo->prepare("INSERT INTO seo_settings (setting_key, setting_value, updated_at) 
-                                         VALUES (?, ?, NOW()) 
-                                         ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()");
+                    $stmt = $pdo->prepare("INSERT INTO seo_settings (page_slug, meta_title, meta_description, meta_keywords, updated_at) 
+                                         VALUES (?, ?, ?, ?, NOW()) 
+                                         ON DUPLICATE KEY UPDATE 
+                                         meta_title = VALUES(meta_title),
+                                         meta_description = VALUES(meta_description),
+                                         meta_keywords = VALUES(meta_keywords),
+                                         updated_at = NOW()");
                     
-                    $data = json_encode([
-                        'title' => $meta_title,
-                        'description' => $meta_description,
-                        'keywords' => $meta_keywords
-                    ]);
-                    
-                    $stmt->execute(["page_meta_$page_type", $data, $data]);
+                    $stmt->execute([$page_type, $meta_title, $meta_description, $meta_keywords]);
                     $success = 'Page SEO settings updated successfully';
                 } catch (PDOException $e) {
                     $error = 'Failed to update page settings';
@@ -106,7 +109,7 @@ try {
     $stmt = $pdo->query("SELECT * FROM seo_settings");
     $settings_raw = $stmt->fetchAll();
     foreach ($settings_raw as $setting) {
-        $seo_settings[$setting['setting_key']] = $setting['setting_value'];
+        $seo_settings[$setting['page_slug']] = $setting;
     }
 } catch (PDOException $e) {
     // Silent fail
@@ -197,34 +200,34 @@ $current_page = 'seo-settings';
                     <div class="form-group">
                         <label>Site Title *</label>
                         <input type="text" name="site_title" class="form-control" 
-                               value="<?php echo htmlspecialchars($seo_settings['site_title'] ?? ''); ?>" required>
+                               value="<?php echo htmlspecialchars($seo_settings['global_title']['meta_title'] ?? ''); ?>" required>
                         <small>Main title for search engines (50-60 characters recommended)</small>
                     </div>
 
                     <div class="form-group">
                         <label>Site Description</label>
-                        <textarea name="site_description" class="form-control"><?php echo htmlspecialchars($seo_settings['site_description'] ?? ''); ?></textarea>
+                        <textarea name="site_description" class="form-control"><?php echo htmlspecialchars($seo_settings['global_title']['meta_description'] ?? ''); ?></textarea>
                         <small>Brief description of your site (150-160 characters recommended)</small>
                     </div>
 
                     <div class="form-group">
                         <label>Site Keywords</label>
                         <input type="text" name="site_keywords" class="form-control" 
-                               value="<?php echo htmlspecialchars($seo_settings['site_keywords'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars($seo_settings['global_title']['meta_keywords'] ?? ''); ?>">
                         <small>Comma-separated keywords (e.g., reviews, ratings, products)</small>
                     </div>
 
                     <div class="form-group">
                         <label>Open Graph Image URL</label>
                         <input type="url" name="og_image" class="form-control" 
-                               value="<?php echo htmlspecialchars($seo_settings['og_image'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars($seo_settings['global_title']['og_image'] ?? ''); ?>">
                         <small>Default image for social media sharing (1200x630px recommended)</small>
                     </div>
 
                     <div class="form-group">
                         <label>Google Analytics ID</label>
                         <input type="text" name="google_analytics" class="form-control" 
-                               value="<?php echo htmlspecialchars($seo_settings['google_analytics_id'] ?? ''); ?>" 
+                               value="<?php echo htmlspecialchars($seo_settings['google_analytics']['meta_description'] ?? ''); ?>" 
                                placeholder="G-XXXXXXXXXX or UA-XXXXXXXXX-X">
                         <small>Google Analytics tracking ID</small>
                     </div>
@@ -232,7 +235,7 @@ $current_page = 'seo-settings';
                     <div class="form-group">
                         <label>Google Search Console Verification Code</label>
                         <input type="text" name="google_search_console" class="form-control" 
-                               value="<?php echo htmlspecialchars($seo_settings['google_search_console_code'] ?? ''); ?>" 
+                               value="<?php echo htmlspecialchars($seo_settings['google_search_console']['meta_description'] ?? ''); ?>" 
                                placeholder="google-site-verification=...">
                         <small>Verification meta tag content from Google Search Console</small>
                     </div>
@@ -291,24 +294,13 @@ $current_page = 'seo-settings';
                 <hr>
                 <div style="font-size:13px;color:#666">
                     <p><strong>Home:</strong> 
-                        <?php 
-                        if (isset($seo_settings['page_meta_home'])) {
-                            $home_meta = json_decode($seo_settings['page_meta_home'], true);
-                            echo htmlspecialchars($home_meta['title'] ?? 'Not set');
-                        } else {
-                            echo 'Not set';
-                        }
-                        ?>
+                        <?php echo isset($seo_settings['home']) ? htmlspecialchars($seo_settings['home']['meta_title']) : 'Not set'; ?>
                     </p>
                     <p><strong>About:</strong> 
-                        <?php 
-                        if (isset($seo_settings['page_meta_about'])) {
-                            $about_meta = json_decode($seo_settings['page_meta_about'], true);
-                            echo htmlspecialchars($about_meta['title'] ?? 'Not set');
-                        } else {
-                            echo 'Not set';
-                        }
-                        ?>
+                        <?php echo isset($seo_settings['about']) ? htmlspecialchars($seo_settings['about']['meta_title']) : 'Not set'; ?>
+                    </p>
+                    <p><strong>Contact:</strong> 
+                        <?php echo isset($seo_settings['contact']) ? htmlspecialchars($seo_settings['contact']['meta_title']) : 'Not set'; ?>
                     </p>
                 </div>
             </div>

@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Message is required';
             } else {
                 try {
-                    $stmt = $pdo->prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin, created_at) VALUES (?, ?, ?, 1, NOW())");
+                    $stmt = $pdo->prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_internal, created_at) VALUES (?, ?, ?, 1, NOW())");
                     $stmt->execute([$ticket_id, $admin_id, $message]);
                     
                     // Update ticket
@@ -223,12 +223,12 @@ $current_page = 'tickets';
                         <p style="color:#999;text-align:center;padding:20px">No replies yet</p>
                     <?php else: ?>
                         <?php foreach ($replies as $reply): ?>
-                            <div class="reply <?php echo $reply['is_admin'] ? 'admin' : ''; ?>">
+                            <div class="reply <?php echo $reply['is_internal'] ? 'admin' : ''; ?>">
                                 <div class="reply-header">
                                     <span class="author">
-                                        <?php echo $reply['is_admin'] ? '👨‍💼 ' : '👤 '; ?>
+                                        <?php echo $reply['is_internal'] ? '👨‍💼 ' : '👤 '; ?>
                                         <?php echo htmlspecialchars($reply['username']); ?>
-                                        <?php echo $reply['is_admin'] ? '<small>(Admin)</small>' : ''; ?>
+                                        <?php echo $reply['is_internal'] ? '<small>(Admin)</small>' : ''; ?>
                                     </span>
                                     <span class="time"><?php echo date('M j, Y g:i A', strtotime($reply['created_at'])); ?></span>
                                 </div>
