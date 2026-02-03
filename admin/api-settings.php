@@ -290,7 +290,7 @@ $current_page = 'api-settings';
                             ?>
                             <tr>
                                 <td>#<?php echo $key['id']; ?></td>
-                                <td><?php echo htmlspecialchars($key['key_name']); ?></td>
+                                <td><?php echo htmlspecialchars($key['name']); ?></td>
                                 <td>
                                     <div class="api-key">
                                         <?php echo substr($key['api_key'], 0, 20); ?>...

@@ -234,9 +234,10 @@ $current_page = 'email-campaigns';
                                         'all' => 'All Users',
                                         'active' => 'Active Users',
                                         'inactive' => 'Inactive Users',
-                                        'verified' => 'Verified Users'
+                                        'new' => 'New Users',
+                                        'custom' => 'Custom'
                                     ];
-                                    echo $audience_labels[$campaign['target_audience']] ?? ucfirst($campaign['target_audience']);
+                                    echo $audience_labels[$campaign['segment_type']] ?? ucfirst($campaign['segment_type']);
                                     ?>
                                 </td>
                                 <td>
@@ -313,7 +314,8 @@ $current_page = 'email-campaigns';
                         <option value="all">All Users</option>
                         <option value="active">Active Users</option>
                         <option value="inactive">Inactive Users</option>
-                        <option value="verified">Verified Users</option>
+                        <option value="new">New Users</option>
+                        <option value="custom">Custom</option>
                     </select>
                 </div>
                 <div class="form-group">
