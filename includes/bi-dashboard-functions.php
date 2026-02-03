@@ -210,7 +210,12 @@ function getKPIMetric(int $kpiId): ?array {
 }
 
 /**
- * Calculate current KPI value
+ * Calculate current KPI value based on data source
+ * 
+ * @param array $kpi KPI array containing 'data_source' and 'metric_type' keys
+ *                   data_source: The data source to query (e.g., 'tasks_completed', 'revenue')
+ *                   metric_type: The type of calculation (e.g., 'count', 'sum', 'average')
+ * @return float The calculated KPI value, or 0 if calculation fails
  */
 function calculateKPIValue(array $kpi): float {
     global $pdo;
@@ -246,6 +251,49 @@ function calculateKPIValue(array $kpi): float {
     } catch (PDOException $e) {
         error_log("Error calculating KPI value: " . $e->getMessage());
         return 0;
+    }
+}
+
+/**
+ * Get widget by ID
+ */
+function getWidgetById(int $widgetId, int $userId): ?array {
+    global $pdo;
+    
+    try {
+        $stmt = $pdo->prepare("
+            SELECT * FROM dashboard_widgets 
+            WHERE id = ? AND user_id = ?
+        ");
+        $stmt->execute([$widgetId, $userId]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    } catch (PDOException $e) {
+        error_log("Error fetching widget: " . $e->getMessage());
+        return null;
+    }
+}
+
+/**
+ * Get widget data by widget ID (wrapper function)
+ */
+function getWidgetDataById(int $widgetId): array {
+    global $pdo;
+    
+    try {
+        $stmt = $pdo->prepare("SELECT data_source, config FROM dashboard_widgets WHERE id = ?");
+        $stmt->execute([$widgetId]);
+        $widget = $stmt->fetch();
+        
+        if (!$widget) {
+            return [];
+        }
+        
+        $config = json_decode($widget['config'], true) ?? [];
+        return getWidgetData($widget['data_source'], $config);
+    } catch (PDOException $e) {
+        error_log("Error fetching widget data: " . $e->getMessage());
+        return [];
     }
 }
 

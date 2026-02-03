@@ -220,7 +220,7 @@ $current_page = 'login-alerts';
                         if (in_array($alert['alert_type'], ['suspicious_ip', 'multiple_failures'])) {
                             $alertClass .= ' suspicious';
                         }
-                        $details = json_decode($alert['alert_data'], true) ?? [];
+                        $details = json_decode($alert['details'], true) ?? [];
                     ?>
                         <div class="alert-item <?= $alertClass ?>">
                             <div class="alert-header">

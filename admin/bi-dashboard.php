@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             
         case 'get_widget_data':
             $widgetId = (int)($_POST['widget_id'] ?? 0);
-            $data = getWidgetData($widgetId);
+            $data = getWidgetDataById($widgetId);
             echo json_encode(['success' => true, 'data' => $data]);
             exit;
     }
