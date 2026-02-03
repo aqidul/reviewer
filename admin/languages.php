@@ -42,11 +42,14 @@ $allLanguages = $conn->query("SELECT * FROM languages ORDER BY name")->fetch_all
 // Get translation statistics
 $translationStats = [];
 foreach ($allLanguages as $lang) {
-    $result = $conn->query("
+    $stmt = $conn->prepare("
         SELECT COUNT(*) as count 
         FROM translations 
-        WHERE language_code = '{$lang['code']}'
+        WHERE language_code = ?
     ");
+    $stmt->bind_param('s', $lang['code']);
+    $stmt->execute();
+    $result = $stmt->get_result();
     $row = $result->fetch_assoc();
     $translationStats[$lang['code']] = $row['count'];
 }

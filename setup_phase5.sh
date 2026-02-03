@@ -7,11 +7,19 @@ echo "Phase 5 Database Setup for ReviewFlow"
 echo "=========================================="
 echo ""
 
-# Database credentials (update these to match your setup)
-DB_HOST="localhost"
-DB_USER="reviewflow_user"
-DB_PASS="Malik@241123"
-DB_NAME="reviewflow"
+# Database credentials
+# IMPORTANT: Update these values or use environment variables
+DB_HOST="${DB_HOST:-localhost}"
+DB_USER="${DB_USER:-reviewflow_user}"
+DB_PASS="${DB_PASS:-}"
+DB_NAME="${DB_NAME:-reviewflow}"
+
+# Check if password is set
+if [ -z "$DB_PASS" ]; then
+    echo "ERROR: Database password not set."
+    echo "Set DB_PASS environment variable: export DB_PASS='your_password'"
+    exit 1
+fi
 
 # MySQL command
 MYSQL_CMD="mysql -h$DB_HOST -u$DB_USER -p$DB_PASS $DB_NAME"

@@ -1,6 +1,7 @@
 <?php
 /**
- * English (en) Translations
+ * Bengali (bn) Translations
+ * বাংলা অনুবাদ
  * Base language file for ReviewFlow
  */
 

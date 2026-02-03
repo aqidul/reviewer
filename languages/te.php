@@ -1,6 +1,7 @@
 <?php
 /**
- * English (en) Translations
+ * Telugu (te) Translations
+ * తెలుగు అనువాదాలు
  * Base language file for ReviewFlow
  */
 
