@@ -84,7 +84,7 @@ if (!isset($current_page)) {
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>👥 Users</span></li>
         <li><a href="<?php echo ADMIN_URL; ?>/reviewers.php" class="<?= $current_page === 'reviewers' ? 'active' : '' ?>">All Reviewers</a></li>
-        <li><a href="<?php echo ADMIN_URL; ?>/kyc-verification.php" class="<?= in_array($current_page, ['kyc-verification', 'kyc-view']) ? 'active' : '' ?>">🔐 KYC Verification <?php if($pending_kyc > 0): ?><span class="badge"><?php echo $pending_kyc; ?></span><?php endif; ?></a></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/kyc-management.php" class="<?= in_array($current_page, ['kyc-management', 'kyc-verification', 'kyc-view']) ? 'active' : '' ?>">🔐 KYC Management <?php if($pending_kyc > 0): ?><span class="badge"><?php echo $pending_kyc; ?></span><?php endif; ?></a></li>
         
         <!-- Tasks Section -->
         <div class="sidebar-divider"></div>
