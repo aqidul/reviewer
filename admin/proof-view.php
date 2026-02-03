@@ -1,51 +1,83 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/proof-functions.php';
+session_start();
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/proof-functions.php';
 
-if (!isLoggedIn() || !isAdmin()) {
-    redirect('../index.php');
+if (!isset($_SESSION['admin_name'])) {
+    header('Location: ' . ADMIN_URL);
+    exit;
 }
 
-$admin_id = $_SESSION['user_id'];
+$admin_id = (int)$_SESSION['user_id'];
+$admin_name = $_SESSION['admin_name'];
 $proof_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if (!$proof_id) {
-    redirect('verify-proofs.php');
+    header('Location: verify-proofs.php');
+    exit;
 }
 
 // Get proof details
-$proof = getProofDetails($db, $proof_id);
+try {
+    $proof = getProofDetails($pdo, $proof_id);
+} catch (PDOException $e) {
+    $proof = null;
+}
 
 if (!$proof) {
     die('Proof not found');
 }
 
 // Get verification history
-$history = getVerificationHistory($db, $proof_id);
+try {
+    $history = getVerificationHistory($pdo, $proof_id);
+} catch (PDOException $e) {
+    $history = [];
+}
 
 // Handle actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['approve'])) {
-        approveProof($db, $proof_id, $admin_id);
-        header('Location: verify-proofs.php?msg=approved');
-        exit;
-    }
-    
-    if (isset($_POST['reject'])) {
-        $reason = filter_input(INPUT_POST, 'reason', FILTER_SANITIZE_STRING);
-        rejectProof($db, $proof_id, $admin_id, $reason);
-        header('Location: verify-proofs.php?msg=rejected');
-        exit;
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request';
+    } else {
+        if (isset($_POST['approve'])) {
+            try {
+                approveProof($pdo, $proof_id, $admin_id);
+                header('Location: verify-proofs.php?msg=approved');
+                exit;
+            } catch (PDOException $e) {
+                $error = 'Database error occurred';
+            }
+        }
+        
+        if (isset($_POST['reject'])) {
+            $reason = $_POST['reason'] ?? '';
+            try {
+                rejectProof($pdo, $proof_id, $admin_id, $reason);
+                header('Location: verify-proofs.php?msg=rejected');
+                exit;
+            } catch (PDOException $e) {
+                $error = 'Database error occurred';
+            }
+        }
     }
 }
 
-include '../includes/header.php';
-
 // Set current page for sidebar
 $current_page = 'proof-view';
+$csrf_token = generateCSRFToken();
 ?>
-
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proof Details - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
 /* Admin Layout */
 .admin-layout{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
 
@@ -65,6 +97,8 @@ $current_page = 'proof-view';
 /* Main Content */
 .main-content{padding:25px;overflow-x:hidden}
 </style>
+</head>
+<body>
 
 <div class="admin-layout">
     <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
@@ -241,6 +275,7 @@ $current_page = 'proof-view';
                         </div>
                         <div class="card-body">
                             <form method="POST">
+                                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                                 <button type="submit" name="approve" class="btn btn-success w-100 mb-2"
                                         onclick="return confirm('Approve this proof?')">
                                     <i class="bi bi-check-circle"></i> Approve Proof
@@ -261,6 +296,7 @@ $current_page = 'proof-view';
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                             </div>
                                             <div class="modal-body">
+                                                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                                                 <div class="mb-3">
                                                     <label class="form-label">Rejection Reason *</label>
                                                     <textarea class="form-control" name="reason" rows="4" required
@@ -315,4 +351,6 @@ $current_page = 'proof-view';
     </div>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

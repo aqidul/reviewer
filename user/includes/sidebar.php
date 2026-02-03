@@ -6,7 +6,7 @@
 if (!isset($pending_tasks_count)) {
     try {
         $user_id = $_SESSION['user_id'] ?? 0;
-        $stmt = $db->prepare("SELECT COUNT(*) FROM tasks WHERE user_id = ? AND task_status = 'pending'");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tasks WHERE user_id = ? AND task_status = 'pending'");
         $stmt->execute([$user_id]);
         $pending_tasks_count = (int)$stmt->fetchColumn();
     } catch (PDOException $e) {
@@ -17,11 +17,32 @@ if (!isset($pending_tasks_count)) {
 if (!isset($unread_messages)) {
     try {
         $user_id = $_SESSION['user_id'] ?? 0;
-        $stmt = $db->prepare("SELECT COUNT(*) FROM chat_messages WHERE user_id = ? AND is_read = 0 AND sender = 'admin'");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM chat_messages WHERE user_id = ? AND is_read = 0 AND sender = 'admin'");
         $stmt->execute([$user_id]);
         $unread_messages = (int)$stmt->fetchColumn();
     } catch (PDOException $e) {
         $unread_messages = 0;
+    }
+}
+
+if (!isset($unread_announcements)) {
+    try {
+        $user_id = $_SESSION['user_id'] ?? 0;
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM announcements a
+            WHERE a.is_active = 1 
+            AND (a.target_audience = 'all' OR a.target_audience = 'users')
+            AND (a.start_date IS NULL OR a.start_date <= CURDATE())
+            AND (a.end_date IS NULL OR a.end_date >= CURDATE())
+            AND NOT EXISTS (
+                SELECT 1 FROM announcement_views av 
+                WHERE av.announcement_id = a.id AND av.user_id = :user_id
+            )
+        ");
+        $stmt->execute([':user_id' => $user_id]);
+        $unread_announcements = (int)$stmt->fetchColumn();
+    } catch (PDOException $e) {
+        $unread_announcements = 0;
     }
 }
 
@@ -70,6 +91,18 @@ if (!isset($current_page)) {
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>💬 Support</span></li>
         <li><a href="<?php echo APP_URL; ?>/user/chat.php" class="<?= $current_page === 'chat' ? 'active' : '' ?>">💬 Support Chat <?php if($unread_messages > 0): ?><span class="badge"><?php echo $unread_messages; ?></span><?php endif; ?></a></li>
+        
+        <!-- Phase 4: Announcements -->
+        <div class="sidebar-divider"></div>
+        <li class="menu-section-label"><span>📢 Updates</span></li>
+        <li><a href="<?php echo APP_URL; ?>/user/announcements.php" class="<?= $current_page === 'announcements' ? 'active' : '' ?>">📢 Announcements <?php if($unread_announcements > 0): ?><span class="badge"><?php echo $unread_announcements; ?></span><?php endif; ?></a></li>
+        
+        <!-- Phase 3: Payment & Activity -->
+        <div class="sidebar-divider"></div>
+        <li class="menu-section-label"><span>💳 Payments</span></li>
+        <li><a href="<?php echo APP_URL; ?>/user/recharge-wallet.php" class="<?= $current_page === 'recharge-wallet' ? 'active' : '' ?>">💳 Recharge Wallet</a></li>
+        <li><a href="<?php echo APP_URL; ?>/user/payment-history.php" class="<?= $current_page === 'payment-history' ? 'active' : '' ?>">📜 Payment History</a></li>
+        <li><a href="<?php echo APP_URL; ?>/user/my-activity.php" class="<?= $current_page === 'my-activity' ? 'active' : '' ?>">📊 My Activity</a></li>
         
         <!-- KYC & Analytics (Phase 1) -->
         <div class="sidebar-divider"></div>

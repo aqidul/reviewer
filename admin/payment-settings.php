@@ -1,51 +1,76 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/payment-functions.php';
+session_start();
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/payment-functions.php';
 
-if (!isLoggedIn() || !isAdmin()) {
-    redirect('../index.php');
+if (!isset($_SESSION['admin_name'])) {
+    header('Location: ' . ADMIN_URL);
+    exit;
 }
 
+$admin_name = $_SESSION['admin_name'];
 $message = '';
 $error = '';
 
 // Handle config update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_config'])) {
-    try {
-        foreach ($_POST['config'] as $key => $value) {
-            $stmt = $db->prepare("
-                INSERT INTO payment_config (config_key, config_value, is_active) 
-                VALUES (?, ?, 1)
-                ON DUPLICATE KEY UPDATE config_value = ?
-            ");
-            $stmt->execute([$key, $value, $value]);
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request';
+    } else {
+        try {
+            foreach ($_POST['config'] as $key => $value) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO payment_config (config_key, config_value, is_active) 
+                    VALUES (?, ?, 1)
+                    ON DUPLICATE KEY UPDATE config_value = ?
+                ");
+                $stmt->execute([$key, $value, $value]);
+            }
+            $message = 'Payment settings updated successfully!';
+        } catch (PDOException $e) {
+            $error = 'Failed to update settings';
         }
-        $message = 'Payment settings updated successfully!';
-    } catch (Exception $e) {
-        $error = 'Failed to update settings: ' . $e->getMessage();
     }
 }
 
 // Get all payments
 $status_filter = $_GET['status'] ?? '';
-$payments = getAllPayments($db, $status_filter, 100);
-
-// Get payment stats
-$stats = getPaymentStats($db);
+try {
+    $payments = getAllPayments($pdo, $status_filter, 100);
+    $stats = getPaymentStats($pdo);
+} catch (PDOException $e) {
+    $payments = [];
+    $stats = ['total_payments' => 0, 'total_amount' => 0, 'pending_count' => 0, 'failed_count' => 0];
+}
 
 // Get current config
-$config_stmt = $db->query("SELECT * FROM payment_config WHERE is_active = 1");
-$configs = $config_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+try {
+    $config_stmt = $pdo->query("SELECT * FROM payment_config WHERE is_active = 1");
+    $configs = $config_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+} catch (PDOException $e) {
+    $configs = [];
+}
 
-include '../includes/header.php';
 $current_page = 'payment-settings';
+$csrf_token = generateCSRFToken();
 ?>
-
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Gateway Settings - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
 .admin-layout{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
 .sidebar{background:linear-gradient(180deg,#2c3e50 0%,#1a252f 100%);color:#fff;padding:0;position:sticky;top:0;height:100vh;overflow-y:auto}
 .main-content{padding:25px;overflow-x:hidden}
 </style>
+</head>
+<body>
 
 <div class="admin-layout">
     <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
@@ -110,6 +135,7 @@ $current_page = 'payment-settings';
             </div>
             <div class="card-body">
                 <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Test Mode</label>
@@ -224,4 +250,6 @@ $current_page = 'payment-settings';
     </div>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

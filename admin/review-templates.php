@@ -1,69 +1,96 @@
 <?php
-require_once '../includes/config.php';
+session_start();
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
 
-if (!isLoggedIn() || !isAdmin()) {
-    redirect('../index.php');
+if (!isset($_SESSION['admin_name'])) {
+    header('Location: ' . ADMIN_URL);
+    exit;
 }
 
+$admin_name = $_SESSION['admin_name'];
+$admin_id = (int)$_SESSION['user_id'];
 $message = '';
 $error = '';
 
 // Handle template creation/update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_template'])) {
-    $id = $_POST['template_id'] ?? null;
-    $name = $_POST['name'];
-    $platform = $_POST['platform'];
-    $category = $_POST['category'];
-    $template_text = $_POST['template_text'];
-    $rating_default = $_POST['rating_default'];
-    $is_active = isset($_POST['is_active']) ? 1 : 0;
-    
-    try {
-        if ($id) {
-            $stmt = $db->prepare("UPDATE review_templates SET name=?, platform=?, category=?, template_text=?, rating_default=?, is_active=? WHERE id=?");
-            $stmt->execute([$name, $platform, $category, $template_text, $rating_default, $is_active, $id]);
-            $message = 'Template updated successfully!';
-        } else {
-            $stmt = $db->prepare("INSERT INTO review_templates (name, platform, category, template_text, rating_default, is_active, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$name, $platform, $category, $template_text, $rating_default, $is_active, $_SESSION['user_id']]);
-            $message = 'Template created successfully!';
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request';
+    } else {
+        $id = $_POST['template_id'] ?? null;
+        $name = $_POST['name'];
+        $platform = $_POST['platform'];
+        $category = $_POST['category'];
+        $template_text = $_POST['template_text'];
+        $rating_default = $_POST['rating_default'];
+        $is_active = isset($_POST['is_active']) ? 1 : 0;
+        
+        try {
+            if ($id) {
+                $stmt = $pdo->prepare("UPDATE review_templates SET name=?, platform=?, category=?, template_text=?, rating_default=?, is_active=? WHERE id=?");
+                $stmt->execute([$name, $platform, $category, $template_text, $rating_default, $is_active, $id]);
+                $message = 'Template updated successfully!';
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO review_templates (name, platform, category, template_text, rating_default, is_active, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $platform, $category, $template_text, $rating_default, $is_active, $admin_id]);
+                $message = 'Template created successfully!';
+            }
+        } catch (PDOException $e) {
+            $error = 'Failed to save template';
         }
-    } catch (Exception $e) {
-        $error = 'Failed to save template: ' . $e->getMessage();
     }
 }
 
 // Handle template deletion
 if (isset($_GET['delete']) && $_GET['delete']) {
     try {
-        $stmt = $db->prepare("DELETE FROM review_templates WHERE id = ?");
+        $stmt = $pdo->prepare("DELETE FROM review_templates WHERE id = ?");
         $stmt->execute([$_GET['delete']]);
         $message = 'Template deleted successfully!';
-    } catch (Exception $e) {
-        $error = 'Failed to delete template: ' . $e->getMessage();
+    } catch (PDOException $e) {
+        $error = 'Failed to delete template';
     }
 }
 
 // Get all templates
-$templates = $db->query("SELECT rt.*, u.username as creator_name FROM review_templates rt LEFT JOIN users u ON rt.created_by = u.id ORDER BY rt.created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $templates = $pdo->query("SELECT rt.*, u.username as creator_name FROM review_templates rt LEFT JOIN users u ON rt.created_by = u.id ORDER BY rt.created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $templates = [];
+}
 
 // Get template being edited
 $edit_template = null;
 if (isset($_GET['edit']) && $_GET['edit']) {
-    $stmt = $db->prepare("SELECT * FROM review_templates WHERE id = ?");
-    $stmt->execute([$_GET['edit']]);
-    $edit_template = $stmt->fetch(PDO::FETCH_ASSOC);
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM review_templates WHERE id = ?");
+        $stmt->execute([$_GET['edit']]);
+        $edit_template = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $edit_template = null;
+    }
 }
 
-include '../includes/header.php';
 $current_page = 'review-templates';
+$csrf_token = generateCSRFToken();
 ?>
-
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Templates - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
 .admin-layout{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
 .sidebar{background:linear-gradient(180deg,#2c3e50 0%,#1a252f 100%);color:#fff;padding:0;position:sticky;top:0;height:100vh;overflow-y:auto}
 .main-content{padding:25px;overflow-x:hidden}
 </style>
+</head>
+<body>
 
 <div class="admin-layout">
     <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
@@ -92,6 +119,7 @@ $current_page = 'review-templates';
             </div>
             <div class="card-body">
                 <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                     <?php if ($edit_template): ?>
                         <input type="hidden" name="template_id" value="<?php echo $edit_template['id']; ?>">
                     <?php endif; ?>
@@ -211,4 +239,6 @@ $current_page = 'review-templates';
     </div>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,29 +1,42 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/chat-functions.php';
+session_start();
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/chat-functions.php';
 
-if (!isLoggedIn() || !isAdmin()) {
-    redirect('../index.php');
+if (!isset($_SESSION['admin_name'])) {
+    header('Location: ' . ADMIN_URL);
+    exit;
 }
 
-$admin_id = $_SESSION['user_id'];
+$admin_id = (int)$_SESSION['user_id'];
+$admin_name = $_SESSION['admin_name'];
 
 // Get filter
 $status_filter = isset($_GET['status']) ? $_GET['status'] : 'open';
 
 // Get conversations
-$conversations = getAllConversations($db, $status_filter, 100);
-
-// Get statistics
-$stats = getChatStatistics($db, null, true);
-
-include '../includes/header.php';
+try {
+    $conversations = getAllConversations($pdo, $status_filter, 100);
+    $stats = getChatStatistics($pdo, null, true);
+} catch (PDOException $e) {
+    $conversations = [];
+    $stats = ['total_conversations' => 0, 'open_conversations' => 0, 'pending_conversations' => 0, 'unread_messages' => 0];
+}
 
 // Set current page for sidebar
 $current_page = 'support-chat';
 ?>
-
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Chat Dashboard - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
 /* Admin Layout */
 .admin-layout{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
 
@@ -55,6 +68,8 @@ $current_page = 'support-chat';
     font-weight: bold;
 }
 </style>
+</head>
+<body>
 
 <div class="admin-layout">
     <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
@@ -300,4 +315,6 @@ document.getElementById('conversationModal').addEventListener('hidden.bs.modal',
 });
 </script>
 
-<?php include '../includes/footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

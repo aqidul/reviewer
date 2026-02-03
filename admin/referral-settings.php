@@ -1,47 +1,67 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/referral-functions.php';
+declare(strict_types=1);
+session_start();
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/referral-functions.php';
 
-if (!isLoggedIn() || !isAdmin()) {
-    redirect('../index.php');
+if (!isset($_SESSION['admin_name'])) {
+    header('Location: ' . ADMIN_URL);
+    exit;
 }
+
+$admin_name = escape($_SESSION['admin_name'] ?? 'Admin');
 
 $message = '';
 $error = '';
 
 // Handle settings update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
-    foreach ($_POST['levels'] as $level => $data) {
-        $commission = floatval($data['commission']);
-        $is_active = isset($data['active']) ? 1 : 0;
-        updateReferralSettings($db, $level, $commission, $is_active);
+    if (verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        foreach ($_POST['levels'] as $level => $data) {
+            $commission = floatval($data['commission']);
+            $is_active = isset($data['active']) ? 1 : 0;
+            updateReferralSettings($pdo, $level, $commission, $is_active);
+        }
+        $message = 'Referral settings updated successfully!';
+    } else {
+        $error = 'Invalid security token';
     }
-    $message = 'Referral settings updated successfully!';
 }
 
 // Get current settings
-$settings = getReferralSettings($db);
+$settings = getReferralSettings($pdo);
 
 // Get referral statistics
-$total_referrals_stmt = $db->query("SELECT COUNT(*) FROM referrals WHERE level = 1");
-$total_referrals = $total_referrals_stmt->fetchColumn();
+try {
+    $total_referrals_stmt = $pdo->query("SELECT COUNT(*) FROM referrals WHERE level = 1");
+    $total_referrals = $total_referrals_stmt->fetchColumn();
 
-$active_referrals_stmt = $db->query("SELECT COUNT(*) FROM referrals WHERE level = 1 AND status = 'active'");
-$active_referrals = $active_referrals_stmt->fetchColumn();
+    $active_referrals_stmt = $pdo->query("SELECT COUNT(*) FROM referrals WHERE level = 1 AND status = 'active'");
+    $active_referrals = $active_referrals_stmt->fetchColumn();
 
-$total_earnings_stmt = $db->query("SELECT COALESCE(SUM(amount), 0) FROM referral_earnings WHERE status = 'credited'");
-$total_earnings = $total_earnings_stmt->fetchColumn();
+    $total_earnings_stmt = $pdo->query("SELECT COALESCE(SUM(amount), 0) FROM referral_earnings WHERE status = 'credited'");
+    $total_earnings = $total_earnings_stmt->fetchColumn();
 
-$pending_earnings_stmt = $db->query("SELECT COALESCE(SUM(amount), 0) FROM referral_earnings WHERE status = 'pending'");
-$pending_earnings = $pending_earnings_stmt->fetchColumn();
+    $pending_earnings_stmt = $pdo->query("SELECT COALESCE(SUM(amount), 0) FROM referral_earnings WHERE status = 'pending'");
+    $pending_earnings = $pending_earnings_stmt->fetchColumn();
+} catch (PDOException $e) {
+    $error = 'Database error';
+    $total_referrals = $active_referrals = $total_earnings = $pending_earnings = 0;
+}
 
-include '../includes/header.php';
-
-// Set current page for sidebar
-$current_page = 'referral-settings';
+$csrf_token = generateCSRFToken();
 ?>
-
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Referral Settings - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
 /* Admin Layout */
 .admin-layout{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
 
@@ -61,7 +81,8 @@ $current_page = 'referral-settings';
 /* Main Content */
 .main-content{padding:25px;overflow-x:hidden}
 </style>
-
+</head>
+<body>
 <div class="admin-layout">
     <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
     
@@ -125,6 +146,7 @@ $current_page = 'referral-settings';
                 </div>
                 <div class="card-body">
                     <form method="POST">
+                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                         <div class="table-responsive">
                             <table class="table table-bordered">
                                 <thead class="table-light">
@@ -195,7 +217,7 @@ $current_page = 'referral-settings';
                 </div>
                 <div class="card-body">
                     <?php
-                    $recent_stmt = $db->query("
+                    $recent_stmt = $pdo->query("
                         SELECT 
                             r.*,
                             u1.username as referrer_name,
@@ -255,4 +277,6 @@ $current_page = 'referral-settings';
     </div>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
