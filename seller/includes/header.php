@@ -208,6 +208,10 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
                 <i class="bi bi-box-seam"></i>
                 <span>Orders</span>
             </a>
+            <a href="analytics.php" class="<?= $current_page === 'analytics' ? 'active' : '' ?>">
+                <i class="bi bi-graph-up"></i>
+                <span>Analytics</span>
+            </a>
             <a href="wallet.php" class="<?= $current_page === 'wallet' ? 'active' : '' ?>">
                 <i class="bi bi-wallet2"></i>
                 <span>Wallet</span>

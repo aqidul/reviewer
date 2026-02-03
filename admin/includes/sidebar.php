@@ -104,6 +104,7 @@ if (!isset($current_page)) {
         <!-- Reports & Export Section -->
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>📊 Reports & Export</span></li>
+        <li><a href="<?php echo ADMIN_URL; ?>/analytics.php" class="<?= $current_page === 'analytics' ? 'active' : '' ?>">📈 Analytics Dashboard</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/reports.php" class="<?= $current_page === 'reports' ? 'active' : '' ?>">📈 Reports</a></li>
         <li><a href="<?php echo ADMIN_URL; ?>/export-data.php" class="<?= $current_page === 'export-data' ? 'active' : '' ?>">📥 Export Review Data</a></li>
         
