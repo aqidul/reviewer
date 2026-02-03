@@ -1,32 +1,41 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/chat-functions.php';
+session_start();
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/chat-functions.php';
 
-if (!isLoggedIn() || isAdmin()) {
-    redirect('../index.php');
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../index.php');
+    exit;
 }
 
-$user_id = $_SESSION['user_id'];
+$user_id = (int)$_SESSION['user_id'];
 
 // Get or create conversation
-$conversation_id = getOrCreateConversation($db, $user_id);
-
-// Get messages
-$messages = getChatMessages($db, $conversation_id);
-
-// Mark messages as read
-markMessagesAsRead($db, $conversation_id, 'user');
-
-// Get conversation details
-$conversation = getConversationDetails($db, $conversation_id);
+try {
+    $conversation_id = getOrCreateConversation($pdo, $user_id);
+    $messages = getChatMessages($pdo, $conversation_id);
+    markMessagesAsRead($pdo, $conversation_id, 'user');
+    $conversation = getConversationDetails($pdo, $conversation_id);
+} catch (PDOException $e) {
+    $conversation_id = 0;
+    $messages = [];
+    $conversation = ['admin_name' => '', 'status' => 'open'];
+}
 
 // Set current page for sidebar
 $current_page = 'chat';
-
-include '../includes/header.php';
 ?>
-
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Chat - User Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
     /* Sidebar Styles */
     .sidebar {
         width: 260px;
@@ -163,6 +172,8 @@ include '../includes/header.php';
     border-top: 1px solid #dee2e6;
 }
 </style>
+</head>
+<body>
 
 <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
 
@@ -339,4 +350,6 @@ setInterval(loadMessages, 5000);
 scrollToBottom();
 </script>
 
-<?php include '../includes/footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

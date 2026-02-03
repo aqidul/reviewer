@@ -1,52 +1,76 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/proof-functions.php';
+session_start();
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/proof-functions.php';
 
-if (!isLoggedIn() || !isAdmin()) {
-    redirect('../index.php');
+if (!isset($_SESSION['admin_name'])) {
+    header('Location: ' . ADMIN_URL);
+    exit;
 }
 
-$admin_id = $_SESSION['user_id'];
+$admin_id = (int)$_SESSION['user_id'];
+$admin_name = $_SESSION['admin_name'];
 $message = '';
 $error = '';
 
 // Handle proof approval/rejection
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $csrf_token = generateCSRFToken();
+    
     if (isset($_POST['approve_proof'])) {
         $proof_id = filter_input(INPUT_POST, 'proof_id', FILTER_SANITIZE_NUMBER_INT);
-        $result = approveProof($db, $proof_id, $admin_id);
-        if ($result['success']) {
-            $message = $result['message'];
-        } else {
-            $error = $result['message'];
+        try {
+            $result = approveProof($pdo, $proof_id, $admin_id);
+            if ($result['success']) {
+                $message = $result['message'];
+            } else {
+                $error = $result['message'];
+            }
+        } catch (PDOException $e) {
+            $error = 'Database error occurred';
         }
     }
     
     if (isset($_POST['reject_proof'])) {
         $proof_id = filter_input(INPUT_POST, 'proof_id', FILTER_SANITIZE_NUMBER_INT);
-        $reason = filter_input(INPUT_POST, 'rejection_reason', FILTER_SANITIZE_STRING);
-        $result = rejectProof($db, $proof_id, $admin_id, $reason);
-        if ($result['success']) {
-            $message = $result['message'];
-        } else {
-            $error = $result['message'];
+        $reason = filter_input(INPUT_POST, 'rejection_reason', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        try {
+            $result = rejectProof($pdo, $proof_id, $admin_id, $reason);
+            if ($result['success']) {
+                $message = $result['message'];
+            } else {
+                $error = $result['message'];
+            }
+        } catch (PDOException $e) {
+            $error = 'Database error occurred';
         }
     }
 }
 
 // Get pending proofs
-$pending_proofs = getPendingProofs($db, 100);
-
-// Get statistics
-$stats = getProofStats($db);
-
-include '../includes/header.php';
+try {
+    $pending_proofs = getPendingProofs($pdo, 100);
+    $stats = getProofStats($pdo);
+} catch (PDOException $e) {
+    $pending_proofs = [];
+    $stats = ['total' => 0, 'pending' => 0, 'manual_review' => 0, 'approved' => 0, 'auto_approved' => 0, 'rejected' => 0];
+}
 
 // Set current page for sidebar
 $current_page = 'verify-proofs';
+$csrf_token = generateCSRFToken();
 ?>
-
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proof Verification - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
 /* Admin Layout */
 .admin-layout{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
 
@@ -66,6 +90,8 @@ $current_page = 'verify-proofs';
 /* Main Content */
 .main-content{padding:25px;overflow-x:hidden}
 </style>
+</head>
+<body>
 
 <div class="admin-layout">
     <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
@@ -244,6 +270,7 @@ $current_page = 'verify-proofs';
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                         </div>
                                                         <div class="modal-body">
+                                                            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                                                             <input type="hidden" name="proof_id" value="<?php echo $proof['id']; ?>">
                                                             <div class="mb-3">
                                                                 <label class="form-label">Rejection Reason *</label>
@@ -281,4 +308,6 @@ $current_page = 'verify-proofs';
     </div>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

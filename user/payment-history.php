@@ -1,26 +1,38 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/payment-functions.php';
+session_start();
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/payment-functions.php';
 
-if (!isLoggedIn() || isAdmin()) {
-    redirect('../index.php');
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../index.php');
+    exit;
 }
 
-$user_id = $_SESSION['user_id'];
+$user_id = (int)$_SESSION['user_id'];
 
 // Get user's payment history
-$payments = getUserPayments($db, $user_id, 100);
-
-// Get payment stats
-$stats = getPaymentStats($db, $user_id);
+try {
+    $payments = getUserPayments($pdo, $user_id, 100);
+    $stats = getPaymentStats($pdo, $user_id);
+} catch (PDOException $e) {
+    $payments = [];
+    $stats = ['total_payments' => 0, 'total_amount' => 0, 'pending_count' => 0];
+}
 
 // Set current page for sidebar
 $current_page = 'payment-history';
-
-include '../includes/header.php';
 ?>
-
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment History - User Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
     /* Sidebar Styles */
     .sidebar {
         width: 260px;
@@ -40,6 +52,8 @@ include '../includes/header.php';
         min-height: calc(100vh - 60px);
     }
 </style>
+</head>
+<body>
 
 <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
 
@@ -140,4 +154,6 @@ include '../includes/header.php';
     </div>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

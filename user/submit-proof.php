@@ -1,61 +1,84 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/proof-functions.php';
+session_start();
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/proof-functions.php';
 
-if (!isLoggedIn() || isAdmin()) {
-    redirect('../index.php');
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../index.php');
+    exit;
 }
 
-$user_id = $_SESSION['user_id'];
+$user_id = (int)$_SESSION['user_id'];
 $message = '';
 $error = '';
 
 // Get user's tasks that need proof submission
-$tasks_query = "
-    SELECT DISTINCT t.id, t.title, t.amount, t.assigned_date
-    FROM tasks t
-    JOIN orders o ON t.id = o.task_id
-    WHERE t.user_id = ? 
-    AND o.step3_status = 'approved'
-    AND NOT EXISTS (
-        SELECT 1 FROM task_proofs tp WHERE tp.task_id = t.id AND tp.user_id = ?
-    )
-    ORDER BY t.assigned_date DESC
-";
-$tasks_stmt = $db->prepare($tasks_query);
-$tasks_stmt->execute([$user_id, $user_id]);
-$available_tasks = $tasks_stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $tasks_query = "
+        SELECT DISTINCT t.id, t.title, t.amount, t.assigned_date
+        FROM tasks t
+        JOIN orders o ON t.id = o.task_id
+        WHERE t.user_id = ? 
+        AND o.step3_status = 'approved'
+        AND NOT EXISTS (
+            SELECT 1 FROM task_proofs tp WHERE tp.task_id = t.id AND tp.user_id = ?
+        )
+        ORDER BY t.assigned_date DESC
+    ";
+    $tasks_stmt = $pdo->prepare($tasks_query);
+    $tasks_stmt->execute([$user_id, $user_id]);
+    $available_tasks = $tasks_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $available_tasks = [];
+}
 
 // Handle proof submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_proof'])) {
+    $csrf_token = generateCSRFToken();
+    
     $task_id = filter_input(INPUT_POST, 'task_id', FILTER_SANITIZE_NUMBER_INT);
-    $proof_type = filter_input(INPUT_POST, 'proof_type', FILTER_SANITIZE_STRING);
-    $proof_text = filter_input(INPUT_POST, 'proof_text', FILTER_SANITIZE_STRING);
+    $proof_type = filter_input(INPUT_POST, 'proof_type', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $proof_text = filter_input(INPUT_POST, 'proof_text', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     
     $proof_file = null;
     if (isset($_FILES['proof_file']) && $_FILES['proof_file']['error'] === UPLOAD_ERR_OK) {
         $proof_file = $_FILES['proof_file'];
     }
     
-    $result = submitProof($db, $user_id, $task_id, $proof_type, $proof_file, $proof_text);
-    
-    if ($result['success']) {
-        $message = $result['message'];
-    } else {
-        $error = $result['message'];
+    try {
+        $result = submitProof($pdo, $user_id, $task_id, $proof_type, $proof_file, $proof_text);
+        if ($result['success']) {
+            $message = $result['message'];
+        } else {
+            $error = $result['message'];
+        }
+    } catch (PDOException $e) {
+        $error = 'Database error occurred';
     }
 }
 
 // Get user's submitted proofs
-$proofs = getUserProofs($db, $user_id, 20);
+try {
+    $proofs = getUserProofs($pdo, $user_id, 20);
+} catch (PDOException $e) {
+    $proofs = [];
+}
 
 // Set current page for sidebar
 $current_page = 'submit-proof';
-
-include '../includes/header.php';
+$csrf_token = generateCSRFToken();
 ?>
-
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Task Proof - User Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
     /* Sidebar Styles */
     .sidebar {
         width: 260px;
@@ -146,6 +169,8 @@ include '../includes/header.php';
         }
     }
 </style>
+</head>
+<body>
 
 <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
 
@@ -175,6 +200,7 @@ include '../includes/header.php';
                 <div class="card-body">
                     <?php if (count($available_tasks) > 0): ?>
                     <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="task_id" class="form-label">Select Task *</label>
@@ -346,4 +372,6 @@ function toggleProofFields() {
 }
 </script>
 
-<?php include '../includes/footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

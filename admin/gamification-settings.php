@@ -1,25 +1,33 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/gamification-functions.php';
+declare(strict_types=1);
+session_start();
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/gamification-functions.php';
 
-if (!isLoggedIn() || !isAdmin()) {
-    redirect('../index.php');
+if (!isset($_SESSION['admin_name'])) {
+    header('Location: ' . ADMIN_URL);
+    exit;
 }
+
+$admin_name = escape($_SESSION['admin_name'] ?? 'Admin');
 
 $message = '';
 
 // Get all statistics
-$total_users_stmt = $db->query("SELECT COUNT(*) FROM user_points");
-$total_users = $total_users_stmt->fetchColumn();
+try {
+    $total_users_stmt = $pdo->query("SELECT COUNT(*) FROM user_points");
+    $total_users = $total_users_stmt->fetchColumn();
 
-$total_points_stmt = $db->query("SELECT SUM(total_earned) FROM user_points");
-$total_points = $total_points_stmt->fetchColumn();
+    $total_points_stmt = $pdo->query("SELECT SUM(total_earned) FROM user_points");
+    $total_points = $total_points_stmt->fetchColumn();
 
-$total_badges_stmt = $db->query("SELECT COUNT(*) FROM user_badges");
-$total_badges = $total_badges_stmt->fetchColumn();
+    $total_badges_stmt = $pdo->query("SELECT COUNT(*) FROM user_badges");
+    $total_badges = $total_badges_stmt->fetchColumn();
 
-// Get level distribution
-$level_dist = $db->query("
+    // Get level distribution
+    $level_dist = $pdo->query("
     SELECT level, COUNT(*) as count 
     FROM user_points 
     GROUP BY level 
@@ -33,14 +41,14 @@ $level_dist = $db->query("
         END DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-// Get level settings
-$level_settings = getLevelSettings($db);
+    // Get level settings
+    $level_settings = getLevelSettings($pdo);
 
-// Get all badges
-$all_badges = getAllBadges($db);
+    // Get all badges
+    $all_badges = getAllBadges($pdo);
 
-// Get recent point transactions
-$recent_transactions = $db->query("
+    // Get recent point transactions
+    $recent_transactions = $pdo->query("
     SELECT pt.*, u.username
     FROM point_transactions pt
     JOIN users u ON pt.user_id = u.id
@@ -74,7 +82,8 @@ $current_page = 'gamification-settings';
 /* Main Content */
 .main-content{padding:25px;overflow-x:hidden}
 </style>
-
+</head>
+<body>
 <div class="admin-layout">
     <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
     
@@ -179,7 +188,7 @@ $current_page = 'gamification-settings';
                                     <p class="text-muted small mb-0"><?php echo htmlspecialchars($badge['description']); ?></p>
                                     <div class="mt-2">
                                         <?php
-                                        $earned_count = $db->prepare("SELECT COUNT(*) FROM user_badges WHERE badge_id = ?");
+                                        $earned_count = $pdo->prepare("SELECT COUNT(*) FROM user_badges WHERE badge_id = ?");
                                         $earned_count->execute([$badge['id']]);
                                         $count = $earned_count->fetchColumn();
                                         ?>
@@ -237,4 +246,6 @@ $current_page = 'gamification-settings';
     </div>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

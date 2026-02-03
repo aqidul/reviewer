@@ -1,10 +1,16 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/activity-logger.php';
+session_start();
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/activity-logger.php';
 
-if (!isLoggedIn() || !isAdmin()) {
-    redirect('../index.php');
+if (!isset($_SESSION['admin_name'])) {
+    header('Location: ' . ADMIN_URL);
+    exit;
 }
+
+$admin_name = $_SESSION['admin_name'];
 
 // Get filters
 $user_filter = $_GET['user_id'] ?? '';
@@ -27,38 +33,58 @@ if ($action_filter) {
 $where_clause = count($where) > 0 ? 'WHERE ' . implode(' AND ', $where) : '';
 
 // Get activities
-$stmt = $db->prepare("
-    SELECT ual.*, u.username, u.email
-    FROM user_activity_logs ual
-    JOIN users u ON ual.user_id = u.id
-    {$where_clause}
-    ORDER BY ual.created_at DESC
-    LIMIT 100
-");
-$stmt->execute($params);
-$activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $stmt = $pdo->prepare("
+        SELECT ual.*, u.username, u.email
+        FROM user_activity_logs ual
+        JOIN users u ON ual.user_id = u.id
+        {$where_clause}
+        ORDER BY ual.created_at DESC
+        LIMIT 100
+    ");
+    $stmt->execute($params);
+    $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $activities = [];
+}
 
 // Get unique actions for filter
-$actions = $db->query("SELECT DISTINCT action FROM user_activity_logs ORDER BY action")->fetchAll(PDO::FETCH_COLUMN);
+try {
+    $actions = $pdo->query("SELECT DISTINCT action FROM user_activity_logs ORDER BY action")->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {
+    $actions = [];
+}
 
 // Get stats
-$total_stats = $db->query("
-    SELECT 
-        COUNT(*) as total_activities,
-        COUNT(DISTINCT user_id) as active_users,
-        COUNT(DISTINCT DATE(created_at)) as active_days
-    FROM user_activity_logs
-")->fetch(PDO::FETCH_ASSOC);
+try {
+    $total_stats = $pdo->query("
+        SELECT 
+            COUNT(*) as total_activities,
+            COUNT(DISTINCT user_id) as active_users,
+            COUNT(DISTINCT DATE(created_at)) as active_days
+        FROM user_activity_logs
+    ")->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $total_stats = ['total_activities' => 0, 'active_users' => 0, 'active_days' => 0];
+}
 
-include '../includes/header.php';
 $current_page = 'user-activity';
 ?>
-
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Activity Logs - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
 .admin-layout{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
 .sidebar{background:linear-gradient(180deg,#2c3e50 0%,#1a252f 100%);color:#fff;padding:0;position:sticky;top:0;height:100vh;overflow-y:auto}
 .main-content{padding:25px;overflow-x:hidden}
 </style>
+</head>
+<body>
 
 <div class="admin-layout">
     <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
@@ -173,4 +199,6 @@ $current_page = 'user-activity';
     </div>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
