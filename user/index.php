@@ -5,6 +5,7 @@ session_start();
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/security.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/gamification-functions.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ' . APP_URL . '/index.php');
@@ -78,6 +79,17 @@ $total_earnings = (float)($user_stats['total_earnings'] ?? 0);
 $user_rating = (float)($user_stats['rating'] ?? 5.0);
 $user_level = (int)($user_stats['level'] ?? 1);
 $streak_days = (int)($user_stats['streak_days'] ?? 0);
+
+// Leaderboard summary
+try {
+    $user_points = getUserPoints($pdo, $user_id);
+    $user_rank = (int)getUserRank($pdo, $user_id);
+    $leaderboard_preview = getLeaderboard($pdo, 'all_time', 5);
+} catch (PDOException $e) {
+    $user_points = ['points' => 0];
+    $user_rank = 0;
+    $leaderboard_preview = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -474,6 +486,37 @@ $streak_days = (int)($user_stats['streak_days'] ?? 0);
         
         <!-- Right Column - Widgets -->
         <div class="sidebar-column">
+            <!-- Leaderboard Widget -->
+            <div class="widget">
+                <div class="widget-title">🏆 Leaderboard</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                    <div style="font-size:13px;color:#666">Your Rank</div>
+                    <div style="font-size:18px;font-weight:700;color:#667eea">#<?php echo $user_rank ?: '-'; ?></div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                    <div style="font-size:13px;color:#666">Your Points</div>
+                    <div style="font-size:16px;font-weight:700;color:#27ae60"><?php echo number_format((float)($user_points['points'] ?? 0)); ?></div>
+                </div>
+                <?php if (empty($leaderboard_preview)): ?>
+                    <div class="empty-state" style="padding:16px">
+                        <p>No leaderboard data yet</p>
+                    </div>
+                <?php else: ?>
+                    <div style="display:grid;gap:8px">
+                        <?php foreach ($leaderboard_preview as $index => $leader): ?>
+                            <div style="display:flex;align-items:center;justify-content:space-between;background:#f8f9fa;padding:10px;border-radius:8px">
+                                <div style="font-size:13px;font-weight:600;color:#333">
+                                    #<?php echo $index + 1; ?> <?php echo escape($leader['username']); ?>
+                                </div>
+                                <div style="font-size:12px;color:#666">
+                                    <?php echo number_format((float)$leader['points']); ?> pts
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+                <a href="<?php echo APP_URL; ?>/user/leaderboard.php" style="display:block;text-align:center;margin-top:12px;color:#667eea;font-size:13px;text-decoration:none">View Full Leaderboard →</a>
+            </div>
             <!-- Referral Widget -->
             <div class="widget">
                 <div class="widget-title">🎁 Refer & Earn ₹<?php echo getSetting('referral_bonus', 50); ?></div>
