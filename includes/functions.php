@@ -37,19 +37,20 @@ if (!function_exists('redirect')) {
             '/seller/',
             '/seller/index.php'
         ];
+        $fallback_path = '/index.php';
         if (str_contains($path, "\r") || str_contains($path, "\n")) {
-            $path = parse_url(APP_URL, PHP_URL_PATH) ?? '/';
+            $path = $fallback_path;
         }
         $parsed = parse_url($path);
         if ($parsed !== false && (isset($parsed['scheme']) || isset($parsed['host']) || str_starts_with($path, '//'))) {
-            $path = parse_url(APP_URL, PHP_URL_PATH) ?? '/';
+            $path = $fallback_path;
         }
         if ($path === '') {
-            $path = parse_url(APP_URL, PHP_URL_PATH) ?? '/';
+            $path = $fallback_path;
         }
         $normalized = '/' . ltrim($path, '/');
         if (!in_array($normalized, $allowed_paths, true)) {
-            $normalized = parse_url(APP_URL, PHP_URL_PATH) ?? '/';
+            $normalized = $fallback_path;
         }
         header('Location: ' . $normalized);
         exit;
