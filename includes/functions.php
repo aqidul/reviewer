@@ -27,6 +27,9 @@ if (!function_exists('sanitizeInput')) {
 
 if (!function_exists('redirect')) {
     function redirect(string $path): void {
+        if (!str_starts_with($path, '/')) {
+            $path = '/' . ltrim($path, '/');
+        }
         header('Location: ' . $path);
         exit;
     }

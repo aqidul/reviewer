@@ -18,7 +18,7 @@ const DB_CHARSET = 'utf8mb4';
 // Application Settings
 const APP_NAME = 'ReviewFlow';
 const APP_URL = 'https://palians.com/reviewer';
-define('BASE_URL', APP_URL);
+const BASE_URL = APP_URL;
 const ADMIN_URL = 'https://palians.com/reviewer/admin';
 const SELLER_URL = 'https://palians.com/reviewer/seller';
 const APP_VERSION = '3.0.0';
