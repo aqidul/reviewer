@@ -27,8 +27,11 @@ if (!function_exists('sanitizeInput')) {
 
 if (!function_exists('redirect')) {
     function redirect(string $path): void {
-        $target = str_starts_with($path, 'http') ? $path : APP_URL . '/' . ltrim($path, '/');
-        header('Location: ' . $target);
+        if (str_starts_with($path, 'http')) {
+            header('Location: ' . $path);
+        } else {
+            header('Location: ' . $path);
+        }
         exit;
     }
 }
