@@ -28,14 +28,14 @@ if (!function_exists('sanitizeInput')) {
 if (!function_exists('redirect')) {
     function redirect(string $path): void {
         if (str_contains($path, "\r") || str_contains($path, "\n")) {
-            $path = '/';
+            $path = parse_url(APP_URL, PHP_URL_PATH) ?? '/';
         }
         $parsed = parse_url($path);
-        if ($parsed !== false && (isset($parsed['scheme']) || isset($parsed['host']))) {
-            $path = '/';
+        if ($parsed !== false && (isset($parsed['scheme']) || isset($parsed['host']) || str_starts_with($path, '//'))) {
+            $path = parse_url(APP_URL, PHP_URL_PATH) ?? '/';
         }
         if ($path === '') {
-            $path = '/';
+            $path = parse_url(APP_URL, PHP_URL_PATH) ?? '/';
         }
         header('Location: ' . $path);
         exit;
