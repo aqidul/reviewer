@@ -35,7 +35,7 @@ if (!function_exists('redirect')) {
             $path = $fallback_path;
         }
         $parsed = parse_url($path);
-        if ($parsed !== false && (isset($parsed['scheme']) || isset($parsed['host']) || str_starts_with($path, '//'))) {
+        if ($parsed !== false && (isset($parsed['scheme']) || isset($parsed['host']))) {
             $app_url = parse_url(APP_URL);
             $app_host = $app_url['host'] ?? null;
             $target_host = $parsed['host'] ?? null;
