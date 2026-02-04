@@ -30,11 +30,11 @@ if (!function_exists('redirect')) {
         if (str_contains($path, "\r") || str_contains($path, "\n")) {
             $path = '/';
         }
-        if (str_contains($path, '://')) {
+        if (str_contains($path, '://') || str_starts_with($path, '//')) {
             $path = '/';
         }
-        if (!str_starts_with($path, '/')) {
-            $path = '/' . ltrim($path, '/');
+        if ($path === '') {
+            $path = '/';
         }
         header('Location: ' . $path);
         exit;
