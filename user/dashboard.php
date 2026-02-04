@@ -8,34 +8,70 @@ if (!isUser()) {
 
 $user_id = (int)$_SESSION['user_id'];
 
-// Get user's tasks
-$query = "
-    SELECT t.*, 
-           (SELECT COUNT(*) FROM orders WHERE task_id = t.id) as order_count,
-           (SELECT COUNT(*) FROM orders WHERE task_id = t.id AND step4_status = 'approved') as completed_count
-    FROM tasks t
-    WHERE t.user_id = :user_id
-    ORDER BY t.assigned_date DESC
-";
+$taskStatusColumn = 'status';
+$taskAssignedColumn = 'assigned_date';
 
-$stmt = $pdo->prepare($query);
-$stmt->execute([':user_id' => $user_id]);
-$tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $stmt = $pdo->query("SHOW COLUMNS FROM tasks LIKE 'task_status'");
+    if ($stmt->fetch()) {
+        $taskStatusColumn = 'task_status';
+    }
+} catch (PDOException $e) {
+    error_log("Dashboard status column check error: " . $e->getMessage());
+}
+
+try {
+    $stmt = $pdo->query("SHOW COLUMNS FROM tasks LIKE 'assigned_date'");
+    if (!$stmt->fetch()) {
+        $stmt = $pdo->query("SHOW COLUMNS FROM tasks LIKE 'created_at'");
+        if ($stmt->fetch()) {
+            $taskAssignedColumn = 'created_at';
+        }
+    }
+} catch (PDOException $e) {
+    error_log("Dashboard assigned date column check error: " . $e->getMessage());
+}
+
+// Get user's tasks
+try {
+    $query = "
+        SELECT t.*, 
+               t.$taskStatusColumn AS status,
+               t.$taskAssignedColumn AS assigned_date,
+               (SELECT COUNT(*) FROM orders WHERE task_id = t.id) as order_count,
+               (SELECT COUNT(*) FROM orders WHERE task_id = t.id AND step4_status = 'approved') as completed_count
+        FROM tasks t
+        WHERE t.user_id = :user_id
+        ORDER BY t.$taskAssignedColumn DESC
+    ";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([':user_id' => $user_id]);
+    $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log("Dashboard tasks query error: " . $e->getMessage());
+    $tasks = [];
+}
 
 // Get pending orders
-$query = "
-    SELECT o.* 
-    FROM orders o
-    JOIN tasks t ON o.task_id = t.id
-    WHERE t.user_id = :user_id 
-    AND o.refund_status != 'completed'
-    ORDER BY o.submitted_at DESC
-    LIMIT 5
-";
+try {
+    $query = "
+        SELECT o.* 
+        FROM orders o
+        JOIN tasks t ON o.task_id = t.id
+        WHERE t.user_id = :user_id 
+        AND o.refund_status != 'completed'
+        ORDER BY o.submitted_at DESC
+        LIMIT 5
+    ";
 
-$orders_stmt = $pdo->prepare($query);
-$orders_stmt->execute([':user_id' => $user_id]);
-$pending_orders = $orders_stmt->fetchAll(PDO::FETCH_ASSOC);
+    $orders_stmt = $pdo->prepare($query);
+    $orders_stmt->execute([':user_id' => $user_id]);
+    $pending_orders = $orders_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log("Dashboard pending orders query error: " . $e->getMessage());
+    $pending_orders = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -176,7 +212,8 @@ $pending_orders = $orders_stmt->fetchAll(PDO::FETCH_ASSOC);
                             <?php 
                             $pending = 0;
                             foreach($tasks as $task) {
-                                if($task['status'] == 'pending' || $task['status'] == 'in_progress') {
+                                $task_status = $task['status'] ?? '';
+                                if(in_array($task_status, ['pending', 'in_progress', 'assigned'], true)) {
                                     $pending++;
                                 }
                             }
@@ -309,9 +346,10 @@ $pending_orders = $orders_stmt->fetchAll(PDO::FETCH_ASSOC);
                             <td><?php echo date('d M Y', strtotime($task['assigned_date'])); ?></td>
                             <td>
                                 <?php 
-                                $status_class = $task['status'] == 'completed' ? 'status-completed' : 
-                                              ($task['status'] == 'in_progress' ? 'status-approved' : 'status-pending');
-                                echo '<span class="status-badge ' . $status_class . '">' . ucfirst($task['status']) . '</span>';
+                                $task_status = $task['status'] ?? 'pending';
+                                $status_class = $task_status == 'completed' ? 'status-completed' :
+                                              ($task_status == 'in_progress' ? 'status-approved' : 'status-pending');
+                                echo '<span class="status-badge ' . $status_class . '">' . ucfirst($task_status) . '</span>';
                                 ?>
                             </td>
                             <td>
