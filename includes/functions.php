@@ -27,6 +27,16 @@ if (!function_exists('sanitizeInput')) {
 
 if (!function_exists('redirect')) {
     function redirect(string $path): void {
+        $allowed_paths = [
+            '/',
+            '/index.php',
+            '/user/',
+            '/user/dashboard.php',
+            '/admin/',
+            '/admin/dashboard.php',
+            '/seller/',
+            '/seller/index.php'
+        ];
         if (str_contains($path, "\r") || str_contains($path, "\n")) {
             $path = parse_url(APP_URL, PHP_URL_PATH) ?? '/';
         }
@@ -37,7 +47,11 @@ if (!function_exists('redirect')) {
         if ($path === '') {
             $path = parse_url(APP_URL, PHP_URL_PATH) ?? '/';
         }
-        header('Location: ' . $path);
+        $normalized = '/' . ltrim($path, '/');
+        if (!in_array($normalized, $allowed_paths, true)) {
+            $normalized = parse_url(APP_URL, PHP_URL_PATH) ?? '/';
+        }
+        header('Location: ' . $normalized);
         exit;
     }
 }
