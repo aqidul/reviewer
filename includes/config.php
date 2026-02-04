@@ -88,9 +88,93 @@ try {
         PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
     ]);
 } catch (PDOException $e) {
-    error_log('Database Connection Failed: ' . $e->getMessage());
+    // Enhanced error logging with more details
+    $error_message = sprintf(
+        'Database Connection Failed: %s | DSN: mysql:host=%s;dbname=%s | User: %s | Time: %s',
+        $e->getMessage(),
+        DB_HOST,
+        DB_NAME,
+        DB_USER,
+        date('Y-m-d H:i:s')
+    );
+    error_log($error_message);
+    
+    // Set HTTP 500 status
     http_response_code(500);
-    die('Database connection error.');
+    
+    // Show detailed error in debug mode, generic error in production
+    if (DEBUG) {
+        die('<h1>Database Connection Error</h1><p>Details: ' . htmlspecialchars($e->getMessage()) . '</p><p>Check the error log for more information.</p>');
+    } else {
+        // User-friendly error page
+        ?>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Service Unavailable - <?php echo APP_NAME; ?></title>
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    margin: 0;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: #333;
+                }
+                .error-container {
+                    background: white;
+                    padding: 3rem;
+                    border-radius: 12px;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                    text-align: center;
+                    max-width: 500px;
+                }
+                .error-icon {
+                    font-size: 4rem;
+                    margin-bottom: 1rem;
+                }
+                h1 {
+                    color: #e74c3c;
+                    margin: 0 0 1rem 0;
+                    font-size: 1.8rem;
+                }
+                p {
+                    color: #666;
+                    line-height: 1.6;
+                    margin: 1rem 0;
+                }
+                .btn {
+                    display: inline-block;
+                    margin-top: 1.5rem;
+                    padding: 0.8rem 2rem;
+                    background: #667eea;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 6px;
+                    transition: background 0.3s;
+                }
+                .btn:hover {
+                    background: #5568d3;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="error-container">
+                <div class="error-icon">⚠️</div>
+                <h1>Service Temporarily Unavailable</h1>
+                <p>We're experiencing technical difficulties. Our team has been notified and is working to resolve the issue.</p>
+                <p>Please try again in a few moments.</p>
+                <a href="<?php echo APP_URL; ?>" class="btn">Return to Home</a>
+            </div>
+        </body>
+        </html>
+        <?php
+        exit;
+    }
 }
 
 // Error Handler
