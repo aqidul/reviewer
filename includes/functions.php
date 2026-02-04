@@ -27,33 +27,26 @@ if (!function_exists('sanitizeInput')) {
 
 if (!function_exists('redirect')) {
     function redirect(string $path): void {
+        $fallback_path = APP_URL . '/index.php';
         if (str_contains($path, "\r") || str_contains($path, "\n")) {
-            $path = '/index.php';
+            $path = $fallback_path;
         }
-        if (str_contains($path, '../') || str_contains($path, '..\\')) {
-            $path = '/index.php';
+        if (str_starts_with($path, '//')) {
+            $path = $fallback_path;
         }
-        $allowed_prefixes = ['/', '/user/', '/admin/', '/seller/'];
-        $fallback_path = '/index.php';
         $parsed = parse_url($path);
         if ($parsed !== false && (isset($parsed['scheme']) || isset($parsed['host']) || str_starts_with($path, '//'))) {
-            $path = $fallback_path;
+            $app_url = parse_url(APP_URL);
+            $app_host = $app_url['host'] ?? null;
+            $target_host = $parsed['host'] ?? null;
+            if ($app_host === null || $target_host === null || strcasecmp($app_host, $target_host) !== 0) {
+                $path = $fallback_path;
+            }
         }
         if ($path === '') {
             $path = $fallback_path;
         }
-        $normalized = '/' . ltrim($path, '/');
-        $is_allowed = false;
-        foreach ($allowed_prefixes as $prefix) {
-            if ($normalized === $prefix || str_starts_with($normalized, $prefix)) {
-                $is_allowed = true;
-                break;
-            }
-        }
-        if (!$is_allowed) {
-            $normalized = $fallback_path;
-        }
-        header('Location: ' . $normalized);
+        header('Location: ' . $path);
         exit;
     }
 }

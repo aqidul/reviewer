@@ -3,7 +3,7 @@ require_once '../includes/config.php';
 require_once '../includes/functions.php';
 
 if (!isUser()) {
-    redirect(APP_URL . '/index.php');
+    redirect('/index.php');
 }
 
 $user_id = (int)$_SESSION['user_id'];
