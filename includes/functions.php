@@ -25,6 +25,50 @@ if (!function_exists('sanitizeInput')) {
     }
 }
 
+if (!function_exists('redirect')) {
+    function redirect(string $path): void {
+        $fallback_path = APP_URL . '/index.php';
+        if (str_contains($path, "\r") || str_contains($path, "\n")) {
+            $path = $fallback_path;
+        }
+        if (str_starts_with($path, '//')) {
+            $path = $fallback_path;
+        }
+        $parsed = parse_url($path);
+        if ($parsed !== false && (isset($parsed['scheme']) || isset($parsed['host']))) {
+            $app_url = parse_url(APP_URL);
+            $app_host = $app_url['host'] ?? null;
+            $target_host = $parsed['host'] ?? null;
+            if ($app_host === null || $target_host === null || strcasecmp($app_host, $target_host) !== 0) {
+                $path = $fallback_path;
+            }
+        }
+        if ($path === '') {
+            $path = $fallback_path;
+        }
+        header('Location: ' . $path);
+        exit;
+    }
+}
+
+if (!function_exists('isLoggedIn')) {
+    function isLoggedIn(): bool {
+        return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+    }
+}
+
+if (!function_exists('isAdmin')) {
+    function isAdmin(): bool {
+        return isset($_SESSION['admin_name']) && !empty($_SESSION['admin_name']);
+    }
+}
+
+if (!function_exists('isUser')) {
+    function isUser(): bool {
+        return isLoggedIn() && !isAdmin();
+    }
+}
+
 /**
  * Escape output for HTML
  */
