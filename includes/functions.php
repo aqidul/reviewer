@@ -27,16 +27,7 @@ if (!function_exists('sanitizeInput')) {
 
 if (!function_exists('redirect')) {
     function redirect(string $path): void {
-        $allowed_paths = [
-            '/',
-            '/index.php',
-            '/user/',
-            '/user/dashboard.php',
-            '/admin/',
-            '/admin/dashboard.php',
-            '/seller/',
-            '/seller/index.php'
-        ];
+        $allowed_prefixes = ['/', '/user/', '/admin/', '/seller/'];
         $fallback_path = '/index.php';
         if (str_contains($path, "\r") || str_contains($path, "\n")) {
             $path = $fallback_path;
@@ -49,7 +40,14 @@ if (!function_exists('redirect')) {
             $path = $fallback_path;
         }
         $normalized = '/' . ltrim($path, '/');
-        if (!in_array($normalized, $allowed_paths, true)) {
+        $is_allowed = false;
+        foreach ($allowed_prefixes as $prefix) {
+            if ($normalized === $prefix || str_starts_with($normalized, $prefix)) {
+                $is_allowed = true;
+                break;
+            }
+        }
+        if (!$is_allowed) {
             $normalized = $fallback_path;
         }
         header('Location: ' . $normalized);
