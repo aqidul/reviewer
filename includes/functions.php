@@ -27,11 +27,7 @@ if (!function_exists('sanitizeInput')) {
 
 if (!function_exists('redirect')) {
     function redirect(string $path): void {
-        if (str_starts_with($path, 'http')) {
-            header('Location: ' . $path);
-        } else {
-            header('Location: ' . $path);
-        }
+        header('Location: ' . $path);
         exit;
     }
 }
