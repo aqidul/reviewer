@@ -8,42 +8,128 @@ if (!isUser()) {
 
 $user_id = (int)$_SESSION['user_id'];
 
-$taskStatusColumn = 'status';
-$taskAssignedColumn = 'assigned_date';
+$allowedStatusColumns = ['status', 'task_status'];
+$allowedDateColumns = ['assigned_date', 'created_at'];
+$pendingStatusValues = ['pending', 'in_progress', 'assigned'];
+$taskColumns = null;
 
-try {
-    $stmt = $pdo->query("SHOW COLUMNS FROM tasks LIKE 'task_status'");
-    if ($stmt->fetch()) {
-        $taskStatusColumn = 'task_status';
+if (!isset($_SESSION['dashboard_task_status_column']) || !isset($_SESSION['dashboard_task_assigned_column'])) {
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM tasks");
+        $taskColumns = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
+    } catch (PDOException $e) {
+        error_log("Dashboard column lookup error: " . $e->getMessage());
+        $taskColumns = [];
     }
-} catch (PDOException $e) {
-    error_log("Dashboard status column check error: " . $e->getMessage());
 }
 
-try {
-    $stmt = $pdo->query("SHOW COLUMNS FROM tasks LIKE 'assigned_date'");
-    if (!$stmt->fetch()) {
-        $stmt = $pdo->query("SHOW COLUMNS FROM tasks LIKE 'created_at'");
-        if ($stmt->fetch()) {
-            $taskAssignedColumn = 'created_at';
+$validateTaskColumn = static function (
+    string $column,
+    string $defaultColumn,
+    array $allowedColumns,
+    ?array $taskColumns
+): string {
+    if (!in_array($column, $allowedColumns, true)) {
+        return $defaultColumn;
+    }
+    if ($taskColumns !== null && !isset($taskColumns[$column])) {
+        return $defaultColumn;
+    }
+    return $column;
+};
+
+$resolveTaskColumnWithCache = static function (
+    string $sessionKey,
+    array $allowedColumns,
+    string $defaultColumn,
+    array $candidateOrder,
+    ?array $taskColumns,
+    callable $validator
+): string {
+    $column = $_SESSION[$sessionKey] ?? $defaultColumn;
+
+    $column = $validator($column, $defaultColumn, $allowedColumns, $taskColumns);
+
+    if ($taskColumns !== null) {
+        foreach ($candidateOrder as $candidate) {
+            if (isset($taskColumns[$candidate])) {
+                $column = $candidate;
+                break;
+            }
         }
-    }
-} catch (PDOException $e) {
-    error_log("Dashboard assigned date column check error: " . $e->getMessage());
-}
 
-// Get user's tasks
-try {
-    $query = "
+        $column = $validator($column, $defaultColumn, $allowedColumns, $taskColumns);
+        $_SESSION[$sessionKey] = $column;
+    }
+
+    return $column;
+};
+
+$taskStatusColumn = $resolveTaskColumnWithCache(
+    'dashboard_task_status_column',
+    $allowedStatusColumns,
+    'status',
+    ['task_status', 'status'],
+    $taskColumns,
+    $validateTaskColumn
+);
+$taskAssignedColumn = $resolveTaskColumnWithCache(
+    'dashboard_task_assigned_column',
+    $allowedDateColumns,
+    'assigned_date',
+    ['assigned_date', 'created_at'],
+    $taskColumns,
+    $validateTaskColumn
+);
+$taskQueryTemplates = [
+    'status|assigned_date' => "
         SELECT t.*, 
-               t.$taskStatusColumn AS status,
-               t.$taskAssignedColumn AS assigned_date,
+               t.`status` AS status,
+               t.`assigned_date` AS assigned_date,
                (SELECT COUNT(*) FROM orders WHERE task_id = t.id) as order_count,
                (SELECT COUNT(*) FROM orders WHERE task_id = t.id AND step4_status = 'approved') as completed_count
         FROM tasks t
         WHERE t.user_id = :user_id
-        ORDER BY t.$taskAssignedColumn DESC
-    ";
+        ORDER BY t.`assigned_date` DESC
+    ",
+    'status|created_at' => "
+        SELECT t.*, 
+               t.`status` AS status,
+               t.`created_at` AS assigned_date,
+               (SELECT COUNT(*) FROM orders WHERE task_id = t.id) as order_count,
+               (SELECT COUNT(*) FROM orders WHERE task_id = t.id AND step4_status = 'approved') as completed_count
+        FROM tasks t
+        WHERE t.user_id = :user_id
+        ORDER BY t.`created_at` DESC
+    ",
+    'task_status|assigned_date' => "
+        SELECT t.*, 
+               t.`task_status` AS status,
+               t.`assigned_date` AS assigned_date,
+               (SELECT COUNT(*) FROM orders WHERE task_id = t.id) as order_count,
+               (SELECT COUNT(*) FROM orders WHERE task_id = t.id AND step4_status = 'approved') as completed_count
+        FROM tasks t
+        WHERE t.user_id = :user_id
+        ORDER BY t.`assigned_date` DESC
+    ",
+    'task_status|created_at' => "
+        SELECT t.*, 
+               t.`task_status` AS status,
+               t.`created_at` AS assigned_date,
+               (SELECT COUNT(*) FROM orders WHERE task_id = t.id) as order_count,
+               (SELECT COUNT(*) FROM orders WHERE task_id = t.id AND step4_status = 'approved') as completed_count
+        FROM tasks t
+        WHERE t.user_id = :user_id
+        ORDER BY t.`created_at` DESC
+    ",
+];
+$taskQueryKey = $taskStatusColumn . '|' . $taskAssignedColumn;
+if (!isset($taskQueryTemplates[$taskQueryKey])) {
+    $taskQueryKey = 'status|assigned_date';
+}
+// Get user's tasks
+try {
+    $query = $taskQueryTemplates[$taskQueryKey];
 
     $stmt = $pdo->prepare($query);
     $stmt->execute([':user_id' => $user_id]);
@@ -213,7 +299,7 @@ try {
                             $pending = 0;
                             foreach($tasks as $task) {
                                 $task_status = $task['status'] ?? '';
-                                if(in_array($task_status, ['pending', 'in_progress', 'assigned'], true)) {
+                                if(in_array($task_status, $pendingStatusValues, true)) {
                                     $pending++;
                                 }
                             }
