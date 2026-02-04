@@ -25,6 +25,32 @@ if (!function_exists('sanitizeInput')) {
     }
 }
 
+if (!function_exists('redirect')) {
+    function redirect(string $path): void {
+        $target = str_starts_with($path, 'http') ? $path : APP_URL . '/' . ltrim($path, '/');
+        header('Location: ' . $target);
+        exit;
+    }
+}
+
+if (!function_exists('isLoggedIn')) {
+    function isLoggedIn(): bool {
+        return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+    }
+}
+
+if (!function_exists('isAdmin')) {
+    function isAdmin(): bool {
+        return isset($_SESSION['admin_name']) && !empty($_SESSION['admin_name']);
+    }
+}
+
+if (!function_exists('isUser')) {
+    function isUser(): bool {
+        return isLoggedIn() && !isAdmin();
+    }
+}
+
 /**
  * Escape output for HTML
  */

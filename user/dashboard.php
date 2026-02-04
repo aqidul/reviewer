@@ -1,11 +1,12 @@
 <?php
 require_once '../includes/config.php';
+require_once '../includes/functions.php';
 
 if (!isLoggedIn() || isAdmin()) {
     redirect('../index.php');
 }
 
-$user_id = $_SESSION['user_id'];
+$user_id = (int)$_SESSION['user_id'];
 
 // Get user's tasks
 $query = "
@@ -17,7 +18,7 @@ $query = "
     ORDER BY t.assigned_date DESC
 ";
 
-$stmt = $db->prepare($query);
+$stmt = $pdo->prepare($query);
 $stmt->execute([':user_id' => $user_id]);
 $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -32,7 +33,7 @@ $query = "
     LIMIT 5
 ";
 
-$orders_stmt = $db->prepare($query);
+$orders_stmt = $pdo->prepare($query);
 $orders_stmt->execute([':user_id' => $user_id]);
 $pending_orders = $orders_stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
