@@ -1,12 +1,31 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/functions.php';
-
-if (!isUser()) {
-    redirect(APP_URL . '/index.php');
+// Enhanced error handling for dashboard
+try {
+    require_once '../includes/config.php';
+    require_once '../includes/functions.php';
+    
+    // Check authentication
+    if (!isUser()) {
+        redirect(APP_URL . '/index.php');
+    }
+    
+    // Validate user_id exists in session
+    if (!isset($_SESSION['user_id'])) {
+        error_log('Dashboard accessed without valid user_id in session');
+        redirect(APP_URL . '/index.php');
+    }
+    
+    $user_id = (int)$_SESSION['user_id'];
+    
+    // Log user access for debugging (only in debug mode)
+    if (DEBUG) {
+        error_log("Dashboard accessed by user_id: {$user_id}");
+    }
+} catch (Exception $e) {
+    error_log("Dashboard initialization error: " . $e->getMessage());
+    http_response_code(500);
+    die('An error occurred while loading the dashboard. Please try again later.');
 }
-
-$user_id = (int)$_SESSION['user_id'];
 
 $allowedStatusColumns = ['status', 'task_status'];
 $allowedDateColumns = ['assigned_date', 'created_at'];

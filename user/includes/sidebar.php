@@ -2,46 +2,78 @@
 // This file should be included after setting $current_page variable
 // Make sure to have fetched badge counts before including this
 
+// Initialize badge counts with safe defaults
+$pending_tasks_count = 0;
+$unread_messages = 0;
+$unread_announcements = 0;
+
 // Get badge counts if not already set
 if (!isset($pending_tasks_count)) {
     try {
-        $user_id = $_SESSION['user_id'] ?? 0;
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tasks WHERE user_id = ? AND task_status = 'pending'");
-        $stmt->execute([$user_id]);
-        $pending_tasks_count = (int)$stmt->fetchColumn();
+        if (!isset($pdo)) {
+            error_log("Sidebar: PDO connection not available");
+            $pending_tasks_count = 0;
+        } else {
+            $user_id = $_SESSION['user_id'] ?? 0;
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM tasks WHERE user_id = ? AND task_status = 'pending'");
+            $stmt->execute([$user_id]);
+            $pending_tasks_count = (int)$stmt->fetchColumn();
+        }
     } catch (PDOException $e) {
+        error_log("Sidebar pending tasks query error: " . $e->getMessage());
+        $pending_tasks_count = 0;
+    } catch (Exception $e) {
+        error_log("Sidebar pending tasks unexpected error: " . $e->getMessage());
         $pending_tasks_count = 0;
     }
 }
 
 if (!isset($unread_messages)) {
     try {
-        $user_id = $_SESSION['user_id'] ?? 0;
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM chat_messages WHERE user_id = ? AND is_read = 0 AND sender = 'admin'");
-        $stmt->execute([$user_id]);
-        $unread_messages = (int)$stmt->fetchColumn();
+        if (!isset($pdo)) {
+            error_log("Sidebar: PDO connection not available");
+            $unread_messages = 0;
+        } else {
+            $user_id = $_SESSION['user_id'] ?? 0;
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM chat_messages WHERE user_id = ? AND is_read = 0 AND sender = 'admin'");
+            $stmt->execute([$user_id]);
+            $unread_messages = (int)$stmt->fetchColumn();
+        }
     } catch (PDOException $e) {
+        error_log("Sidebar unread messages query error: " . $e->getMessage());
+        $unread_messages = 0;
+    } catch (Exception $e) {
+        error_log("Sidebar unread messages unexpected error: " . $e->getMessage());
         $unread_messages = 0;
     }
 }
 
 if (!isset($unread_announcements)) {
     try {
-        $user_id = $_SESSION['user_id'] ?? 0;
-        $stmt = $pdo->prepare("
-            SELECT COUNT(*) FROM announcements a
-            WHERE a.is_active = 1 
-            AND (a.target_audience = 'all' OR a.target_audience = 'users')
-            AND (a.start_date IS NULL OR a.start_date <= CURDATE())
-            AND (a.end_date IS NULL OR a.end_date >= CURDATE())
-            AND NOT EXISTS (
-                SELECT 1 FROM announcement_views av 
-                WHERE av.announcement_id = a.id AND av.user_id = :user_id
-            )
-        ");
-        $stmt->execute([':user_id' => $user_id]);
-        $unread_announcements = (int)$stmt->fetchColumn();
+        if (!isset($pdo)) {
+            error_log("Sidebar: PDO connection not available");
+            $unread_announcements = 0;
+        } else {
+            $user_id = $_SESSION['user_id'] ?? 0;
+            $stmt = $pdo->prepare("
+                SELECT COUNT(*) FROM announcements a
+                WHERE a.is_active = 1 
+                AND (a.target_audience = 'all' OR a.target_audience = 'users')
+                AND (a.start_date IS NULL OR a.start_date <= CURDATE())
+                AND (a.end_date IS NULL OR a.end_date >= CURDATE())
+                AND NOT EXISTS (
+                    SELECT 1 FROM announcement_views av 
+                    WHERE av.announcement_id = a.id AND av.user_id = ?
+                )
+            ");
+            $stmt->execute([$user_id]);
+            $unread_announcements = (int)$stmt->fetchColumn();
+        }
     } catch (PDOException $e) {
+        error_log("Sidebar unread announcements query error: " . $e->getMessage());
+        $unread_announcements = 0;
+    } catch (Exception $e) {
+        error_log("Sidebar unread announcements unexpected error: " . $e->getMessage());
         $unread_announcements = 0;
     }
 }
