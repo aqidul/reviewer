@@ -27,11 +27,14 @@ if (!function_exists('sanitizeInput')) {
 
 if (!function_exists('redirect')) {
     function redirect(string $path): void {
+        if (str_contains($path, "\r") || str_contains($path, "\n")) {
+            $path = '/index.php';
+        }
+        if (str_contains($path, '../') || str_contains($path, '..\\')) {
+            $path = '/index.php';
+        }
         $allowed_prefixes = ['/', '/user/', '/admin/', '/seller/'];
         $fallback_path = '/index.php';
-        if (str_contains($path, "\r") || str_contains($path, "\n")) {
-            $path = $fallback_path;
-        }
         $parsed = parse_url($path);
         if ($parsed !== false && (isset($parsed['scheme']) || isset($parsed['host']) || str_starts_with($path, '//'))) {
             $path = $fallback_path;
