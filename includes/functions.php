@@ -30,7 +30,8 @@ if (!function_exists('redirect')) {
         if (str_contains($path, "\r") || str_contains($path, "\n")) {
             $path = '/';
         }
-        if (preg_match('/^[a-z][a-z0-9+.-]*:\\/\\//i', $path) === 1 || str_starts_with($path, '//')) {
+        $parsed = parse_url($path);
+        if ($parsed !== false && (isset($parsed['scheme']) || isset($parsed['host']))) {
             $path = '/';
         }
         if ($path === '') {
