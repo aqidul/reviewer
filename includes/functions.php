@@ -30,7 +30,7 @@ if (!function_exists('redirect')) {
         if (str_contains($path, "\r") || str_contains($path, "\n")) {
             $path = '/';
         }
-        if (str_contains($path, '://') || str_starts_with($path, '//')) {
+        if (preg_match('/^[a-z][a-z0-9+.-]*:\\/\\//i', $path) === 1 || str_starts_with($path, '//')) {
             $path = '/';
         }
         if ($path === '') {
