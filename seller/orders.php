@@ -48,6 +48,13 @@ try {
     if (!empty($orders)) {
         $order_ids = array_column($orders, 'id');
         $product_links = array_values(array_unique(array_filter(array_column($orders, 'product_link'))));
+        $max_entry_filters = 200;
+        if (count($order_ids) > $max_entry_filters) {
+            $order_ids = array_slice($order_ids, 0, $max_entry_filters);
+        }
+        if (count($product_links) > $max_entry_filters) {
+            $product_links = array_slice($product_links, 0, $max_entry_filters);
+        }
         $entry_conditions = [];
         $entry_params = [];
         
@@ -89,7 +96,7 @@ try {
                 LEFT JOIN task_steps ts2 ON t.id = ts2.task_id AND ts2.step_number = 2
                 LEFT JOIN task_steps ts3 ON t.id = ts3.task_id AND ts3.step_number = 3
                 LEFT JOIN task_steps ts4 ON t.id = ts4.task_id AND ts4.step_number = 4
-                WHERE " . implode(' OR ', $entry_conditions) . "
+                WHERE (" . implode(' OR ', $entry_conditions) . ")
                 ORDER BY t.created_at DESC
             ";
             
