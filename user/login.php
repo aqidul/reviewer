@@ -55,16 +55,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             // Check if login field is email or mobile
             $is_email = str_contains($login_field, '@');
-            $field = $is_email ? 'email' : 'mobile';
             
-            $stmt = $pdo->prepare("
-                SELECT id, name, email, mobile, password, status, user_type
-                FROM users 
-                WHERE $field = :login_field 
-                AND user_type = 'user'
-                AND status = 'active'
-                LIMIT 1
-            ");
+            // Use separate queries to avoid dynamic column names in SQL
+            if ($is_email) {
+                $stmt = $pdo->prepare("
+                    SELECT id, name, email, mobile, password, status, user_type
+                    FROM users 
+                    WHERE email = :login_field 
+                    AND user_type = 'user'
+                    AND status = 'active'
+                    LIMIT 1
+                ");
+            } else {
+                $stmt = $pdo->prepare("
+                    SELECT id, name, email, mobile, password, status, user_type
+                    FROM users 
+                    WHERE mobile = :login_field 
+                    AND user_type = 'user'
+                    AND status = 'active'
+                    LIMIT 1
+                ");
+            }
             
             $stmt->execute([':login_field' => $login_field]);
             $user = $stmt->fetch();

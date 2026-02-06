@@ -115,15 +115,22 @@ function updateProfile($pdo, $user) {
                 sendErrorResponse('Invalid email format', 400);
             }
             
-            // Check if username/email already exists
-            if ($field === 'username' || $field === 'email') {
-                $stmt = $pdo->prepare("SELECT id FROM users WHERE $field = ? AND id != ?");
+            // Check if username/email already exists using safe queries
+            if ($field === 'username') {
+                $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
                 $stmt->execute([$value, $user['id']]);
                 if ($stmt->fetch()) {
-                    sendErrorResponse(ucfirst($field) . ' already taken', 400);
+                    sendErrorResponse('Username already taken', 400);
+                }
+            } elseif ($field === 'email') {
+                $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+                $stmt->execute([$value, $user['id']]);
+                if ($stmt->fetch()) {
+                    sendErrorResponse('Email already taken', 400);
                 }
             }
             
+            // Use whitelisted field names only
             $update_fields[] = "$field = ?";
             $update_values[] = $value;
         }

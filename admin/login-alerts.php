@@ -68,21 +68,30 @@ $alerts = [];
 $totalAlerts = 0;
 
 try {
-    $query = "SELECT la.*, u.name, u.email 
-              FROM login_alerts la 
-              LEFT JOIN users u ON la.user_id = u.id";
+    $baseQuery = "SELECT la.*, u.name, u.email 
+                  FROM login_alerts la 
+                  LEFT JOIN users u ON la.user_id = u.id";
     
+    $whereClause = "";
     if ($filter === 'unread') {
-        $query .= " WHERE la.is_read = 0";
+        $whereClause = " WHERE la.is_read = 0";
     } elseif ($filter === 'suspicious') {
-        $query .= " WHERE la.alert_type IN ('suspicious_ip', 'multiple_failures', 'location_change')";
+        $whereClause = " WHERE la.alert_type IN ('suspicious_ip', 'multiple_failures', 'location_change')";
     }
     
-    $countQuery = str_replace('la.*, u.name, u.email', 'COUNT(*)', $query);
+    // Count query using prepared statement
+    $countQuery = "SELECT COUNT(*) FROM login_alerts la" . $whereClause;
     $totalAlerts = (int)$pdo->query($countQuery)->fetchColumn();
     
-    $query .= " ORDER BY la.created_at DESC LIMIT " . (($page - 1) * $perPage) . ", $perPage";
-    $alerts = $pdo->query($query)->fetchAll();
+    // Main query with safe pagination using prepared statement
+    $offset = ($page - 1) * $perPage;
+    $query = $baseQuery . $whereClause . " ORDER BY la.created_at DESC LIMIT :offset, :limit";
+    
+    $stmt = $pdo->prepare($query);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+    $stmt->execute();
+    $alerts = $stmt->fetchAll();
     
     $totalPages = ceil($totalAlerts / $perPage);
 } catch (PDOException $e) {

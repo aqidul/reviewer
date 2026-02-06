@@ -235,11 +235,13 @@ class Security {
     }
     
     /**
-     * Sanitize input string
+     * Sanitize input string for display
+     * Note: For database operations, use prepared statements instead
      */
     public static function sanitize(string $input): string {
         $input = trim($input);
-        $input = stripslashes($input);
+        // Remove stripslashes - not needed with magic_quotes disabled (PHP 5.4+)
+        // stripslashes can corrupt legitimate data
         $input = htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
         return $input;
     }
