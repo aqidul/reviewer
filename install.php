@@ -95,10 +95,13 @@ try {
     $adminEmail = env('ADMIN_EMAIL', 'admin@reviewflow.com');
     $adminPasswordPlain = env('ADMIN_PASSWORD', 'ChangeMe123!');
     $adminPassword = password_hash($adminPasswordPlain, PASSWORD_DEFAULT);
-    $conn->exec("
+    
+    // Use prepared statement for admin insertion
+    $stmt = $conn->prepare("
         INSERT IGNORE INTO `admin_settings` (`admin_username`, `admin_password`) 
-        VALUES ('$adminEmail', '$adminPassword')
+        VALUES (?, ?)
     ");
+    $stmt->execute([$adminEmail, $adminPassword]);
     
     // Create activity log table
     $conn->exec("

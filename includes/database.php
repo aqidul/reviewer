@@ -30,8 +30,9 @@ class Database {
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->conn->exec("set names utf8");
         } catch(PDOException $e) {
-            error_log("Database Connection Error: " . $e->getMessage());
-            echo "Connection Error. Please contact administrator.";
+            $errorId = uniqid('db_', true);
+            error_log("Database Connection Error [$errorId]: " . $e->getMessage());
+            echo "Connection Error. Please contact administrator with error ID: $errorId";
         }
         
         return $this->conn;

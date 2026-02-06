@@ -28,7 +28,7 @@ function loadEnv(string $path = null): void {
         
         // Parse KEY=VALUE
         if (strpos($line, '=') !== false) {
-            list($key, $value) = explode('=', $line, 2);
+            [$key, $value] = explode('=', $line, 2);
             $key = trim($key);
             $value = trim($value);
             
