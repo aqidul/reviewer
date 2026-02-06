@@ -2,7 +2,7 @@
 // Enhanced error handling for dashboard
 try {
     require_once '../includes/config.php';
-    require_once '../includes/functions.php';
+    require_once __DIR__ . '/../includes/functions.php';
     
     // Check authentication
     if (!isUser()) {

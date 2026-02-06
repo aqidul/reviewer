@@ -175,44 +175,6 @@ function updateLoginStreak($db, $user_id) {
     return true;
 }
 
-/**
- * Award badge to user
- */
-function awardBadge($db, $user_id, $badge_name) {
-    try {
-        // Get badge ID
-        $stmt = $db->prepare("SELECT id FROM badges WHERE name = ? AND is_active = 1");
-        $stmt->execute([$badge_name]);
-        $badge_id = $stmt->fetchColumn();
-        
-        if (!$badge_id) {
-            return false;
-        }
-        
-        // Check if user already has badge
-        $check = $db->prepare("SELECT id FROM user_badges WHERE user_id = ? AND badge_id = ?");
-        $check->execute([$user_id, $badge_id]);
-        if ($check->fetch()) {
-            return false; // Already has badge
-        }
-        
-        // Award badge
-        $insert = $db->prepare("
-            INSERT INTO user_badges (user_id, badge_id)
-            VALUES (?, ?)
-        ");
-        $insert->execute([$user_id, $badge_id]);
-        
-        // Send notification
-        createNotification($db, $user_id, 'badge_earned', 
-            "You earned a new badge: {$badge_name}!");
-        
-        return true;
-    } catch (Exception $e) {
-        error_log("Award badge error: " . $e->getMessage());
-        return false;
-    }
-}
 
 /**
  * Check and award badges based on achievements

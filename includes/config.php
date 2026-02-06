@@ -6,7 +6,7 @@ ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
 // Debug mode (set to false in production)
-const DEBUG = false;
+const DEBUG = true;
 
 // Database Configuration
 const DB_HOST = 'localhost';
