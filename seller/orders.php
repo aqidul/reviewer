@@ -11,6 +11,9 @@ $seller_id = (int)$seller_id;
 // Build query
 $where_clause = "WHERE seller_id = ?";
 $params = [$seller_id];
+$build_entry_link_key = static function (?string $product_link): string {
+    return 'link_' . hash('sha256', $product_link ?? '');
+};
 
 if ($status_filter !== 'all') {
     $where_clause .= " AND admin_status = ?";
@@ -80,10 +83,6 @@ try {
             $entry_params[] = $seller_id;
             $entry_params = array_merge($entry_params, $product_links);
         }
-        
-        $build_entry_link_key = static function (?string $product_link): string {
-            return 'link_' . sha1($product_link ?? '');
-        };
         
         if (!empty($entry_conditions)) {
             $entry_query = "
