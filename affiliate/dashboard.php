@@ -211,7 +211,7 @@ try {
                                 <?php foreach ($commission_breakdown as $breakdown): ?>
                                 <tr>
                                     <td>
-                                        <span class="badge bg-primary">Level <?= $breakdown['commission_level'] ?></span>
+                                        <span class="badge bg-primary">Level <?= $breakdown['level'] ?></span>
                                     </td>
                                     <td><?= number_format($breakdown['count']) ?></td>
                                     <td>₹<?= number_format($breakdown['total_amount'], 2) ?></td>
