@@ -28,7 +28,7 @@ class Database {
                 $this->password
             );
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->conn->exec("set names utf8");
+            $this->conn->exec("set names utf8mb4");
         } catch(PDOException $e) {
             $errorId = uniqid('db_', true);
             error_log("Database Connection Error [$errorId]: " . $e->getMessage());

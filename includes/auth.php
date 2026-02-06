@@ -152,7 +152,7 @@ class Auth {
     // Logout
     public static function logout() {
         session_destroy();
-        redirect('../index.php');
+        redirect(APP_URL . '/index.php');
     }
 }
 ?>
