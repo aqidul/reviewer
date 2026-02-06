@@ -45,6 +45,13 @@ try {
     $stmt->execute($params);
     $orders = $stmt->fetchAll();
     
+    if ($selected_order_id > 0) {
+        $order_ids_for_modal = array_column($orders, 'id');
+        if (!in_array($selected_order_id, $order_ids_for_modal, true)) {
+            $selected_order_id = 0;
+        }
+    }
+    
     $entry_tasks = [];
     if (!empty($orders)) {
         $order_ids = array_column($orders, 'id');
@@ -73,6 +80,10 @@ try {
             $entry_params[] = $seller_id;
             $entry_params = array_merge($entry_params, $product_links);
         }
+        
+        $build_entry_link_key = static function (?string $product_link): string {
+            return 'link_' . sha1($product_link ?? '');
+        };
         
         if (!empty($entry_conditions)) {
             $entry_query = "
@@ -110,7 +121,7 @@ try {
             foreach ($entry_rows as $entry) {
                 $entry_key = $entry['review_request_id']
                     ? 'request_' . $entry['review_request_id']
-                    : 'link_' . sha1((string)$entry['product_link']);
+                    : $build_entry_link_key($entry['product_link']);
                 $entry_tasks[$entry_key][] = $entry;
             }
         }
@@ -401,7 +412,7 @@ try {
                                                 <?php
                                                 $entry_key = 'request_' . $order['id'];
                                                 if (empty($entry_tasks[$entry_key]) && !empty($order['product_link'])) {
-                                                    $entry_key = 'link_' . sha1($order['product_link']);
+                                                    $entry_key = $build_entry_link_key($order['product_link']);
                                                 }
                                                 $order_entries = $entry_tasks[$entry_key] ?? [];
                                                 ?>
@@ -503,7 +514,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     <?php if ($selected_order_id > 0): ?>
-    var modalElement = document.getElementById('orderModal<?= $selected_order_id ?>');
+    var selectedOrderId = <?= json_encode($selected_order_id, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var modalElement = document.getElementById('orderModal' + selectedOrderId);
     if (modalElement) {
         var orderModal = new bootstrap.Modal(modalElement);
         orderModal.show();
