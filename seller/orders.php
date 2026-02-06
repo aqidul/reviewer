@@ -5,14 +5,28 @@ require_once __DIR__ . '/includes/header.php';
 
 // Get filter
 $status_filter = $_GET['status'] ?? 'all';
-$selected_order_id = isset($_GET['id']) ? max(0, intval($_GET['id'])) : 0;
+$selected_order_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT, [
+    'options' => ['min_range' => 1]
+]) ?: 0;
 $seller_id = (int)$seller_id;
 
 // Build query
 $where_clause = "WHERE seller_id = ?";
 $params = [$seller_id];
 $build_entry_link_key = static function (?string $product_link): string {
-    return 'link_' . hash('sha256', $product_link ?? '');
+    $normalized_link = trim((string)$product_link);
+    if ($normalized_link === '') {
+        return '';
+    }
+    return 'link_' . hash('sha256', $normalized_link);
+};
+$resolve_entry_keys = static function (array $order) use ($build_entry_link_key): array {
+    $keys = ['request_' . $order['id']];
+    $link_key = $build_entry_link_key($order['product_link'] ?? null);
+    if ($link_key !== '') {
+        $keys[] = $link_key;
+    }
+    return $keys;
 };
 
 if ($status_filter !== 'all') {
@@ -49,7 +63,7 @@ try {
     $orders = $stmt->fetchAll();
     
     if ($selected_order_id > 0) {
-        $order_ids_for_modal = array_column($orders, 'id');
+        $order_ids_for_modal = array_map('intval', array_column($orders, 'id'));
         if (!in_array($selected_order_id, $order_ids_for_modal, true)) {
             $selected_order_id = 0;
         }
@@ -58,7 +72,9 @@ try {
     $entry_tasks = [];
     if (!empty($orders)) {
         $order_ids = array_column($orders, 'id');
-        $product_links = array_values(array_unique(array_filter(array_column($orders, 'product_link'))));
+        $product_links = array_column($orders, 'product_link');
+        $product_links = array_filter($product_links);
+        $product_links = array_values(array_unique($product_links));
         $max_entry_filters = 200;
         if (count($order_ids) > $max_entry_filters) {
             error_log("Seller entry lookup truncated order_ids for seller {$seller_id}");
@@ -118,9 +134,15 @@ try {
             $entry_rows = $stmt->fetchAll();
             
             foreach ($entry_rows as $entry) {
-                $entry_key = $entry['review_request_id']
-                    ? 'request_' . $entry['review_request_id']
-                    : $build_entry_link_key($entry['product_link']);
+                if (!empty($entry['review_request_id'])) {
+                    $entry_key = 'request_' . $entry['review_request_id'];
+                    $entry_tasks[$entry_key][] = $entry;
+                    continue;
+                }
+                $entry_key = $build_entry_link_key($entry['product_link']);
+                if ($entry_key === '') {
+                    continue;
+                }
                 $entry_tasks[$entry_key][] = $entry;
             }
         }
@@ -409,11 +431,13 @@ try {
                                                 <?php endif; ?>
                                                 
                                                 <?php
-                                                $entry_key = 'request_' . $order['id'];
-                                                if (empty($entry_tasks[$entry_key]) && !empty($order['product_link'])) {
-                                                    $entry_key = $build_entry_link_key($order['product_link']);
+                                                $order_entries = [];
+                                                foreach ($resolve_entry_keys($order) as $entry_key) {
+                                                    if (!empty($entry_tasks[$entry_key])) {
+                                                        $order_entries = $entry_tasks[$entry_key];
+                                                        break;
+                                                    }
                                                 }
-                                                $order_entries = $entry_tasks[$entry_key] ?? [];
                                                 ?>
                                                 
                                                 <hr>
@@ -513,7 +537,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     <?php if ($selected_order_id > 0): ?>
-    var selectedOrderId = <?= json_encode($selected_order_id, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    var selectedOrderId = <?= (int)$selected_order_id ?>;
     var modalElement = document.getElementById('orderModal' + selectedOrderId);
     if (modalElement) {
         var orderModal = new bootstrap.Modal(modalElement);
