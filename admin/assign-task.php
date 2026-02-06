@@ -60,6 +60,16 @@ try {
     error_log("Fetch brands error: " . $e->getMessage());
 }
 
+// Fetch active sellers for dropdown
+$sellers = [];
+try {
+    $stmt = $pdo->prepare("SELECT id, name, email, company_name FROM sellers WHERE status = 'active' ORDER BY name ASC");
+    $stmt->execute();
+    $sellers = $stmt->fetchAll();
+} catch (PDOException $e) {
+    error_log("Fetch sellers error: " . $e->getMessage());
+}
+
 // Handle BULK task assignment
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_assign'])) {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -73,9 +83,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_assign'])) {
     $deadline = $_POST['deadline'] ?? null;
     $priority = $_POST['priority'] ?? 'medium';
     $notes = sanitizeInput($_POST['notes'] ?? '');
+    $seller_id = intval($_POST['seller_id'] ?? 0);
+    $review_request_id = intval($_POST['review_request_id'] ?? 0);
+    
+    if ($review_request_id > 0) {
+        try {
+            $stmt = $pdo->prepare("SELECT seller_id, product_link FROM review_requests WHERE id = ?");
+            $stmt->execute([$review_request_id]);
+            $review_request = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$review_request) {
+                $errors[] = 'Invalid review request ID';
+            } else {
+                $seller_id = (int) $review_request['seller_id'];
+                $product_link = $review_request['product_link'] ?: $product_link;
+            }
+        } catch (PDOException $e) {
+            $errors[] = 'Failed to load review request';
+        }
+    }
     
     if (empty($selected_users)) {
         $errors[] = 'Please select at least one user';
+    }
+    
+    if ($seller_id <= 0) {
+        $errors[] = 'Seller is required';
     }
     
     if (empty($product_link)) {
@@ -98,14 +130,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_assign'])) {
                 
                 // Insert task
                 $stmt = $pdo->prepare("
-                    INSERT INTO tasks (user_id, product_link, brand_name, task_status, commission, deadline, priority, admin_notes, assigned_by, created_at)
-                    VALUES (:user_id, :product_link, :brand_name, 'pending', :commission, :deadline, :priority, :notes, :admin, NOW())
+                    INSERT INTO tasks (
+                        user_id,
+                        product_link,
+                        brand_name,
+                        seller_id,
+                        review_request_id,
+                        task_status,
+                        commission,
+                        deadline,
+                        priority,
+                        admin_notes,
+                        assigned_by,
+                        created_at
+                    )
+                    VALUES (
+                        :user_id,
+                        :product_link,
+                        :brand_name,
+                        :seller_id,
+                        :review_request_id,
+                        'pending',
+                        :commission,
+                        :deadline,
+                        :priority,
+                        :notes,
+                        :admin,
+                        NOW()
+                    )
                 ");
                 
                 $stmt->execute([
                     ':user_id' => $uid,
                     ':product_link' => $product_link,
                     ':brand_name' => !empty($brand_name) ? $brand_name : null,
+                    ':seller_id' => $seller_id,
+                    ':review_request_id' => $review_request_id > 0 ? $review_request_id : null,
                     ':commission' => $commission,
                     ':deadline' => !empty($deadline) ? $deadline : null,
                     ':priority' => $priority,
@@ -211,6 +271,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['single_assign'])) {
     $deadline = $_POST['deadline'] ?? null;
     $priority = $_POST['priority'] ?? 'medium';
     $notes = sanitizeInput($_POST['notes'] ?? '');
+    $seller_id = intval($_POST['seller_id'] ?? 0);
+    $review_request_id = intval($_POST['review_request_id'] ?? 0);
+    
+    if ($review_request_id > 0) {
+        try {
+            $stmt = $pdo->prepare("SELECT seller_id, product_link FROM review_requests WHERE id = ?");
+            $stmt->execute([$review_request_id]);
+            $review_request = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$review_request) {
+                $errors[] = 'Invalid review request ID';
+            } else {
+                $seller_id = (int) $review_request['seller_id'];
+                $product_link = $review_request['product_link'] ?: $product_link;
+            }
+        } catch (PDOException $e) {
+            $errors[] = 'Failed to load review request';
+        }
+    }
+    
+    if ($seller_id <= 0) {
+        $errors[] = 'Seller is required';
+    }
     
     if (empty($product_link)) {
         $errors[] = 'Product link is required';
@@ -230,14 +312,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['single_assign'])) {
             
             // Insert task
             $stmt = $pdo->prepare("
-                INSERT INTO tasks (user_id, product_link, brand_name, task_status, commission, deadline, priority, admin_notes, assigned_by, created_at)
-                VALUES (:user_id, :product_link, :brand_name, 'pending', :commission, :deadline, :priority, :notes, :admin, NOW())
+                INSERT INTO tasks (
+                    user_id,
+                    product_link,
+                    brand_name,
+                    seller_id,
+                    review_request_id,
+                    task_status,
+                    commission,
+                    deadline,
+                    priority,
+                    admin_notes,
+                    assigned_by,
+                    created_at
+                )
+                VALUES (
+                    :user_id,
+                    :product_link,
+                    :brand_name,
+                    :seller_id,
+                    :review_request_id,
+                    'pending',
+                    :commission,
+                    :deadline,
+                    :priority,
+                    :notes,
+                    :admin,
+                    NOW()
+                )
             ");
             
             $stmt->execute([
                 ':user_id' => $user_id,
                 ':product_link' => $product_link,
                 ':brand_name' => !empty($brand_name) ? $brand_name : null,
+                ':seller_id' => $seller_id,
+                ':review_request_id' => $review_request_id > 0 ? $review_request_id : null,
                 ':commission' => $commission,
                 ':deadline' => !empty($deadline) ? $deadline : null,
                 ':priority' => $priority,
@@ -914,6 +1024,28 @@ $csrf_token = generateCSRFToken();
                     <h3 class="card-title">📝 Step 2: Task Details</h3>
                     
                     <div class="form-group">
+                        <label for="seller_id">Seller *</label>
+                        <select id="seller_id" name="seller_id" class="form-control" required>
+                            <option value="">Select seller</option>
+                            <?php foreach ($sellers as $seller): ?>
+                                <?php $seller_label = trim(($seller['company_name'] ?? '') . ' - ' . ($seller['name'] ?? '') . ' (' . ($seller['email'] ?? '') . ')'); ?>
+                                <option value="<?php echo (int) $seller['id']; ?>" <?php echo ((int)($_POST['seller_id'] ?? 0) === (int)$seller['id']) ? 'selected' : ''; ?>>
+                                    <?php echo escape($seller_label); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="form-text">This links the task to the seller so entries show on seller dashboard</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="review_request_id">Review Request ID (Optional)</label>
+                        <input type="number" id="review_request_id" name="review_request_id" class="form-control"
+                               placeholder="Enter review_request ID to auto-link seller/product"
+                               value="<?php echo escape($_POST['review_request_id'] ?? ''); ?>">
+                        <p class="form-text">If provided, seller and product link will be auto-linked from this request</p>
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="product_link">Product Link (Amazon/Flipkart) *</label>
                         <input type="url" id="product_link" name="product_link" class="form-control" 
                                placeholder="https://www.amazon.in/dp/XXXXXXXXXX or https://www.flipkart.com/..." required
@@ -1036,6 +1168,27 @@ $csrf_token = generateCSRFToken();
                 <!-- Task Details for Bulk -->
                 <div class="card">
                     <h3 class="card-title">📝 Task Details (Same for all selected users)</h3>
+
+                    <div class="form-group">
+                        <label>Seller *</label>
+                        <select name="seller_id" class="form-control" required>
+                            <option value="">Select seller</option>
+                            <?php foreach ($sellers as $seller): ?>
+                                <?php $seller_label = trim(($seller['company_name'] ?? '') . ' - ' . ($seller['name'] ?? '') . ' (' . ($seller['email'] ?? '') . ')'); ?>
+                                <option value="<?php echo (int) $seller['id']; ?>">
+                                    <?php echo escape($seller_label); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="form-text">Links tasks to seller for visibility</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Review Request ID (Optional)</label>
+                        <input type="number" name="review_request_id" class="form-control"
+                               placeholder="Enter review_request ID to auto-link seller/product">
+                        <p class="form-text">If provided, seller/product link will be auto-linked from this request</p>
+                    </div>
                     
                     <div class="form-group">
                         <label>Product Link (Amazon/Flipkart) *</label>
@@ -1148,6 +1301,27 @@ $csrf_token = generateCSRFToken();
                 <!-- Task Details for No Task Users -->
                 <div class="card">
                     <h3 class="card-title">📝 Task Details for New Users</h3>
+
+                    <div class="form-group">
+                        <label>Seller *</label>
+                        <select name="seller_id" class="form-control" required>
+                            <option value="">Select seller</option>
+                            <?php foreach ($sellers as $seller): ?>
+                                <?php $seller_label = trim(($seller['company_name'] ?? '') . ' - ' . ($seller['name'] ?? '') . ' (' . ($seller['email'] ?? '') . ')'); ?>
+                                <option value="<?php echo (int) $seller['id']; ?>">
+                                    <?php echo escape($seller_label); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="form-text">Links tasks to seller for visibility</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Review Request ID (Optional)</label>
+                        <input type="number" name="review_request_id" class="form-control"
+                               placeholder="Enter review_request ID to auto-link seller/product">
+                        <p class="form-text">If provided, seller/product link will be auto-linked from this request</p>
+                    </div>
                     
                     <div class="form-group">
                         <label>Product Link (Amazon/Flipkart) *</label>
@@ -1356,10 +1530,17 @@ function deselectAllNoTaskUsers() {
 document.getElementById('assignTaskForm').addEventListener('submit', function(e) {
     const userId = document.getElementById('selected_user_id').value;
     const productLink = document.getElementById('product_link').value;
+    const sellerId = document.getElementById('seller_id').value;
     
     if (!userId || userId === '0') {
         e.preventDefault();
         alert('Please select a user first!');
+        return false;
+    }
+    
+    if (!sellerId) {
+        e.preventDefault();
+        alert('Please select a seller!');
         return false;
     }
     
