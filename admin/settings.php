@@ -146,18 +146,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_admin_password
     $new_password = $_POST['new_password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
     
-    // Hardcoded admin credentials check (as per original setup)
-    $admin_user = 'aqidulmumtaz';
-    $admin_pass = 'Malik@241123';
+    // Admin credentials from environment
+    $admin_user = env('ADMIN_EMAIL', 'admin@reviewflow.com');
+    $admin_pass = env('ADMIN_PASSWORD', '');
     
-    if ($current_password !== $admin_pass) {
+    // Verify current password
+    $isCurrentPasswordValid = false;
+    if (strpos($admin_pass, '$2y$') === 0) {
+        $isCurrentPasswordValid = password_verify($current_password, $admin_pass);
+    } else {
+        $isCurrentPasswordValid = ($current_password === $admin_pass);
+    }
+    
+    if (!$isCurrentPasswordValid) {
         $errors[] = "Current password is incorrect";
     } elseif (strlen($new_password) < 8) {
         $errors[] = "New password must be at least 8 characters";
     } elseif ($new_password !== $confirm_password) {
         $errors[] = "New passwords do not match";
     } else {
-        // Note: In production, store admin credentials in database or config file
+        // Note: In production, store admin credentials in database or update .env file
         $errors[] = "Admin password change requires manual update in config file for security";
     }
     $active_tab = 'security';

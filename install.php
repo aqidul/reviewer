@@ -3,10 +3,13 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-$host = 'localhost';
-$dbname = 'reviewflow';
-$username = 'reviewflow_user';
-$password = 'Malik@241123';
+// Load environment variables
+require_once __DIR__ . '/includes/env-loader.php';
+
+$host = env('DB_HOST', 'localhost');
+$dbname = env('DB_NAME', 'reviewflow');
+$username = env('DB_USER', 'reviewflow_user');
+$password = env('DB_PASS', '');
 
 try {
     // Create database connection
@@ -88,12 +91,17 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
     
-    // Insert default admin credentials
-    $adminPassword = password_hash('Malik@241123', PASSWORD_DEFAULT);
-    $conn->exec("
+    // Insert default admin credentials from environment
+    $adminEmail = env('ADMIN_EMAIL', 'admin@reviewflow.com');
+    $adminPasswordPlain = env('ADMIN_PASSWORD', 'ChangeMe123!');
+    $adminPassword = password_hash($adminPasswordPlain, PASSWORD_DEFAULT);
+    
+    // Use prepared statement for admin insertion
+    $stmt = $conn->prepare("
         INSERT IGNORE INTO `admin_settings` (`admin_username`, `admin_password`) 
-        VALUES ('aqidulmumtaz', '$adminPassword')
+        VALUES (?, ?)
     ");
+    $stmt->execute([$adminEmail, $adminPassword]);
     
     // Create activity log table
     $conn->exec("

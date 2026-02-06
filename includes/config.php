@@ -1,27 +1,30 @@
 <?php
 declare(strict_types=1);
 
+// Load environment variables
+require_once __DIR__ . '/env-loader.php';
+
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
 // Debug mode (set to false in production)
-const DEBUG = true;
+define('DEBUG', env('DEBUG_MODE', false));
 
 // Database Configuration
-const DB_HOST = 'localhost';
-const DB_USER = 'reviewflow_user';
-const DB_PASS = 'Malik@241123';
-const DB_NAME = 'reviewflow';
-const DB_CHARSET = 'utf8mb4';
+define('DB_HOST', env('DB_HOST', 'localhost'));
+define('DB_USER', env('DB_USER', 'reviewflow_user'));
+define('DB_PASS', env('DB_PASS', ''));
+define('DB_NAME', env('DB_NAME', 'reviewflow'));
+define('DB_CHARSET', env('DB_CHARSET', 'utf8mb4'));
 
 // Application Settings
-const APP_NAME = 'ReviewFlow';
-const APP_URL = 'https://palians.com/reviewer';
-const BASE_URL = APP_URL; // Alias for shared header/footer templates (legacy usage).
-const ADMIN_URL = 'https://palians.com/reviewer/admin';
-const SELLER_URL = 'https://palians.com/reviewer/seller';
-const APP_VERSION = '3.0.0';
+define('APP_NAME', env('APP_NAME', 'ReviewFlow'));
+define('APP_URL', env('APP_URL', 'https://palians.com/reviewer'));
+define('BASE_URL', APP_URL); // Alias for shared header/footer templates (legacy usage).
+define('ADMIN_URL', env('ADMIN_URL', 'https://palians.com/reviewer/admin'));
+define('SELLER_URL', env('SELLER_URL', 'https://palians.com/reviewer/seller'));
+define('APP_VERSION', env('APP_VERSION', '3.0.0'));
 
 // Security Settings
 const SESSION_TIMEOUT = 3600;
@@ -47,18 +50,18 @@ const WHATSAPP_API_URL = 'https://api.whatsapp.com/send';
 const WHATSAPP_SUPPORT = '919876543210';
 
 // Email Settings
-const SMTP_HOST = 'smtp.gmail.com';
-const SMTP_PORT = 587;
-const SMTP_USER = 'your-email@gmail.com';
-const SMTP_PASS = 'your-app-password';
-const SMTP_FROM = 'noreply@palians.com';
-const SMTP_FROM_NAME = 'ReviewFlow';
+define('SMTP_HOST', env('SMTP_HOST', 'smtp.gmail.com'));
+define('SMTP_PORT', (int)env('SMTP_PORT', 587));
+define('SMTP_USER', env('SMTP_USER', ''));
+define('SMTP_PASS', env('SMTP_PASS', ''));
+define('SMTP_FROM', env('SMTP_FROM', 'noreply@palians.com'));
+define('SMTP_FROM_NAME', env('SMTP_FROM_NAME', 'ReviewFlow'));
 
 // Payment Gateway Settings (Override with database settings)
-const RAZORPAY_KEY_ID = '';
-const RAZORPAY_KEY_SECRET = '';
-const PAYUMONEY_MERCHANT_KEY = '';
-const PAYUMONEY_MERCHANT_SALT = '';
+define('RAZORPAY_KEY_ID', env('RAZORPAY_KEY_ID', ''));
+define('RAZORPAY_KEY_SECRET', env('RAZORPAY_KEY_SECRET', ''));
+define('PAYUMONEY_MERCHANT_KEY', env('PAYU_MERCHANT_KEY', ''));
+define('PAYUMONEY_MERCHANT_SALT', env('PAYU_MERCHANT_SALT', ''));
 
 // GST Settings
 const GST_RATE = 18;

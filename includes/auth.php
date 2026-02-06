@@ -97,11 +97,22 @@ class Auth {
     
     // Admin Login
     public function adminLogin($username, $password) {
-        // Hardcoded admin credentials (as per your requirement)
-        $admin_username = 'aqidulmumtaz';
-        $admin_password = 'Malik@241123';
+        // Load admin credentials from environment
+        $admin_username = env('ADMIN_EMAIL', 'admin@reviewflow.com');
+        $admin_password = env('ADMIN_PASSWORD', '');
         
-        if ($username === $admin_username && $password === $admin_password) {
+        // Support both plain text and hashed passwords
+        $isValidPassword = false;
+        if (strpos($admin_password, '$2y$') === 0) {
+            $isValidPassword = password_verify($password, $admin_password);
+        } else {
+            $isValidPassword = ($password === $admin_password);
+            if ($isValidPassword) {
+                error_log("WARNING: Admin password is not hashed in .env file");
+            }
+        }
+        
+        if ($username === $admin_username && $isValidPassword) {
             // Create or update admin user in database
             $query = "SELECT * FROM users WHERE email = :email AND user_type = 'admin'";
             $stmt = $this->db->prepare($query);

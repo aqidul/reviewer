@@ -14,12 +14,14 @@ declare(strict_types=1);
 // ============================================
 
 /**
- * Sanitize user input
+ * Sanitize user input for display
+ * Note: For database operations, always use prepared statements
  */
 if (!function_exists('sanitizeInput')) {
     function sanitizeInput(string $input): string {
         $input = trim($input);
-        $input = stripslashes($input);
+        // Removed stripslashes - not needed with magic_quotes disabled (PHP 5.4+)
+        // and can corrupt legitimate data
         $input = htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
         return $input;
     }
