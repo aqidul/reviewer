@@ -3,6 +3,8 @@ session_start();
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/security.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/gamification-functions.php';
+require_once __DIR__ . '/../includes/referral-functions.php';
 
 if (!isset($_SESSION['admin_name'])) {
     header('Location: ' . ADMIN_URL);
@@ -102,6 +104,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_refund'])) {
             
             $stmt = $pdo->prepare("UPDATE tasks SET task_status = 'completed' WHERE id = :id");
             $stmt->execute([':id' => $task_id]);
+
+            // ✅ Gamification hook (award points + badges)
+            $pointsCheck = $pdo->prepare("
+                SELECT 1 FROM point_transactions
+                WHERE user_id = ? AND type = 'task_completion' AND reference_id = ?
+            ");
+            $pointsCheck->execute([$task['user_id'], $task_id]);
+
+            if (!$pointsCheck->fetchColumn()) {
+                awardTaskCompletionPoints($pdo, $task['user_id'], $task_id);
+            }
+
+            // ✅ Referral commission hook (avoid duplicates)
+            $refCheck = $pdo->prepare("
+                SELECT 1 FROM referral_earnings
+                WHERE task_id = ? AND from_user_id = ?
+                LIMIT 1
+            ");
+            $refCheck->execute([$task_id, $task['user_id']]);
+
+            if (!$refCheck->fetchColumn()) {
+                $task_amount = $refund_amount > 0 ? $refund_amount : floatval($step[1]['order_amount'] ?? 0);
+                creditReferralCommission($pdo, $task['user_id'], $task_id, $task_amount);
+            }
             
             createNotification($task['user_id'], 'success', 'Refund Processed', 'Your refund of ₹' . number_format($refund_amount, 2) . ' has been sent for Task #' . $task_id);
             

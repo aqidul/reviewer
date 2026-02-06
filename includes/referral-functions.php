@@ -11,8 +11,10 @@ if (!defined('DB_HOST')) {
 /**
  * Generate unique referral code for user
  */
-function generateReferralCode($user_id) {
-    return 'REF' . str_pad($user_id, 6, '0', STR_PAD_LEFT);
+if (!function_exists('generateReferralCode')) {
+    function generateReferralCode($user_id) {
+        return 'REF' . str_pad($user_id, 6, '0', STR_PAD_LEFT);
+    }
 }
 
 /**
@@ -162,8 +164,10 @@ function creditReferralCommission($db, $referee_id, $task_id, $task_amount) {
             $mark_credited->execute([$ref['referrer_id'], $referee_id, $task_id]);
             
             // Send notification
-            createNotification($db, $ref['referrer_id'], 'referral_commission', 
-                "You earned ₹{$commission} commission from your Level {$ref['level']} referral!");
+            if (function_exists('createNotification')) {
+                createNotification($ref['referrer_id'], 'referral_commission', 'Referral Commission',
+                    "You earned ₹{$commission} commission from your Level {$ref['level']} referral!");
+            }
         }
         
         return true;
@@ -176,33 +180,35 @@ function creditReferralCommission($db, $referee_id, $task_id, $task_amount) {
 /**
  * Get referral statistics for user
  */
-function getReferralStats($db, $user_id) {
-    // Total referrals
-    $total_stmt = $db->prepare("SELECT COUNT(*) FROM referrals WHERE referrer_id = ? AND level = 1");
-    $total_stmt->execute([$user_id]);
-    $total_referrals = $total_stmt->fetchColumn();
-    
-    // Active referrals
-    $active_stmt = $db->prepare("SELECT COUNT(*) FROM referrals WHERE referrer_id = ? AND level = 1 AND status = 'active'");
-    $active_stmt->execute([$user_id]);
-    $active_referrals = $active_stmt->fetchColumn();
-    
-    // Total earnings
-    $earnings_stmt = $db->prepare("SELECT COALESCE(SUM(amount), 0) FROM referral_earnings WHERE user_id = ? AND status = 'credited'");
-    $earnings_stmt->execute([$user_id]);
-    $total_earnings = $earnings_stmt->fetchColumn();
-    
-    // Pending earnings
-    $pending_stmt = $db->prepare("SELECT COALESCE(SUM(amount), 0) FROM referral_earnings WHERE user_id = ? AND status = 'pending'");
-    $pending_stmt->execute([$user_id]);
-    $pending_earnings = $pending_stmt->fetchColumn();
-    
-    return [
-        'total_referrals' => $total_referrals,
-        'active_referrals' => $active_referrals,
-        'total_earnings' => $total_earnings,
-        'pending_earnings' => $pending_earnings
-    ];
+if (!function_exists('getReferralStats')) {
+    function getReferralStats($db, $user_id) {
+        // Total referrals
+        $total_stmt = $db->prepare("SELECT COUNT(*) FROM referrals WHERE referrer_id = ? AND level = 1");
+        $total_stmt->execute([$user_id]);
+        $total_referrals = $total_stmt->fetchColumn();
+        
+        // Active referrals
+        $active_stmt = $db->prepare("SELECT COUNT(*) FROM referrals WHERE referrer_id = ? AND level = 1 AND status = 'active'");
+        $active_stmt->execute([$user_id]);
+        $active_referrals = $active_stmt->fetchColumn();
+        
+        // Total earnings
+        $earnings_stmt = $db->prepare("SELECT COALESCE(SUM(amount), 0) FROM referral_earnings WHERE user_id = ? AND status = 'credited'");
+        $earnings_stmt->execute([$user_id]);
+        $total_earnings = $earnings_stmt->fetchColumn();
+        
+        // Pending earnings
+        $pending_stmt = $db->prepare("SELECT COALESCE(SUM(amount), 0) FROM referral_earnings WHERE user_id = ? AND status = 'pending'");
+        $pending_stmt->execute([$user_id]);
+        $pending_earnings = $pending_stmt->fetchColumn();
+        
+        return [
+            'total_referrals' => $total_referrals,
+            'active_referrals' => $active_referrals,
+            'total_earnings' => $total_earnings,
+            'pending_earnings' => $pending_earnings
+        ];
+    }
 }
 
 /**
