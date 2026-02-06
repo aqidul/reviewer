@@ -6,6 +6,7 @@ require_once __DIR__ . '/includes/header.php';
 // Get filter
 $status_filter = $_GET['status'] ?? 'all';
 $selected_order_id = isset($_GET['id']) ? max(0, intval($_GET['id'])) : 0;
+$seller_id = (int)$seller_id;
 
 // Build query
 $where_clause = "WHERE seller_id = ?";
@@ -50,9 +51,11 @@ try {
         $product_links = array_values(array_unique(array_filter(array_column($orders, 'product_link'))));
         $max_entry_filters = 200;
         if (count($order_ids) > $max_entry_filters) {
+            error_log("Seller entry lookup truncated order_ids for seller {$seller_id}");
             $order_ids = array_slice($order_ids, 0, $max_entry_filters);
         }
         if (count($product_links) > $max_entry_filters) {
+            error_log("Seller entry lookup truncated product_links for seller {$seller_id}");
             $product_links = array_slice($product_links, 0, $max_entry_filters);
         }
         $entry_conditions = [];
@@ -107,7 +110,7 @@ try {
             foreach ($entry_rows as $entry) {
                 $entry_key = $entry['review_request_id']
                     ? 'request_' . $entry['review_request_id']
-                    : 'link_' . $entry['product_link'];
+                    : 'link_' . sha1((string)$entry['product_link']);
                 $entry_tasks[$entry_key][] = $entry;
             }
         }
@@ -398,7 +401,7 @@ try {
                                                 <?php
                                                 $entry_key = 'request_' . $order['id'];
                                                 if (empty($entry_tasks[$entry_key]) && !empty($order['product_link'])) {
-                                                    $entry_key = 'link_' . $order['product_link'];
+                                                    $entry_key = 'link_' . sha1($order['product_link']);
                                                 }
                                                 $order_entries = $entry_tasks[$entry_key] ?? [];
                                                 ?>
