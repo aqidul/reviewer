@@ -38,11 +38,22 @@ $total_pages = ceil($total_orders / $per_page);
 // Get orders with review tracking
 $query = "
     SELECT rr.*,
-           (SELECT COUNT(DISTINCT user_id) FROM orders WHERE task_id IN 
-               (SELECT id FROM tasks WHERE review_request_id = rr.id)) as assigned_users,
-           (SELECT COUNT(*) FROM orders WHERE task_id IN 
-               (SELECT id FROM tasks WHERE review_request_id = rr.id) 
-               AND step4_status = 'approved') as completed_reviews
+           (
+               SELECT COUNT(DISTINCT t.user_id)
+               FROM tasks t
+               WHERE t.review_request_id = rr.id
+                  OR (t.review_request_id IS NULL AND t.seller_id = rr.seller_id AND t.product_link = rr.product_link)
+           ) as assigned_users,
+           (
+               SELECT COUNT(*)
+               FROM tasks t
+               LEFT JOIN task_steps ts3 ON t.id = ts3.task_id AND ts3.step_number = 3
+               WHERE ts3.step_status = 'completed'
+                 AND (
+                        t.review_request_id = rr.id
+                        OR (t.review_request_id IS NULL AND t.seller_id = rr.seller_id AND t.product_link = rr.product_link)
+                 )
+           ) as completed_reviews
     FROM review_requests rr
     WHERE $where_clause
     ORDER BY rr.created_at DESC
@@ -63,13 +74,24 @@ $stats_query = "
     SELECT 
         COUNT(*) as total,
         SUM(reviews_needed) as total_reviews_ordered,
-        SUM(reviews_completed) as total_reviews_completed,
+        SUM(
+            (
+                SELECT COUNT(*)
+                FROM tasks t
+                LEFT JOIN task_steps ts3 ON t.id = ts3.task_id AND ts3.step_number = 3
+                WHERE ts3.step_status = 'completed'
+                  AND (
+                        t.review_request_id = rr.id
+                        OR (t.review_request_id IS NULL AND t.seller_id = rr.seller_id AND t.product_link = rr.product_link)
+                  )
+            )
+        ) as total_reviews_completed,
         SUM(CASE WHEN admin_status = 'completed' THEN 1 ELSE 0 END) as completed_orders,
         SUM(CASE WHEN admin_status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
         SUM(CASE WHEN admin_status = 'approved' THEN 1 ELSE 0 END) as active_orders
-    FROM review_requests
-    WHERE seller_id = :seller_id 
-    AND created_at BETWEEN :start_date AND :end_date
+    FROM review_requests rr
+    WHERE rr.seller_id = :seller_id 
+    AND rr.created_at BETWEEN :start_date AND :end_date
 ";
 $stmt = $pdo->prepare($stats_query);
 $stmt->execute([
@@ -213,8 +235,11 @@ $stats = $stmt->fetch();
                     <tbody>
                         <?php foreach ($orders as $order): ?>
                         <?php
+                        $completed_reviews = isset($order['completed_reviews']) 
+                            ? (int)$order['completed_reviews'] 
+                            : (int)$order['reviews_completed'];
                         $completion_percentage = $order['reviews_needed'] > 0 
-                            ? round(($order['reviews_completed'] / $order['reviews_needed']) * 100) 
+                            ? round(($completed_reviews / $order['reviews_needed']) * 100) 
                             : 0;
                         ?>
                         <tr>
@@ -229,7 +254,7 @@ $stats = $stmt->fetch();
                             </td>
                             <td><span class="badge bg-secondary"><?= strtoupper($order['platform']) ?></span></td>
                             <td>
-                                <strong><?= $order['reviews_completed'] ?></strong> / <?= $order['reviews_needed'] ?>
+                                <strong><?= $completed_reviews ?></strong> / <?= $order['reviews_needed'] ?>
                             </td>
                             <td>
                                 <div class="progress" style="height: 25px; min-width: 100px;">
