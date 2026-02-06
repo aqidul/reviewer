@@ -3,15 +3,29 @@ session_start();
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/security.php';
 
-// Admin authentication
-$admin_user = 'aqidulmumtaz';
-$admin_pass = 'Malik@241123';
+// Admin authentication using environment variables
+$admin_user = env('ADMIN_EMAIL', 'admin@reviewflow.com');
+$admin_pass = env('ADMIN_PASSWORD', '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = sanitizeInput($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     
-    if ($username === $admin_user && $password === $admin_pass) {
+    // For security, check against hashed password if stored
+    // For initial setup, allow direct comparison but log warning
+    $isValidPassword = false;
+    
+    // Check if admin_pass is a hash
+    if (strpos($admin_pass, '$2y$') === 0) {
+        // It's a bcrypt hash
+        $isValidPassword = password_verify($password, $admin_pass);
+    } else {
+        // Plain text password (only for development/initial setup)
+        $isValidPassword = ($password === $admin_pass);
+        error_log("WARNING: Admin password is not hashed. Please hash the password in .env file.");
+    }
+    
+    if ($username === $admin_user && $isValidPassword) {
         $_SESSION['admin_name'] = $username;
         $_SESSION['admin_login_time'] = time();
         header('Location: ' . ADMIN_URL . '/dashboard.php');
