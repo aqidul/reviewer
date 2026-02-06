@@ -5,6 +5,7 @@ require_once __DIR__ . '/includes/header.php';
 
 // Get filter
 $status_filter = $_GET['status'] ?? 'all';
+$selected_order_id = isset($_GET['id']) ? max(0, intval($_GET['id'])) : 0;
 
 // Build query
 $where_clause = "WHERE seller_id = ?";
@@ -18,16 +19,97 @@ if ($status_filter !== 'all') {
 try {
     // Get orders
     $stmt = $pdo->prepare("
-        SELECT * FROM review_requests 
+        SELECT 
+            rr.*,
+            (
+                SELECT COUNT(DISTINCT t.user_id)
+                FROM tasks t
+                WHERE t.review_request_id = rr.id
+                   OR (t.review_request_id IS NULL AND t.seller_id = rr.seller_id AND t.product_link = rr.product_link)
+            ) as assigned_users,
+            (
+                SELECT COUNT(*)
+                FROM tasks t
+                LEFT JOIN task_steps ts3 ON t.id = ts3.task_id AND ts3.step_number = 3
+                WHERE ts3.step_status = 'completed'
+                  AND (
+                        t.review_request_id = rr.id
+                        OR (t.review_request_id IS NULL AND t.seller_id = rr.seller_id AND t.product_link = rr.product_link)
+                  )
+            ) as computed_reviews_completed
+        FROM review_requests rr
         $where_clause
-        ORDER BY created_at DESC
+        ORDER BY rr.created_at DESC
     ");
     $stmt->execute($params);
     $orders = $stmt->fetchAll();
     
+    $entry_tasks = [];
+    if (!empty($orders)) {
+        $order_ids = array_column($orders, 'id');
+        $product_links = array_values(array_unique(array_filter(array_column($orders, 'product_link'))));
+        $entry_conditions = [];
+        $entry_params = [];
+        
+        if (!empty($order_ids)) {
+            $placeholders = implode(',', array_fill(0, count($order_ids), '?'));
+            $entry_conditions[] = "t.review_request_id IN ($placeholders)";
+            $entry_params = array_merge($entry_params, $order_ids);
+        }
+        
+        if (!empty($product_links)) {
+            $placeholders = implode(',', array_fill(0, count($product_links), '?'));
+            $entry_conditions[] = "(t.review_request_id IS NULL AND t.seller_id = ? AND t.product_link IN ($placeholders))";
+            $entry_params[] = $seller_id;
+            $entry_params = array_merge($entry_params, $product_links);
+        }
+        
+        if (!empty($entry_conditions)) {
+            $entry_query = "
+                SELECT 
+                    t.id,
+                    t.review_request_id,
+                    t.product_link,
+                    t.task_status,
+                    t.created_at,
+                    u.name as reviewer_name,
+                    ts1.order_number,
+                    ts1.order_amount,
+                    ts1.order_screenshot,
+                    ts1.step_status as step1_status,
+                    ts2.delivery_screenshot,
+                    ts2.step_status as step2_status,
+                    ts3.review_screenshot,
+                    ts3.step_status as step3_status,
+                    ts4.review_live_screenshot,
+                    ts4.step_status as step4_status
+                FROM tasks t
+                JOIN users u ON t.user_id = u.id
+                LEFT JOIN task_steps ts1 ON t.id = ts1.task_id AND ts1.step_number = 1
+                LEFT JOIN task_steps ts2 ON t.id = ts2.task_id AND ts2.step_number = 2
+                LEFT JOIN task_steps ts3 ON t.id = ts3.task_id AND ts3.step_number = 3
+                LEFT JOIN task_steps ts4 ON t.id = ts4.task_id AND ts4.step_number = 4
+                WHERE " . implode(' OR ', $entry_conditions) . "
+                ORDER BY t.created_at DESC
+            ";
+            
+            $stmt = $pdo->prepare($entry_query);
+            $stmt->execute($entry_params);
+            $entry_rows = $stmt->fetchAll();
+            
+            foreach ($entry_rows as $entry) {
+                $entry_key = $entry['review_request_id']
+                    ? 'request_' . $entry['review_request_id']
+                    : 'link_' . $entry['product_link'];
+                $entry_tasks[$entry_key][] = $entry;
+            }
+        }
+    }
+    
 } catch (PDOException $e) {
     error_log('Orders fetch error: ' . $e->getMessage());
     $orders = [];
+    $entry_tasks = [];
 }
 ?>
 
@@ -166,14 +248,17 @@ try {
                                         <div class="d-flex align-items-center">
                                             <div class="progress flex-grow-1" style="height: 8px; width: 60px;">
                                                 <?php 
+                                                $completed_reviews = isset($order['computed_reviews_completed']) 
+                                                    ? (int)$order['computed_reviews_completed'] 
+                                                    : (int)$order['reviews_completed'];
                                                 $progress = $order['reviews_needed'] > 0 
-                                                    ? ($order['reviews_completed'] / $order['reviews_needed']) * 100 
+                                                    ? ($completed_reviews / $order['reviews_needed']) * 100 
                                                     : 0;
                                                 ?>
                                                 <div class="progress-bar bg-success" style="width: <?= $progress ?>%"></div>
                                             </div>
                                             <span class="ms-2 small">
-                                                <?= $order['reviews_completed'] ?>/<?= $order['reviews_needed'] ?>
+                                                <?= $completed_reviews ?>/<?= $order['reviews_needed'] ?>
                                             </span>
                                         </div>
                                     </td>
@@ -275,7 +360,7 @@ try {
                                                     </div>
                                                     <div class="col-md-4 mb-3">
                                                         <strong>Reviews:</strong>
-                                                        <p><?= $order['reviews_completed'] ?> / <?= $order['reviews_needed'] ?></p>
+                                                        <p><?= $completed_reviews ?> / <?= $order['reviews_needed'] ?></p>
                                                     </div>
                                                 </div>
                                                 
@@ -301,6 +386,79 @@ try {
                                                     <p class="mb-0">
                                                         <strong>Payment ID:</strong> <?= htmlspecialchars($order['payment_id']) ?>
                                                     </p>
+                                                <?php endif; ?>
+                                                
+                                                <?php
+                                                $entry_key = 'request_' . $order['id'];
+                                                if (empty($entry_tasks[$entry_key]) && !empty($order['product_link'])) {
+                                                    $entry_key = 'link_' . $order['product_link'];
+                                                }
+                                                $order_entries = $entry_tasks[$entry_key] ?? [];
+                                                ?>
+                                                
+                                                <hr>
+                                                <h6>Reviewer Entries</h6>
+                                                <?php if (!empty($order_entries)): ?>
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Task</th>
+                                                                    <th>Reviewer</th>
+                                                                    <th>Order ID</th>
+                                                                    <th>Order Proof</th>
+                                                                    <th>Review Proof</th>
+                                                                    <th>Live Review</th>
+                                                                    <th>Status</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <?php foreach ($order_entries as $entry): ?>
+                                                                    <?php
+                                                                    $entry_status = 'Pending';
+                                                                    if (($entry['step4_status'] ?? '') === 'completed') {
+                                                                        $entry_status = 'Refund Completed';
+                                                                    } elseif (($entry['step3_status'] ?? '') === 'completed') {
+                                                                        $entry_status = 'Review Submitted';
+                                                                    } elseif (($entry['step2_status'] ?? '') === 'completed') {
+                                                                        $entry_status = 'Delivered';
+                                                                    } elseif (($entry['step1_status'] ?? '') === 'completed') {
+                                                                        $entry_status = 'Order Placed';
+                                                                    }
+                                                                    ?>
+                                                                    <tr>
+                                                                        <td>#<?= htmlspecialchars($entry['id']) ?></td>
+                                                                        <td><?= htmlspecialchars($entry['reviewer_name']) ?></td>
+                                                                        <td><?= htmlspecialchars($entry['order_number'] ?? '-') ?></td>
+                                                                        <td>
+                                                                            <?php if (!empty($entry['order_screenshot'])): ?>
+                                                                                <a href="<?= htmlspecialchars($entry['order_screenshot']) ?>" target="_blank">View</a>
+                                                                            <?php else: ?>
+                                                                                <span class="text-muted">-</span>
+                                                                            <?php endif; ?>
+                                                                        </td>
+                                                                        <td>
+                                                                            <?php if (!empty($entry['review_screenshot'])): ?>
+                                                                                <a href="<?= htmlspecialchars($entry['review_screenshot']) ?>" target="_blank">View</a>
+                                                                            <?php else: ?>
+                                                                                <span class="text-muted">-</span>
+                                                                            <?php endif; ?>
+                                                                        </td>
+                                                                        <td>
+                                                                            <?php if (!empty($entry['review_live_screenshot'])): ?>
+                                                                                <a href="<?= htmlspecialchars($entry['review_live_screenshot']) ?>" target="_blank">View</a>
+                                                                            <?php else: ?>
+                                                                                <span class="text-muted">-</span>
+                                                                            <?php endif; ?>
+                                                                        </td>
+                                                                        <td><?= htmlspecialchars($entry_status) ?></td>
+                                                                    </tr>
+                                                                <?php endforeach; ?>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <p class="text-muted small mb-0">No reviewer entries yet.</p>
                                                 <?php endif; ?>
                                                 
                                                 <?php if ($order['admin_status'] === 'rejected' && $order['rejection_reason']): ?>
@@ -333,6 +491,14 @@ document.addEventListener('DOMContentLoaded', function() {
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+    
+    <?php if ($selected_order_id > 0): ?>
+    var modalElement = document.getElementById('orderModal<?= $selected_order_id ?>');
+    if (modalElement) {
+        var orderModal = new bootstrap.Modal(modalElement);
+        orderModal.show();
+    }
+    <?php endif; ?>
 });
 </script>
 
