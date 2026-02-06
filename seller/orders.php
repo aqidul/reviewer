@@ -9,24 +9,40 @@ $selected_order_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT, [
     'options' => ['min_range' => 1]
 ]) ?: 0;
 $seller_id = (int)$seller_id;
+const MAX_ENTRY_FILTERS = 200;
 
 // Build query
 $where_clause = "WHERE seller_id = ?";
 $params = [$seller_id];
-$build_entry_link_key = static function (?string $product_link): string {
+$build_entry_link_key = static function (?string $product_link): ?string {
     $normalized_link = trim((string)$product_link);
     if ($normalized_link === '') {
-        return '';
+        return null;
     }
     return 'link_' . hash('sha256', $normalized_link);
 };
 $resolve_entry_keys = static function (array $order) use ($build_entry_link_key): array {
     $keys = ['request_' . $order['id']];
     $link_key = $build_entry_link_key($order['product_link'] ?? null);
-    if ($link_key !== '') {
+    if ($link_key !== null) {
         $keys[] = $link_key;
     }
     return $keys;
+};
+$determine_entry_status = static function (array $entry): string {
+    if (($entry['step4_status'] ?? '') === 'completed') {
+        return 'Refund Completed';
+    }
+    if (($entry['step3_status'] ?? '') === 'completed') {
+        return 'Review Submitted';
+    }
+    if (($entry['step2_status'] ?? '') === 'completed') {
+        return 'Delivered';
+    }
+    if (($entry['step1_status'] ?? '') === 'completed') {
+        return 'Order Placed';
+    }
+    return 'Pending';
 };
 
 if ($status_filter !== 'all') {
@@ -75,7 +91,7 @@ try {
         $product_links = array_column($orders, 'product_link');
         $product_links = array_filter($product_links);
         $product_links = array_values(array_unique($product_links));
-        $max_entry_filters = 200;
+        $max_entry_filters = MAX_ENTRY_FILTERS;
         if (count($order_ids) > $max_entry_filters) {
             error_log("Seller entry lookup truncated order_ids for seller {$seller_id}");
             $order_ids = array_slice($order_ids, 0, $max_entry_filters);
@@ -140,7 +156,7 @@ try {
                     continue;
                 }
                 $entry_key = $build_entry_link_key($entry['product_link']);
-                if ($entry_key === '') {
+                if ($entry_key === null) {
                     continue;
                 }
                 $entry_tasks[$entry_key][] = $entry;
@@ -459,16 +475,7 @@ try {
                                                             <tbody>
                                                                 <?php foreach ($order_entries as $entry): ?>
                                                                     <?php
-                                                                    $entry_status = 'Pending';
-                                                                    if (($entry['step4_status'] ?? '') === 'completed') {
-                                                                        $entry_status = 'Refund Completed';
-                                                                    } elseif (($entry['step3_status'] ?? '') === 'completed') {
-                                                                        $entry_status = 'Review Submitted';
-                                                                    } elseif (($entry['step2_status'] ?? '') === 'completed') {
-                                                                        $entry_status = 'Delivered';
-                                                                    } elseif (($entry['step1_status'] ?? '') === 'completed') {
-                                                                        $entry_status = 'Order Placed';
-                                                                    }
+                                                                    $entry_status = $determine_entry_status($entry);
                                                                     ?>
                                                                     <tr>
                                                                         <td>#<?= htmlspecialchars($entry['id']) ?></td>
