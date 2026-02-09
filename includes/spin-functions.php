@@ -79,16 +79,16 @@ function processSpinResult($db, $user_id) {
             return ['success' => false, 'message' => 'You have already spun today'];
         }
         
-        // Weighted random selection
+        // Weighted random selection - 8 segments matching the wheel
         $prizes = [
-            ['type' => 'nothing', 'amount' => 0, 'label' => 'Better Luck Next Time', 'weight' => 30],
-            ['type' => 'points', 'amount' => 10, 'label' => '10 Points', 'weight' => 25],
-            ['type' => 'points', 'amount' => 25, 'label' => '25 Points', 'weight' => 20],
-            ['type' => 'money', 'amount' => 5, 'label' => '₹5', 'weight' => 12],
-            ['type' => 'money', 'amount' => 10, 'label' => '₹10', 'weight' => 8],
-            ['type' => 'money', 'amount' => 25, 'label' => '₹25', 'weight' => 3],
-            ['type' => 'money', 'amount' => 50, 'label' => '₹50', 'weight' => 1.5],
-            ['type' => 'money', 'amount' => 100, 'label' => '₹100', 'weight' => 0.5],
+            ['type' => 'money', 'amount' => 5, 'label' => '₹5', 'weight' => 15, 'index' => 0],
+            ['type' => 'points', 'amount' => 10, 'label' => '10 Pts', 'weight' => 20, 'index' => 1],
+            ['type' => 'money', 'amount' => 10, 'label' => '₹10', 'weight' => 12, 'index' => 2],
+            ['type' => 'points', 'amount' => 25, 'label' => '25 Pts', 'weight' => 15, 'index' => 3],
+            ['type' => 'money', 'amount' => 25, 'label' => '₹25', 'weight' => 8, 'index' => 4],
+            ['type' => 'money', 'amount' => 50, 'label' => '₹50', 'weight' => 5, 'index' => 5],
+            ['type' => 'money', 'amount' => 100, 'label' => '₹100', 'weight' => 2, 'index' => 6],
+            ['type' => 'nothing', 'amount' => 0, 'label' => 'Better Luck', 'weight' => 23, 'index' => 7],
         ];
         
         // Calculate total weight
@@ -100,11 +100,13 @@ function processSpinResult($db, $user_id) {
         // Select prize
         $cumulativeWeight = 0;
         $selectedPrize = $prizes[0]; // Default to first prize
+        $prizeIndex = 0;
         
-        foreach ($prizes as $prize) {
+        foreach ($prizes as $index => $prize) {
             $cumulativeWeight += $prize['weight'];
             if ($random <= $cumulativeWeight) {
                 $selectedPrize = $prize;
+                $prizeIndex = $index;
                 break;
             }
         }
@@ -155,6 +157,7 @@ function processSpinResult($db, $user_id) {
         return [
             'success' => true,
             'prize' => $selectedPrize,
+            'prize_index' => $prizeIndex,
             'message' => 'Congratulations! You won ' . $selectedPrize['label']
         ];
         
