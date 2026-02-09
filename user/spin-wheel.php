@@ -338,11 +338,10 @@ $current_page = 'spin-wheel';
         
         /* Confetti Animation */
         .confetti {
-            position: fixed;
+            position: absolute;
             width: 10px;
             height: 10px;
             background: #f39c12;
-            position: absolute;
             animation: confetti-fall 3s linear forwards;
             z-index: 9999;
         }

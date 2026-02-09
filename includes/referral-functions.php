@@ -387,7 +387,7 @@ function getReferralMilestoneRewards($db, $user_id) {
 function getNetworkSize($db, $user_id) {
     try {
         $stmt = $db->prepare("
-            SELECT COUNT(DISTINCT referee_id) as total
+            SELECT COUNT(DISTINCT referred_id) as total
             FROM referrals
             WHERE referrer_id = ?
         ");
