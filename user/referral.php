@@ -3,6 +3,7 @@ session_start();
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/security.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/referral-functions.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: ' . APP_URL . '/index.php');
@@ -19,12 +20,12 @@ $referral_bonus = (float)getSetting('referral_bonus', 50);
 // Get referral stats
 try {
     // Total referrals
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM referrals WHERE referrer_id = ?");
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM referrals WHERE referrer_id = ? AND level = 1");
     $stmt->execute([$user_id]);
     $total_referrals = (int)$stmt->fetchColumn();
     
     // Completed referrals (bonus received)
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM referrals WHERE referrer_id = ? AND status = 'completed'");
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM referrals WHERE referrer_id = ? AND level = 1 AND status = 'active'");
     $stmt->execute([$user_id]);
     $completed_referrals = (int)$stmt->fetchColumn();
     
@@ -32,16 +33,31 @@ try {
     $pending_referrals = $total_referrals - $completed_referrals;
     
     // Total earnings from referrals
-    $stmt = $pdo->prepare("SELECT referral_earnings FROM users WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM referral_earnings WHERE user_id = ? AND status = 'credited'");
     $stmt->execute([$user_id]);
     $total_earnings = (float)$stmt->fetchColumn();
     
-    // Get referred users list
+    // Get level-wise stats
+    $level_stats = getLevelWiseReferralStats($pdo, $user_id);
+    
+    // Get network size
+    $network_size = getNetworkSize($pdo, $user_id);
+    
+    // Get referral tree
+    $referral_tree = getReferralTree($pdo, $user_id, 3);
+    
+    // Get milestone rewards
+    $milestone_rewards = getReferralMilestoneRewards($pdo, $user_id);
+    
+    // Check and award milestones
+    checkReferralMilestones($pdo, $user_id);
+    
+    // Get referred users list (Level 1 only for display)
     $stmt = $pdo->prepare("
         SELECT r.*, u.name as referred_name, u.email as referred_email, u.created_at as joined_at
         FROM referrals r
         JOIN users u ON r.referred_id = u.id
-        WHERE r.referrer_id = ?
+        WHERE r.referrer_id = ? AND r.level = 1
         ORDER BY r.created_at DESC
         LIMIT 50
     ");
@@ -51,7 +67,7 @@ try {
     // Get referral transactions
     $stmt = $pdo->prepare("
         SELECT * FROM wallet_transactions 
-        WHERE user_id = ? AND type = 'referral' 
+        WHERE user_id = ? AND (type = 'referral' OR description LIKE '%referral%') 
         ORDER BY created_at DESC 
         LIMIT 20
     ");
@@ -66,6 +82,10 @@ try {
     $total_earnings = 0;
     $referred_users = [];
     $referral_transactions = [];
+    $level_stats = [];
+    $network_size = 0;
+    $referral_tree = [];
+    $milestone_rewards = [];
 }
 
 // Referral link
@@ -170,6 +190,63 @@ $twitter_message = "I'm earning money on " . APP_NAME . "! Join using my code: "
         .empty-state h4{color:#666;margin-bottom:8px}
         .empty-state p{font-size:13px}
         
+        /* Level-wise Earnings Cards */
+        .level-earnings-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:25px}
+        .level-card{background:#fff;border-radius:15px;padding:25px;box-shadow:0 5px 20px rgba(0,0,0,0.1);text-align:center;border-top:4px solid;transition:transform 0.3s}
+        .level-card:hover{transform:translateY(-5px)}
+        .level-card.level-1{border-color:#27ae60}
+        .level-card.level-2{border-color:#3498db}
+        .level-card.level-3{border-color:#9b59b6}
+        .level-badge{display:inline-block;padding:5px 15px;border-radius:20px;font-size:12px;font-weight:700;color:#fff;margin-bottom:15px}
+        .level-badge.level-1{background:linear-gradient(135deg,#27ae60,#229954)}
+        .level-badge.level-2{background:linear-gradient(135deg,#3498db,#2980b9)}
+        .level-badge.level-3{background:linear-gradient(135deg,#9b59b6,#8e44ad)}
+        .level-count{font-size:32px;font-weight:800;color:#333;margin:10px 0}
+        .level-commission{font-size:20px;font-weight:700;color:#f39c12;margin-bottom:5px}
+        .level-earnings{font-size:24px;font-weight:800;color:#27ae60}
+        .level-label{font-size:13px;color:#888;margin-top:5px}
+        
+        /* Milestone Badges */
+        .milestone-badges{display:flex;gap:15px;flex-wrap:wrap;margin:20px 0}
+        .milestone-badge{background:#fff;border-radius:12px;padding:20px;text-align:center;flex:1;min-width:150px;box-shadow:0 4px 15px rgba(0,0,0,0.08);transition:all 0.3s}
+        .milestone-badge:hover{transform:scale(1.05)}
+        .milestone-badge.achieved{border:2px solid #27ae60;box-shadow:0 6px 20px rgba(39,174,96,0.3)}
+        .milestone-badge:not(.achieved){opacity:0.5;filter:grayscale(1)}
+        .milestone-icon{font-size:40px;margin-bottom:10px}
+        .milestone-badge.achieved .milestone-icon{animation:bounce 2s ease-in-out infinite}
+        .milestone-count{font-size:24px;font-weight:800;color:#333;margin-bottom:5px}
+        .milestone-reward{font-size:18px;font-weight:700;color:#27ae60;margin-bottom:5px}
+        .milestone-status{font-size:12px;color:#666}
+        
+        /* Network Visualization */
+        .network-section{background:#fff;border-radius:15px;padding:25px;margin-bottom:25px;box-shadow:0 5px 20px rgba(0,0,0,0.1)}
+        .network-stats{display:flex;justify-content:space-around;margin-bottom:25px;padding:20px;background:linear-gradient(135deg,#e8f5e9,#c8e6c9);border-radius:12px}
+        .network-stat{text-align:center}
+        .network-stat-value{font-size:36px;font-weight:800;color:#27ae60}
+        .network-stat-label{font-size:14px;color:#666;margin-top:5px}
+        
+        /* Referral Tree */
+        .referral-tree{margin:20px 0}
+        .tree-level{margin-bottom:25px}
+        .tree-level-header{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:12px 20px;border-radius:10px;font-weight:700;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center}
+        .tree-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:15px}
+        .tree-item{background:#f8f9fa;border-radius:10px;padding:15px;border-left:4px solid;transition:all 0.3s}
+        .tree-item:hover{background:#e9ecef;transform:translateX(5px)}
+        .tree-item.level-1{border-color:#27ae60}
+        .tree-item.level-2{border-color:#3498db}
+        .tree-item.level-3{border-color:#9b59b6}
+        .tree-user-name{font-weight:700;color:#333;margin-bottom:5px}
+        .tree-user-stats{font-size:12px;color:#666}
+        
+        /* Progress to Next Milestone */
+        .milestone-progress-card{background:linear-gradient(135deg,#fff5e6,#ffe8cc);border-radius:15px;padding:25px;margin-bottom:25px;border-left:4px solid #f39c12}
+        .progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+        .progress-title{font-size:18px;font-weight:700;color:#333}
+        .progress-value{font-size:24px;font-weight:800;color:#f39c12}
+        .progress-bar-container{background:rgba(255,255,255,0.5);height:30px;border-radius:15px;overflow:hidden;margin:15px 0}
+        .progress-bar-fill{height:100%;background:linear-gradient(90deg,#f39c12,#e67e22);border-radius:15px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;transition:width 1s ease;box-shadow:0 2px 10px rgba(243,156,18,0.3)}
+        .progress-info{font-size:14px;color:#666;text-align:center}
+        
         /* Responsive */
         @media(max-width:768px){
             .stats-grid{grid-template-columns:repeat(2,1fr)}
@@ -178,6 +255,10 @@ $twitter_message = "I'm earning money on " . APP_NAME . "! Join using my code: "
             .code-value{font-size:24px}
             .share-buttons{flex-direction:column}
             .share-btn{justify-content:center}
+            .level-earnings-grid{grid-template-columns:1fr}
+            .network-stats{flex-direction:column;gap:15px}
+            .tree-items{grid-template-columns:1fr}
+            .milestone-badges{flex-direction:column}
         }
     </style>
 </head>
@@ -271,6 +352,140 @@ $twitter_message = "I'm earning money on " . APP_NAME . "! Join using my code: "
             </div>
         </div>
     </div>
+    
+    <!-- Network Overview -->
+    <div class="network-section">
+        <div class="section-title">🌐 Your Referral Network</div>
+        <div class="network-stats">
+            <div class="network-stat">
+                <div class="network-stat-value"><?php echo $network_size; ?></div>
+                <div class="network-stat-label">Total Network Size</div>
+            </div>
+            <div class="network-stat">
+                <div class="network-stat-value">₹<?php echo number_format($total_earnings, 0); ?></div>
+                <div class="network-stat-label">Total Earnings</div>
+            </div>
+            <div class="network-stat">
+                <div class="network-stat-value"><?php echo count($level_stats); ?></div>
+                <div class="network-stat-label">Active Levels</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Level-wise Earnings Breakdown -->
+    <div class="card">
+        <div class="section-title">📊 Level-wise Earnings Breakdown</div>
+        <div class="level-earnings-grid">
+            <?php foreach ($level_stats as $level): ?>
+            <div class="level-card level-<?php echo $level['level']; ?>">
+                <div class="level-badge level-<?php echo $level['level']; ?>">
+                    Level <?php echo $level['level']; ?>
+                </div>
+                <div class="level-count"><?php echo $level['count']; ?></div>
+                <div class="level-label">Referrals</div>
+                <div class="level-commission"><?php echo number_format($level['commission_percent'], 1); ?>%</div>
+                <div class="level-label">Commission</div>
+                <div class="level-earnings">₹<?php echo number_format($level['earnings'], 0); ?></div>
+                <div class="level-label">Total Earned</div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    
+    <!-- Referral Milestones -->
+    <?php
+    $milestones = [
+        5 => ['icon' => '🌟', 'reward' => 50],
+        10 => ['icon' => '⭐', 'reward' => 100],
+        25 => ['icon' => '🏆', 'reward' => 300],
+        50 => ['icon' => '👑', 'reward' => 750],
+        100 => ['icon' => '💎', 'reward' => 2000]
+    ];
+    $achieved_milestones = array_column($milestone_rewards, 'milestone_count');
+    ?>
+    <div class="card">
+        <div class="section-title">🎯 Referral Milestones</div>
+        <div class="milestone-badges">
+            <?php foreach ($milestones as $count => $data): ?>
+            <?php $is_achieved = in_array($count, $achieved_milestones); ?>
+            <div class="milestone-badge <?php echo $is_achieved ? 'achieved' : ''; ?>">
+                <div class="milestone-icon"><?php echo $data['icon']; ?></div>
+                <div class="milestone-count"><?php echo $count; ?> Referrals</div>
+                <div class="milestone-reward">₹<?php echo $data['reward']; ?></div>
+                <div class="milestone-status">
+                    <?php echo $is_achieved ? '✓ Achieved!' : ($total_referrals . '/' . $count); ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        
+        <?php
+        // Find next milestone
+        $next_milestone = null;
+        $next_reward = 0;
+        foreach ($milestones as $count => $data) {
+            if ($total_referrals < $count) {
+                $next_milestone = $count;
+                $next_reward = $data['reward'];
+                break;
+            }
+        }
+        ?>
+        
+        <?php if ($next_milestone): ?>
+        <div class="milestone-progress-card">
+            <div class="progress-header">
+                <div class="progress-title">🎁 Next Milestone: <?php echo $next_milestone; ?> Referrals</div>
+                <div class="progress-value">₹<?php echo $next_reward; ?></div>
+            </div>
+            <?php 
+            $progress_percent = ($total_referrals / $next_milestone) * 100;
+            $remaining = $next_milestone - $total_referrals;
+            ?>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" style="width: <?php echo $progress_percent; ?>%">
+                    <?php echo number_format($progress_percent, 1); ?>%
+                </div>
+            </div>
+            <div class="progress-info">
+                <?php echo $remaining; ?> more referral<?php echo $remaining != 1 ? 's' : ''; ?> to unlock ₹<?php echo $next_reward; ?> bonus!
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+    
+    <!-- Referral Tree -->
+    <?php if (!empty($referral_tree)): ?>
+    <div class="card">
+        <div class="section-title">🌳 Your Referral Tree</div>
+        <div class="referral-tree">
+            <?php foreach ($referral_tree as $level => $users): ?>
+            <?php if (!empty($users)): ?>
+            <div class="tree-level">
+                <div class="tree-level-header">
+                    <span>Level <?php echo $level; ?> (<?php echo count($users); ?> referral<?php echo count($users) != 1 ? 's' : ''; ?>)</span>
+                    <span><?php echo [1 => '10%', 2 => '5%', 3 => '2%'][$level] ?? '0%'; ?> Commission</span>
+                </div>
+                <div class="tree-items">
+                    <?php foreach ($users as $user): ?>
+                    <div class="tree-item level-<?php echo $level; ?>">
+                        <div class="tree-user-name">
+                            <?php echo escape($user['username']); ?>
+                        </div>
+                        <div class="tree-user-stats">
+                            📅 Joined: <?php echo date('M d, Y', strtotime($user['created_at'])); ?><br>
+                            ✅ Tasks: <?php echo $user['completed_tasks']; ?><br>
+                            🔖 Status: <?php echo ucfirst($user['status']); ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
     
     <!-- Referred Users -->
     <div class="card">
