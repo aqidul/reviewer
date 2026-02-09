@@ -134,9 +134,34 @@ function getLevelUpBonus($level) {
 }
 
 /**
- * Update daily login streak
+ * Create streak milestones table
+ */
+function createStreakMilestonesTable($db) {
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS streak_milestones (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            milestone_days INT NOT NULL,
+            points_awarded INT NOT NULL,
+            badge_awarded VARCHAR(50) DEFAULT NULL,
+            achieved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_milestone (user_id, milestone_days),
+            KEY idx_user (user_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        return true;
+    } catch (PDOException $e) {
+        error_log("Error creating streak milestones table: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Update daily login streak with enhanced milestones
  */
 function updateLoginStreak($db, $user_id) {
+    // Ensure streak milestones table exists
+    createStreakMilestonesTable($db);
+    
     $points_data = getUserPoints($db, $user_id);
     $today = date('Y-m-d');
 
@@ -158,17 +183,149 @@ function updateLoginStreak($db, $user_id) {
     ");
     $stmt->execute([$new_streak, $today, $user_id]);
 
-    $streak_bonus = min(floor($new_streak / 7) * 5, 20);
+    // Enhanced streak bonus with higher caps
+    $streak_bonus = min(floor($new_streak / 7) * 10, 50);
     $total_points = 5 + $streak_bonus;
 
     awardPoints($db, $user_id, $total_points, 'daily_login',
         "Daily login (Streak: {$new_streak} days)");
 
-    if ($new_streak >= 30 && function_exists('awardBadge')) {
-        awardBadge($user_id, 'streak_30');
-    }
+    // Check and award streak milestones
+    checkStreakMilestones($db, $user_id, $new_streak);
 
     return true;
+}
+
+/**
+ * Check and award streak milestones
+ */
+function checkStreakMilestones($db, $user_id, $current_streak) {
+    $milestones = [
+        3 => ['points' => 15, 'badge' => 'streak_3'],
+        7 => ['points' => 50, 'badge' => 'streak_7'],
+        14 => ['points' => 100, 'badge' => 'streak_14'],
+        21 => ['points' => 200, 'badge' => 'streak_21'],
+        30 => ['points' => 500, 'badge' => 'streak_30'],
+        60 => ['points' => 1000, 'badge' => 'streak_60'],
+        100 => ['points' => 2000, 'badge' => 'streak_100']
+    ];
+    
+    foreach ($milestones as $days => $reward) {
+        if ($current_streak >= $days) {
+            // Check if already awarded
+            $check = $db->prepare("
+                SELECT id FROM streak_milestones 
+                WHERE user_id = ? AND milestone_days = ?
+            ");
+            $check->execute([$user_id, $days]);
+            
+            if (!$check->fetch()) {
+                // Award milestone
+                try {
+                    $insert = $db->prepare("
+                        INSERT INTO streak_milestones (user_id, milestone_days, points_awarded, badge_awarded)
+                        VALUES (?, ?, ?, ?)
+                    ");
+                    $insert->execute([$user_id, $days, $reward['points'], $reward['badge']]);
+                    
+                    // Award points
+                    awardPoints($db, $user_id, $reward['points'], 'streak_milestone',
+                        "Streak milestone: {$days} days");
+                    
+                    // Award badge
+                    if (function_exists('awardBadge') && !empty($reward['badge'])) {
+                        awardBadge($user_id, $reward['badge']);
+                    }
+                    
+                    // Send notification
+                    if (function_exists('createNotification')) {
+                        createNotification($user_id, 'streak_milestone', 'Streak Milestone Achieved!',
+                            "Congratulations! You've reached a {$days}-day login streak! Earned {$reward['points']} bonus points! 🔥");
+                    }
+                } catch (PDOException $e) {
+                    error_log("Error awarding streak milestone: " . $e->getMessage());
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Get streak calendar data for last 30 days
+ */
+function getStreakCalendar($db, $user_id) {
+    try {
+        $calendar = [];
+        $today = date('Y-m-d');
+        
+        // Get all login dates from point transactions
+        $stmt = $db->prepare("
+            SELECT DISTINCT DATE(created_at) as login_date
+            FROM point_transactions
+            WHERE user_id = ? AND type = 'daily_login'
+            AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            ORDER BY login_date DESC
+        ");
+        $stmt->execute([$user_id]);
+        $login_dates = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        // Build 30-day calendar
+        for ($i = 29; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-{$i} days"));
+            $day_of_week = date('D', strtotime($date));
+            $day_num = date('j', strtotime($date));
+            
+            $calendar[] = [
+                'date' => $date,
+                'day_of_week' => $day_of_week,
+                'day_num' => $day_num,
+                'active' => in_array($date, $login_dates),
+                'is_today' => $date === $today
+            ];
+        }
+        
+        return $calendar;
+    } catch (PDOException $e) {
+        error_log("Error fetching streak calendar: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Get streak milestones achieved by user
+ */
+function getStreakMilestones($db, $user_id) {
+    try {
+        $stmt = $db->prepare("
+            SELECT * FROM streak_milestones
+            WHERE user_id = ?
+            ORDER BY milestone_days DESC
+        ");
+        $stmt->execute([$user_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Error fetching streak milestones: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Get next streak milestone
+ */
+function getNextStreakMilestone($current_streak) {
+    $milestones = [3, 7, 14, 21, 30, 60, 100];
+    
+    foreach ($milestones as $milestone) {
+        if ($current_streak < $milestone) {
+            return [
+                'days' => $milestone,
+                'days_remaining' => $milestone - $current_streak,
+                'points_reward' => [3 => 15, 7 => 50, 14 => 100, 21 => 200, 30 => 500, 60 => 1000, 100 => 2000][$milestone]
+            ];
+        }
+    }
+    
+    return null; // All milestones achieved
 }
 
 /**
