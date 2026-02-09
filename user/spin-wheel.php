@@ -30,6 +30,10 @@ $time_until_next = getTimeUntilNextSpin();
 $spin_history = getSpinHistory($pdo, $user_id, 10);
 $spin_stats = getSpinStats($pdo, $user_id);
 
+// Get user streak for bonus badge
+$user_points = getUserPoints($pdo, $user_id);
+$streak_days = $user_points['streak_days'] ?? 0;
+
 $current_page = 'spin-wheel';
 ?>
 <!DOCTYPE html>
@@ -128,12 +132,39 @@ $current_page = 'spin-wheel';
         }
         
         .wheel.spinning {
-            animation: spin 4s cubic-bezier(0.17, 0.67, 0.12, 0.99) forwards;
+            border-color: #f39c12;
+            animation: wheelGlow 0.3s ease-in-out infinite;
         }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(1800deg); }
+        @keyframes wheelGlow {
+            0%, 100% { 
+                box-shadow: 0 10px 40px rgba(0,0,0,0.3), 
+                            inset 0 0 40px rgba(255,255,255,0.2),
+                            0 0 30px rgba(243, 156, 18, 0.8); 
+            }
+            50% { 
+                box-shadow: 0 15px 50px rgba(0,0,0,0.4), 
+                            inset 0 0 50px rgba(255,255,255,0.3),
+                            0 0 60px rgba(243, 156, 18, 1); 
+            }
+        }
+        
+        /* Segment dividers */
+        .wheel::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            transform: translate(-50%, -50%);
+            background: 
+                linear-gradient(0deg, transparent 49.5%, rgba(255,255,255,0.3) 49.5%, rgba(255,255,255,0.3) 50.5%, transparent 50.5%),
+                linear-gradient(45deg, transparent 49.5%, rgba(255,255,255,0.3) 49.5%, rgba(255,255,255,0.3) 50.5%, transparent 50.5%),
+                linear-gradient(90deg, transparent 49.5%, rgba(255,255,255,0.3) 49.5%, rgba(255,255,255,0.3) 50.5%, transparent 50.5%),
+                linear-gradient(135deg, transparent 49.5%, rgba(255,255,255,0.3) 49.5%, rgba(255,255,255,0.3) 50.5%, transparent 50.5%);
+            border-radius: 50%;
+            pointer-events: none;
         }
         
         .wheel-center {
@@ -180,12 +211,27 @@ $current_page = 'spin-wheel';
         .segment-label {
             position: absolute;
             color: white;
-            font-weight: 700;
-            font-size: 0.9rem;
-            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            transform-origin: center;
+            font-weight: 800;
+            font-size: 1rem;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+            transform-origin: 200px 200px;
+            left: 50%;
+            top: 50%;
+            width: 80px;
             text-align: center;
+            pointer-events: none;
+            z-index: 5;
         }
+        
+        /* Position labels for 8 segments */
+        .label-0 { transform: translate(-50%, -50%) rotate(22.5deg) translateY(-140px) rotate(-22.5deg); }
+        .label-1 { transform: translate(-50%, -50%) rotate(67.5deg) translateY(-140px) rotate(-67.5deg); }
+        .label-2 { transform: translate(-50%, -50%) rotate(112.5deg) translateY(-140px) rotate(-112.5deg); }
+        .label-3 { transform: translate(-50%, -50%) rotate(157.5deg) translateY(-140px) rotate(-157.5deg); }
+        .label-4 { transform: translate(-50%, -50%) rotate(202.5deg) translateY(-140px) rotate(-202.5deg); }
+        .label-5 { transform: translate(-50%, -50%) rotate(247.5deg) translateY(-140px) rotate(-247.5deg); }
+        .label-6 { transform: translate(-50%, -50%) rotate(292.5deg) translateY(-140px) rotate(-292.5deg); }
+        .label-7 { transform: translate(-50%, -50%) rotate(337.5deg) translateY(-140px) rotate(-337.5deg); }
         
         .spin-button {
             display: block;
@@ -338,17 +384,33 @@ $current_page = 'spin-wheel';
         
         /* Confetti Animation */
         .confetti {
-            position: absolute;
+            position: fixed;
             width: 10px;
             height: 10px;
-            background: #f39c12;
             animation: confetti-fall 3s linear forwards;
             z-index: 9999;
+            pointer-events: none;
+        }
+        
+        .confetti.circle {
+            border-radius: 50%;
+        }
+        
+        .confetti.triangle {
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 10px solid;
+        }
+        
+        .confetti.star {
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
         }
         
         @keyframes confetti-fall {
             to {
-                transform: translateY(100vh) rotate(360deg);
+                transform: translateY(100vh) rotate(720deg);
                 opacity: 0;
             }
         }
@@ -433,6 +495,84 @@ $current_page = 'spin-wheel';
             box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
         }
         
+        /* Streak Bonus Badge */
+        .streak-bonus-badge {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 5px 20px rgba(243, 156, 18, 0.4);
+            margin: 15px 0;
+            animation: badgePulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes badgePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        /* Prize Pool Section */
+        .prize-pool {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+        }
+        
+        .prize-pool h3 {
+            color: #333;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+        }
+        
+        .prize-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .prize-item {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid #dee2e6;
+            transition: all 0.3s;
+        }
+        
+        .prize-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        
+        .prize-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .prize-label {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .prize-chance {
+            font-size: 0.85rem;
+            color: #888;
+        }
+        
         /* Responsive */
         @media (max-width: 768px) {
             .sidebar {
@@ -495,10 +635,27 @@ $current_page = 'spin-wheel';
         
         <!-- Spin Wheel Card -->
         <div class="spin-card">
+            <?php if ($streak_days >= 7): ?>
+                <div class="text-center">
+                    <div class="streak-bonus-badge">
+                        🔥 Streak Bonus: Extra spin coming soon!
+                    </div>
+                </div>
+            <?php endif; ?>
+            
             <?php if ($can_spin): ?>
                 <div class="wheel-container">
                     <div class="wheel-pointer"></div>
                     <div class="wheel" id="spinWheel">
+                        <!-- Prize labels on segments -->
+                        <div class="segment-label label-0">₹5</div>
+                        <div class="segment-label label-1">10<br>Pts</div>
+                        <div class="segment-label label-2">₹10</div>
+                        <div class="segment-label label-3">25<br>Pts</div>
+                        <div class="segment-label label-4">₹25</div>
+                        <div class="segment-label label-5">₹50</div>
+                        <div class="segment-label label-6">₹100</div>
+                        <div class="segment-label label-7">Better<br>Luck</div>
                         <div class="wheel-center">SPIN</div>
                     </div>
                 </div>
@@ -521,6 +678,15 @@ $current_page = 'spin-wheel';
                 <div class="wheel-container">
                     <div class="wheel-pointer"></div>
                     <div class="wheel" style="opacity: 0.5;">
+                        <!-- Prize labels on segments -->
+                        <div class="segment-label label-0">₹5</div>
+                        <div class="segment-label label-1">10<br>Pts</div>
+                        <div class="segment-label label-2">₹10</div>
+                        <div class="segment-label label-3">25<br>Pts</div>
+                        <div class="segment-label label-4">₹25</div>
+                        <div class="segment-label label-5">₹50</div>
+                        <div class="segment-label label-6">₹100</div>
+                        <div class="segment-label label-7">Better<br>Luck</div>
                         <div class="wheel-center">SPIN</div>
                     </div>
                 </div>
@@ -529,6 +695,53 @@ $current_page = 'spin-wheel';
                     🔒 ALREADY SPUN TODAY
                 </button>
             <?php endif; ?>
+        </div>
+        
+        <!-- Prize Pool Section -->
+        <div class="prize-pool">
+            <h3><i class="bi bi-gift-fill"></i> Available Prizes</h3>
+            <div class="prize-grid">
+                <div class="prize-item">
+                    <span class="prize-icon">💰</span>
+                    <div class="prize-label">₹5</div>
+                    <div class="prize-chance">15% chance</div>
+                </div>
+                <div class="prize-item">
+                    <span class="prize-icon">⭐</span>
+                    <div class="prize-label">10 Points</div>
+                    <div class="prize-chance">20% chance</div>
+                </div>
+                <div class="prize-item">
+                    <span class="prize-icon">💰</span>
+                    <div class="prize-label">₹10</div>
+                    <div class="prize-chance">12% chance</div>
+                </div>
+                <div class="prize-item">
+                    <span class="prize-icon">⭐</span>
+                    <div class="prize-label">25 Points</div>
+                    <div class="prize-chance">15% chance</div>
+                </div>
+                <div class="prize-item">
+                    <span class="prize-icon">💰</span>
+                    <div class="prize-label">₹25</div>
+                    <div class="prize-chance">8% chance</div>
+                </div>
+                <div class="prize-item">
+                    <span class="prize-icon">💰</span>
+                    <div class="prize-label">₹50</div>
+                    <div class="prize-chance">5% chance</div>
+                </div>
+                <div class="prize-item">
+                    <span class="prize-icon">💸</span>
+                    <div class="prize-label">₹100</div>
+                    <div class="prize-chance">2% chance</div>
+                </div>
+                <div class="prize-item">
+                    <span class="prize-icon">😊</span>
+                    <div class="prize-label">Better Luck</div>
+                    <div class="prize-chance">23% chance</div>
+                </div>
+            </div>
         </div>
         
         <!-- Spin History -->
@@ -627,8 +840,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const spinResult = <?php echo json_encode($spin_result); ?>;
     
     if (spinResult.success) {
-        // Animate wheel
+        // Calculate rotation angle based on prize index
+        const prizeIndex = spinResult.prize_index || 0;
+        const SPIN_ROTATIONS = 5; // Number of full rotations before stopping
+        const RANDOM_VARIATION_RANGE = 10; // Degrees of random variation for natural feel
+        const segmentAngle = 360 / 8; // 8 segments = 45 degrees each
+        const targetAngle = (prizeIndex * segmentAngle) + (segmentAngle / 2); // Center of segment
+        const randomVariation = Math.random() * RANDOM_VARIATION_RANGE - (RANDOM_VARIATION_RANGE / 2);
+        const finalRotation = (360 * SPIN_ROTATIONS) + (360 - targetAngle) + randomVariation;
+        
+        // Animate wheel with calculated rotation
         const wheel = document.getElementById('spinWheel');
+        wheel.style.transform = `rotate(${finalRotation}deg)`;
         wheel.classList.add('spinning');
         
         // Show result after animation
@@ -670,18 +893,36 @@ function closeModal() {
 }
 
 function createConfetti() {
-    const colors = ['#f39c12', '#e74c3c', '#27ae60', '#3498db', '#9b59b6'];
-    for (let i = 0; i < 50; i++) {
+    const colors = ['#f39c12', '#e74c3c', '#27ae60', '#3498db', '#9b59b6', '#e67e22', '#1abc9c'];
+    const shapes = ['square', 'circle', 'triangle', 'star'];
+    const confettiCount = 60; // Optimized for performance
+    
+    for (let i = 0; i < confettiCount; i++) {
         setTimeout(() => {
             const confetti = document.createElement('div');
             confetti.className = 'confetti';
+            
+            // Random shape
+            const shape = shapes[Math.floor(Math.random() * shapes.length)];
+            confetti.classList.add(shape);
+            
+            // Random color
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            if (shape === 'triangle') {
+                confetti.style.borderBottomColor = color;
+            } else {
+                confetti.style.background = color;
+            }
+            
+            // Random position and animation
             confetti.style.left = Math.random() * 100 + 'vw';
-            confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-            confetti.style.animationDelay = Math.random() * 2 + 's';
+            confetti.style.animationDelay = Math.random() * 0.5 + 's';
+            confetti.style.animationDuration = (2 + Math.random() * 2) + 's';
+            
             document.body.appendChild(confetti);
             
-            setTimeout(() => confetti.remove(), 3000);
-        }, i * 50);
+            setTimeout(() => confetti.remove(), 4000);
+        }, i * 30);
     }
 }
 
