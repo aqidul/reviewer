@@ -17,7 +17,7 @@ $user_name = $_SESSION['user_name'] ?? 'User';
 // Process spin request
 $spin_result = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['spin_wheel'])) {
-    if (Security::validateCSRF($_POST['csrf_token'] ?? '')) {
+    if (verifyCSRFToken($_POST['csrf_token'] ?? '')) {
         $spin_result = processSpinResult($pdo, $user_id);
     } else {
         $spin_result = ['success' => false, 'message' => 'Invalid security token'];
