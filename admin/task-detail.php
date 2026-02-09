@@ -95,6 +95,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_refund'])) {
             // Add commission to wallet
             $commission = floatval($task['commission'] ?? 0);
             if ($commission > 0) {
+                // Check if wallet entry exists, create if not
+                $walletCheck = $pdo->prepare("SELECT user_id FROM user_wallet WHERE user_id = ?");
+                $walletCheck->execute([$task['user_id']]);
+                
+                if (!$walletCheck->fetch()) {
+                    $createWallet = $pdo->prepare("INSERT INTO user_wallet (user_id, balance) VALUES (?, 0)");
+                    $createWallet->execute([$task['user_id']]);
+                }
+                
                 $stmt = $pdo->prepare("UPDATE user_wallet SET balance = balance + :amount WHERE user_id = :user_id");
                 $stmt->execute([':amount' => $commission, ':user_id' => $task['user_id']]);
                 
@@ -105,34 +114,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_refund'])) {
             $stmt = $pdo->prepare("UPDATE tasks SET task_status = 'completed' WHERE id = :id");
             $stmt->execute([':id' => $task_id]);
 
-            // ✅ Gamification hook (award points + badges)
-            $pointsCheck = $pdo->prepare("
-                SELECT 1 FROM point_transactions
-                WHERE user_id = ? AND type = 'task_completion' AND reference_id = ?
-            ");
-            $pointsCheck->execute([$task['user_id'], $task_id]);
-
-            if (!$pointsCheck->fetchColumn()) {
-                awardTaskCompletionPoints($pdo, $task['user_id'], $task_id);
-            }
-
-            // ✅ Referral commission hook (avoid duplicates)
-            $refCheck = $pdo->prepare("
-                SELECT 1 FROM referral_earnings
-                WHERE task_id = ? AND from_user_id = ?
-                LIMIT 1
-            ");
-            $refCheck->execute([$task_id, $task['user_id']]);
-
-            if (!$refCheck->fetchColumn()) {
-                $task_amount = $refund_amount > 0 ? $refund_amount : floatval($step[1]['order_amount'] ?? 0);
-                creditReferralCommission($pdo, $task['user_id'], $task_id, $task_amount);
-            }
-            
-            createNotification($task['user_id'], 'success', 'Refund Processed', 'Your refund of ₹' . number_format($refund_amount, 2) . ' has been sent for Task #' . $task_id);
-            
             $pdo->commit();
             $success = 'Refund processed successfully!';
+            
+            // ✅ Gamification hook (award points + badges) - OUTSIDE transaction with error handling
+            try {
+                if (function_exists('awardTaskCompletionPoints')) {
+                    $pointsCheck = $pdo->prepare("
+                        SELECT 1 FROM point_transactions
+                        WHERE user_id = ? AND type = 'task_completion' AND reference_id = ?
+                    ");
+                    $pointsCheck->execute([$task['user_id'], $task_id]);
+
+                    if (!$pointsCheck->fetchColumn()) {
+                        awardTaskCompletionPoints($pdo, $task['user_id'], $task_id);
+                    }
+                }
+            } catch (Exception $e) {
+                error_log("Gamification error (task #{$task_id}): " . $e->getMessage());
+                // Continue - don't fail the refund if gamification fails
+            }
+
+            // ✅ Referral commission hook - OUTSIDE transaction with error handling
+            try {
+                if (function_exists('creditReferralCommission')) {
+                    $refCheck = $pdo->prepare("
+                        SELECT 1 FROM referral_earnings
+                        WHERE task_id = ? AND from_user_id = ?
+                        LIMIT 1
+                    ");
+                    $refCheck->execute([$task_id, $task['user_id']]);
+
+                    if (!$refCheck->fetchColumn()) {
+                        $task_amount = $refund_amount > 0 ? $refund_amount : floatval($step[1]['order_amount'] ?? 0);
+                        creditReferralCommission($pdo, $task['user_id'], $task_id, $task_amount);
+                    }
+                }
+            } catch (Exception $e) {
+                error_log("Referral commission error (task #{$task_id}): " . $e->getMessage());
+                // Continue - don't fail the refund if referral fails
+            }
+            
+            // Send notification - with error handling
+            try {
+                if (function_exists('createNotification')) {
+                    createNotification($task['user_id'], 'success', 'Refund Processed', 'Your refund of ₹' . number_format($refund_amount, 2) . ' has been sent for Task #' . $task_id);
+                }
+            } catch (Exception $e) {
+                error_log("Notification error (task #{$task_id}): " . $e->getMessage());
+                // Continue - don't fail the refund if notification fails
+            }
             
             // Refresh data
             $stmt = $pdo->prepare("SELECT * FROM task_steps WHERE task_id = :id ORDER BY step_number");
@@ -146,7 +177,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_refund'])) {
             $task = $stmt->fetch();
             
         } catch (PDOException $e) {
-            $pdo->rollBack();
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             $errors[] = 'Database error: ' . $e->getMessage();
         }
     }
