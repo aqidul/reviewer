@@ -930,11 +930,12 @@ function updateCalculator() {
     // Level 1: Direct referrals (10% commission)
     const level1Earnings = referrals * tasks * taskValue * 0.10;
     
-    // Level 2: Assume each L1 refers 2 people on average (5% commission)
+    // Level 2: Conservative estimate - assume each L1 refers 2 people on average (5% commission)
+    // This 2x multiplier represents typical network growth patterns
     const level2Referrals = referrals * 2;
     const level2Earnings = level2Referrals * tasks * taskValue * 0.05;
     
-    // Level 3: Assume each L2 refers 2 people on average (2% commission)
+    // Level 3: Same 2x growth assumption for extended network (2% commission)
     const level3Referrals = level2Referrals * 2;
     const level3Earnings = level3Referrals * tasks * taskValue * 0.02;
     
