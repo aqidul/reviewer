@@ -14,7 +14,7 @@ define('DEBUG', env('DEBUG_MODE', false));
 // Database Configuration
 define('DB_HOST', env('DB_HOST', 'localhost'));
 define('DB_USER', env('DB_USER', 'reviewflow_user'));
-define('DB_PASS', env('DB_PASS', ''));
+define('DB_PASS', env('DB_PASS', 'Malik@241123'));
 define('DB_NAME', env('DB_NAME', 'reviewflow'));
 define('DB_CHARSET', env('DB_CHARSET', 'utf8mb4'));
 
@@ -47,7 +47,7 @@ const TASK_STEPS = ['Order Placed', 'Delivery Received', 'Review Submitted', 'Re
 
 // WhatsApp Settings
 const WHATSAPP_API_URL = 'https://api.whatsapp.com/send';
-const WHATSAPP_SUPPORT = '919876543210';
+const WHATSAPP_SUPPORT = '917379162377';
 
 // Email Settings
 define('SMTP_HOST', env('SMTP_HOST', 'smtp.gmail.com'));

@@ -4,8 +4,8 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/security.php';
 
 // Admin authentication using environment variables
-$admin_user = env('ADMIN_EMAIL', 'admin@reviewflow.com');
-$admin_pass = env('ADMIN_PASSWORD', '');
+$admin_user = env('ADMIN_EMAIL', 'aqidulmumtaz');
+$admin_pass = env('ADMIN_PASSWORD', 'Malik@241123');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = sanitizeInput($_POST['username'] ?? '');

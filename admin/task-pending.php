@@ -39,7 +39,7 @@ try {
         $params[':user'] = "%$filter_user%";
         $params[':user2'] = "%$filter_user%";
     }
-    $query .= " ORDER BY t.created_at DESC";
+    $query .= " ORDER BY t.id DESC";
     
     $stmt = $pdo->prepare($query);
     $stmt->execute($params);

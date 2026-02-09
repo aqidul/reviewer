@@ -30,25 +30,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
     }
 }
 
-// Get current settings
-$settings = getReferralSettings($pdo);
+// Get current settings (with fallback)
+try {
+    $settings = getReferralSettings($pdo);
+} catch (PDOException $e) {
+    $error = 'Database error: Could not load referral settings - ' . $e->getMessage();
+    $settings = [];
+}
 
-// Get referral statistics
+// Get referral statistics (safe)
+$total_referrals = 0;
+$active_referrals = 0;
+$total_earnings = 0;
+$pending_earnings = 0;
+
 try {
     $total_referrals_stmt = $pdo->query("SELECT COUNT(*) FROM referrals WHERE level = 1");
     $total_referrals = $total_referrals_stmt->fetchColumn();
+} catch (PDOException $e) {
+    error_log("Referral stats error (total): " . $e->getMessage());
+}
 
+try {
     $active_referrals_stmt = $pdo->query("SELECT COUNT(*) FROM referrals WHERE level = 1 AND status = 'active'");
     $active_referrals = $active_referrals_stmt->fetchColumn();
+} catch (PDOException $e) {
+    error_log("Referral stats error (active): " . $e->getMessage());
+}
 
+try {
     $total_earnings_stmt = $pdo->query("SELECT COALESCE(SUM(amount), 0) FROM referral_earnings WHERE status = 'credited'");
     $total_earnings = $total_earnings_stmt->fetchColumn();
+} catch (PDOException $e) {
+    error_log("Referral stats error (earnings): " . $e->getMessage());
+}
 
+try {
     $pending_earnings_stmt = $pdo->query("SELECT COALESCE(SUM(amount), 0) FROM referral_earnings WHERE status = 'pending'");
     $pending_earnings = $pending_earnings_stmt->fetchColumn();
 } catch (PDOException $e) {
-    $error = 'Database error';
-    $total_referrals = $active_referrals = $total_earnings = $pending_earnings = 0;
+    error_log("Referral stats error (pending): " . $e->getMessage());
+}
+
+// Get recent referrals (safe)
+$recent_referrals = [];
+try {
+    // Check if 'username' column exists, fallback to 'name'
+    $columns_stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'username'");
+    $has_username = $columns_stmt->rowCount() > 0;
+    $name_col = $has_username ? 'username' : 'name';
+
+    $recent_stmt = $pdo->query("
+        SELECT 
+            r.*,
+            u1.{$name_col} as referrer_name,
+            u2.{$name_col} as referee_name,
+            u2.email as referee_email
+        FROM referrals r
+        JOIN users u1 ON r.referrer_id = u1.id
+        JOIN users u2 ON r.referee_id = u2.id
+        WHERE r.level = 1
+        ORDER BY r.created_at DESC
+        LIMIT 20
+    ");
+    $recent_referrals = $recent_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log("Recent referrals error: " . $e->getMessage());
 }
 
 $csrf_token = generateCSRFToken();
@@ -108,7 +155,7 @@ $csrf_token = generateCSRFToken();
                 <div class="col-md-3">
                     <div class="card bg-primary text-white">
                         <div class="card-body">
-                            <h3><?php echo $total_referrals; ?></h3>
+                            <h3><?php echo (int)$total_referrals; ?></h3>
                             <p class="mb-0">Total Referrals</p>
                         </div>
                     </div>
@@ -116,7 +163,7 @@ $csrf_token = generateCSRFToken();
                 <div class="col-md-3">
                     <div class="card bg-success text-white">
                         <div class="card-body">
-                            <h3><?php echo $active_referrals; ?></h3>
+                            <h3><?php echo (int)$active_referrals; ?></h3>
                             <p class="mb-0">Active Referrals</p>
                         </div>
                     </div>
@@ -124,7 +171,7 @@ $csrf_token = generateCSRFToken();
                 <div class="col-md-3">
                     <div class="card bg-info text-white">
                         <div class="card-body">
-                            <h3>₹<?php echo number_format($total_earnings, 2); ?></h3>
+                            <h3>₹<?php echo number_format((float)$total_earnings, 2); ?></h3>
                             <p class="mb-0">Total Earnings Paid</p>
                         </div>
                     </div>
@@ -132,7 +179,7 @@ $csrf_token = generateCSRFToken();
                 <div class="col-md-3">
                     <div class="card bg-warning text-white">
                         <div class="card-body">
-                            <h3>₹<?php echo number_format($pending_earnings, 2); ?></h3>
+                            <h3>₹<?php echo number_format((float)$pending_earnings, 2); ?></h3>
                             <p class="mb-0">Pending Earnings</p>
                         </div>
                     </div>
@@ -145,6 +192,11 @@ $csrf_token = generateCSRFToken();
                     <h5><i class="bi bi-percent"></i> Commission Rate Settings</h5>
                 </div>
                 <div class="card-body">
+                    <?php if (empty($settings)): ?>
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> No referral levels found. Please check that the <code>referral_settings</code> table has data.
+                        </div>
+                    <?php else: ?>
                     <form method="POST">
                         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                         <div class="table-responsive">
@@ -160,13 +212,13 @@ $csrf_token = generateCSRFToken();
                                 <tbody>
                                     <?php foreach ($settings as $setting): ?>
                                     <tr>
-                                        <td><strong>Level <?php echo $setting['level']; ?></strong></td>
+                                        <td><strong>Level <?php echo (int)$setting['level']; ?></strong></td>
                                         <td>
                                             <div class="input-group" style="width: 150px;">
                                                 <input type="number" step="0.01" min="0" max="100"
                                                        class="form-control" 
-                                                       name="levels[<?php echo $setting['level']; ?>][commission]"
-                                                       value="<?php echo $setting['commission_percent']; ?>" required>
+                                                       name="levels[<?php echo (int)$setting['level']; ?>][commission]"
+                                                       value="<?php echo htmlspecialchars($setting['commission_percent']); ?>" required>
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
@@ -182,7 +234,7 @@ $csrf_token = generateCSRFToken();
                                         <td>
                                             <div class="form-check form-switch">
                                                 <input class="form-check-input" type="checkbox" 
-                                                       name="levels[<?php echo $setting['level']; ?>][active]"
+                                                       name="levels[<?php echo (int)$setting['level']; ?>][active]"
                                                        <?php echo $setting['is_active'] ? 'checked' : ''; ?>>
                                                 <label class="form-check-label">Active</label>
                                             </div>
@@ -207,6 +259,7 @@ $csrf_token = generateCSRFToken();
                             <i class="bi bi-save"></i> Save Settings
                         </button>
                     </form>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -216,23 +269,6 @@ $csrf_token = generateCSRFToken();
                     <h5><i class="bi bi-clock-history"></i> Recent Referrals</h5>
                 </div>
                 <div class="card-body">
-                    <?php
-                    $recent_stmt = $pdo->query("
-                        SELECT 
-                            r.*,
-                            u1.username as referrer_name,
-                            u2.username as referee_name,
-                            u2.email as referee_email
-                        FROM referrals r
-                        JOIN users u1 ON r.referrer_id = u1.id
-                        JOIN users u2 ON r.referee_id = u2.id
-                        WHERE r.level = 1
-                        ORDER BY r.created_at DESC
-                        LIMIT 20
-                    ");
-                    $recent_referrals = $recent_stmt->fetchAll(PDO::FETCH_ASSOC);
-                    ?>
-
                     <?php if (count($recent_referrals) > 0): ?>
                     <div class="table-responsive">
                         <table class="table table-hover">
@@ -248,19 +284,19 @@ $csrf_token = generateCSRFToken();
                             <tbody>
                                 <?php foreach ($recent_referrals as $ref): ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($ref['referrer_name']); ?></td>
-                                    <td><?php echo htmlspecialchars($ref['referee_name']); ?></td>
-                                    <td><?php echo htmlspecialchars($ref['referee_email']); ?></td>
+                                    <td><?php echo htmlspecialchars($ref['referrer_name'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($ref['referee_name'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($ref['referee_email'] ?? 'N/A'); ?></td>
                                     <td>
-                                        <?php if ($ref['status'] == 'active'): ?>
+                                        <?php if (($ref['status'] ?? '') == 'active'): ?>
                                             <span class="badge bg-success">Active</span>
-                                        <?php elseif ($ref['status'] == 'pending'): ?>
+                                        <?php elseif (($ref['status'] ?? '') == 'pending'): ?>
                                             <span class="badge bg-warning">Pending</span>
                                         <?php else: ?>
                                             <span class="badge bg-secondary">Inactive</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?php echo date('M d, Y', strtotime($ref['created_at'])); ?></td>
+                                    <td><?php echo isset($ref['created_at']) ? date('M d, Y', strtotime($ref['created_at'])) : 'N/A'; ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
