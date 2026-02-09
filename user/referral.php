@@ -143,6 +143,13 @@ $twitter_message = "I'm earning money on " . APP_NAME . "! Join using my code: "
         .share-btn.facebook{background:#1877f2}
         .share-btn.copy{background:#333}
         
+        /* Sticky Share Button (Mobile) */
+        .sticky-share-btn{position:fixed;bottom:20px;right:20px;width:60px;height:60px;background:linear-gradient(135deg,#f39c12,#e67e22);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;box-shadow:0 5px 25px rgba(243,156,18,0.5);cursor:pointer;z-index:1000;animation:sharePulse 2s ease-in-out infinite;display:none}
+        
+        @keyframes sharePulse{0%,100%{transform:scale(1);box-shadow:0 5px 25px rgba(243,156,18,0.5)}50%{transform:scale(1.1);box-shadow:0 8px 35px rgba(243,156,18,0.7)}}
+        
+        @media (max-width:768px){.sticky-share-btn{display:flex}}
+        
         /* Stats Grid */
         .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:25px}
         .stat-card{background:#fff;border-radius:12px;padding:20px;text-align:center;box-shadow:0 3px 15px rgba(0,0,0,0.08)}
@@ -248,6 +255,64 @@ $twitter_message = "I'm earning money on " . APP_NAME . "! Join using my code: "
         .progress-info{font-size:14px;color:#666;text-align:center}
         
         /* Responsive */
+        /* Network Growth Chart */
+        .growth-chart-card{background:#fff;border-radius:15px;padding:25px;margin-bottom:25px;box-shadow:0 5px 20px rgba(0,0,0,0.1)}
+        .chart-container{display:flex;align-items:flex-end;justify-content:space-between;height:200px;padding:20px 0;gap:8px}
+        .chart-bar{flex:1;background:linear-gradient(180deg,#667eea 0%,#764ba2 100%);border-radius:8px 8px 0 0;position:relative;transition:all 0.3s;cursor:pointer;min-height:20px}
+        .chart-bar:hover{transform:translateY(-5px);opacity:0.8}
+        .chart-bar-label{position:absolute;bottom:-25px;left:50%;transform:translateX(-50%);font-size:11px;color:#888;white-space:nowrap}
+        .chart-bar-value{position:absolute;top:-25px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:700;color:#667eea;background:#fff;padding:3px 8px;border-radius:5px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+        .chart-legend{display:flex;justify-content:center;gap:20px;margin-top:35px;font-size:13px;color:#666}
+        .legend-item{display:flex;align-items:center;gap:6px}
+        .legend-dot{width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2)}
+        
+        /* Chain Bonus Explainer */
+        .chain-bonus-card{background:linear-gradient(135deg,#e8f5e9 0%,#c8e6c9 100%);border-radius:15px;padding:30px;margin-bottom:25px;box-shadow:0 5px 20px rgba(0,0,0,0.1);overflow:hidden}
+        .chain-flow{display:flex;align-items:center;justify-content:space-around;gap:15px;margin:25px 0}
+        .chain-level{flex:1;text-align:center;background:#fff;border-radius:15px;padding:25px 15px;box-shadow:0 3px 15px rgba(0,0,0,0.1);position:relative;transition:transform 0.3s}
+        .chain-level:hover{transform:scale(1.05)}
+        .chain-icon{font-size:40px;margin-bottom:10px}
+        .chain-title{font-weight:700;color:#333;font-size:16px;margin-bottom:8px}
+        .chain-percent{font-size:32px;font-weight:800;background:linear-gradient(135deg,#27ae60,#229954);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .chain-desc{font-size:12px;color:#666;margin-top:8px}
+        .chain-arrow{font-size:32px;color:#27ae60;animation:arrowSlide 1.5s ease-in-out infinite}
+        @keyframes arrowSlide{0%,100%{transform:translateX(0);opacity:0.6}50%{transform:translateX(5px);opacity:1}}
+        .chain-info{background:#fff;border-radius:10px;padding:15px;margin-top:20px;font-size:13px;color:#666;line-height:1.6}
+        
+        /* Earning Calculator */
+        .calculator-card{background:linear-gradient(135deg,#fff5e6 0%,#ffe8cc 100%);border-radius:15px;padding:30px;margin-bottom:25px;box-shadow:0 5px 20px rgba(0,0,0,0.1)}
+        .calc-input-group{background:#fff;border-radius:12px;padding:20px;margin:20px 0}
+        .calc-label{font-size:14px;font-weight:600;color:#333;margin-bottom:10px}
+        .calc-slider-container{display:flex;align-items:center;gap:15px}
+        .calc-slider{flex:1;-webkit-appearance:none;appearance:none;height:8px;border-radius:5px;background:#e0e0e0;outline:none}
+        .calc-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#f39c12,#e67e22);cursor:pointer;box-shadow:0 2px 8px rgba(243,156,18,0.4)}
+        .calc-slider::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#f39c12,#e67e22);cursor:pointer;border:none;box-shadow:0 2px 8px rgba(243,156,18,0.4)}
+        .calc-value{min-width:60px;text-align:center;font-size:20px;font-weight:700;color:#f39c12;background:#fff;padding:8px 15px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+        .calc-results{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-top:20px}
+        .calc-result-item{background:#fff;border-radius:12px;padding:20px;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,0.08)}
+        .calc-result-label{font-size:12px;color:#888;margin-bottom:5px}
+        .calc-result-value{font-size:28px;font-weight:800;color:#27ae60}
+        .calc-result-breakdown{font-size:11px;color:#999;margin-top:5px}
+        
+        /* Top Referrers Leaderboard */
+        .leaderboard-card{background:#fff;border-radius:15px;padding:25px;margin-bottom:25px;box-shadow:0 5px 20px rgba(0,0,0,0.1)}
+        .leaderboard-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+        .leaderboard-title{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;color:#333}
+        .leaderboard-trophy{font-size:28px;animation:bounce 2s ease-in-out infinite}
+        @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+        .leaderboard-item{display:flex;align-items:center;padding:15px;background:linear-gradient(135deg,#f8f9fa,#e9ecef);border-radius:12px;margin-bottom:10px;transition:all 0.3s}
+        .leaderboard-item:hover{transform:translateX(5px);box-shadow:0 4px 15px rgba(0,0,0,0.1)}
+        .leaderboard-rank{width:40px;height:40px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px}
+        .leaderboard-item:nth-child(1) .leaderboard-rank{background:linear-gradient(135deg,#ffd700,#ffed4e);color:#333}
+        .leaderboard-item:nth-child(2) .leaderboard-rank{background:linear-gradient(135deg,#c0c0c0,#d3d3d3);color:#333}
+        .leaderboard-item:nth-child(3) .leaderboard-rank{background:linear-gradient(135deg,#cd7f32,#a0522d);color:#fff}
+        .leaderboard-user{flex:1;margin-left:15px}
+        .leaderboard-name{font-weight:700;color:#333;font-size:15px}
+        .leaderboard-count{font-size:12px;color:#888;margin-top:2px}
+        .leaderboard-badge{padding:8px 15px;background:linear-gradient(135deg,#27ae60,#229954);color:#fff;border-radius:20px;font-weight:700;font-size:14px}
+        .leaderboard-coming-soon{text-align:center;padding:30px;background:linear-gradient(135deg,#f8f9fa,#e9ecef);border-radius:12px;color:#999}
+        .leaderboard-coming-soon .icon{font-size:50px;margin-bottom:10px;opacity:0.5}
+        
         @media(max-width:768px){
             .stats-grid{grid-template-columns:repeat(2,1fr)}
             .steps{grid-template-columns:1fr}
@@ -259,6 +324,9 @@ $twitter_message = "I'm earning money on " . APP_NAME . "! Join using my code: "
             .network-stats{flex-direction:column;gap:15px}
             .tree-items{grid-template-columns:1fr}
             .milestone-badges{flex-direction:column}
+            .chain-flow{flex-direction:column;gap:20px}
+            .chain-arrow{transform:rotate(90deg)}
+            .calc-results{grid-template-columns:1fr}
         }
     </style>
 </head>
@@ -295,6 +363,48 @@ $twitter_message = "I'm earning money on " . APP_NAME . "! Join using my code: "
             <div class="stat-icon">💰</div>
             <div class="stat-value">₹<?php echo number_format($total_earnings, 0); ?></div>
             <div class="stat-label">Total Earned</div>
+        </div>
+    </div>
+    
+    <!-- Network Growth Chart -->
+    <?php
+    // Get last 7 days referral data
+    $growth_data = [];
+    for ($i = 6; $i >= 0; $i--) {
+        $date = date('Y-m-d', strtotime("-$i days"));
+        $day_label = date('D', strtotime("-$i days"));
+        try {
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM referrals WHERE referrer_id = ? AND DATE(created_at) = ?");
+            $stmt->execute([$user_id, $date]);
+            $count = (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            $count = 0;
+        }
+        $growth_data[] = ['label' => $day_label, 'count' => $count];
+    }
+    $max_count = max(array_column($growth_data, 'count')) ?: 1;
+    ?>
+    <div class="growth-chart-card">
+        <div class="section-title">📈 7-Day Referral Growth</div>
+        <div class="chart-container">
+            <?php foreach ($growth_data as $day): ?>
+                <?php 
+                $height = ($day['count'] / $max_count) * 100;
+                $height = max($height, 10);
+                ?>
+                <div class="chart-bar" style="height: <?php echo $height; ?>%" title="<?php echo $day['count']; ?> referrals">
+                    <?php if ($day['count'] > 0): ?>
+                        <div class="chart-bar-value"><?php echo $day['count']; ?></div>
+                    <?php endif; ?>
+                    <div class="chart-bar-label"><?php echo $day['label']; ?></div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <div class="chart-legend">
+            <div class="legend-item">
+                <div class="legend-dot"></div>
+                <span>Daily Referrals</span>
+            </div>
         </div>
     </div>
     
@@ -353,6 +463,36 @@ $twitter_message = "I'm earning money on " . APP_NAME . "! Join using my code: "
         </div>
     </div>
     
+    <!-- Chain Bonus Explainer -->
+    <div class="chain-bonus-card">
+        <div class="section-title">💰 3-Level Chain Commission System</div>
+        <div class="chain-flow">
+            <div class="chain-level">
+                <div class="chain-icon">👤</div>
+                <div class="chain-title">Level 1</div>
+                <div class="chain-percent">10%</div>
+                <div class="chain-desc">Direct Referrals</div>
+            </div>
+            <div class="chain-arrow">→</div>
+            <div class="chain-level">
+                <div class="chain-icon">👥</div>
+                <div class="chain-title">Level 2</div>
+                <div class="chain-percent">5%</div>
+                <div class="chain-desc">Their Referrals</div>
+            </div>
+            <div class="chain-arrow">→</div>
+            <div class="chain-level">
+                <div class="chain-icon">👨‍👩‍👧‍👦</div>
+                <div class="chain-title">Level 3</div>
+                <div class="chain-percent">2%</div>
+                <div class="chain-desc">Extended Network</div>
+            </div>
+        </div>
+        <div class="chain-info">
+            <strong>💡 How It Works:</strong> When your direct referral (Level 1) completes a task, you earn <strong>10% commission</strong>. When someone they referred (Level 2) completes a task, you earn <strong>5%</strong>. Even when Level 2's referrals (Level 3) complete tasks, you earn <strong>2%</strong>! This creates a powerful passive income stream as your network grows.
+        </div>
+    </div>
+    
     <!-- Network Overview -->
     <div class="network-section">
         <div class="section-title">🌐 Your Referral Network</div>
@@ -389,6 +529,60 @@ $twitter_message = "I'm earning money on " . APP_NAME . "! Join using my code: "
                 <div class="level-label">Total Earned</div>
             </div>
             <?php endforeach; ?>
+        </div>
+    </div>
+    
+    <!-- Earning Calculator -->
+    <div class="calculator-card">
+        <div class="section-title">🧮 Earnings Calculator</div>
+        <p style="text-align:center;color:#666;font-size:14px;margin-bottom:20px">See how much you can earn with your referral network</p>
+        
+        <div class="calc-input-group">
+            <div class="calc-label">Number of Direct Referrals (Level 1)</div>
+            <div class="calc-slider-container">
+                <input type="range" min="0" max="100" value="10" class="calc-slider" id="calcReferrals">
+                <div class="calc-value" id="calcReferralsValue">10</div>
+            </div>
+        </div>
+        
+        <div class="calc-input-group">
+            <div class="calc-label">Average Tasks Completed per Referral per Month</div>
+            <div class="calc-slider-container">
+                <input type="range" min="0" max="50" value="10" class="calc-slider" id="calcTasks">
+                <div class="calc-value" id="calcTasksValue">10</div>
+            </div>
+        </div>
+        
+        <div class="calc-input-group">
+            <div class="calc-label">Average Task Value (₹)</div>
+            <div class="calc-slider-container">
+                <input type="range" min="10" max="500" value="50" step="10" class="calc-slider" id="calcTaskValue">
+                <div class="calc-value" id="calcTaskValueDisplay">₹50</div>
+            </div>
+        </div>
+        
+        <div class="calc-results">
+            <div class="calc-result-item">
+                <div class="calc-result-label">Level 1 (10%)</div>
+                <div class="calc-result-value" id="calcLevel1">₹500</div>
+                <div class="calc-result-breakdown">Monthly Earnings</div>
+            </div>
+            <div class="calc-result-item">
+                <div class="calc-result-label">Level 2 (5%)</div>
+                <div class="calc-result-value" id="calcLevel2">₹250</div>
+                <div class="calc-result-breakdown">Estimated</div>
+            </div>
+            <div class="calc-result-item">
+                <div class="calc-result-label">Level 3 (2%)</div>
+                <div class="calc-result-value" id="calcLevel3">₹100</div>
+                <div class="calc-result-breakdown">Estimated</div>
+            </div>
+        </div>
+        
+        <div style="text-align:center;margin-top:20px;padding:15px;background:#fff;border-radius:10px">
+            <div style="font-size:14px;color:#888;margin-bottom:5px">Total Monthly Potential</div>
+            <div style="font-size:36px;font-weight:800;color:#27ae60" id="calcTotal">₹850</div>
+            <div style="font-size:12px;color:#999;margin-top:5px">* Estimates based on average network growth</div>
         </div>
     </div>
     
@@ -549,6 +743,58 @@ $twitter_message = "I'm earning money on " . APP_NAME . "! Join using my code: "
         <?php endif; ?>
     </div>
     
+    <!-- Top Referrers Leaderboard -->
+    <div class="leaderboard-card">
+        <div class="leaderboard-header">
+            <div class="leaderboard-title">
+                <span class="leaderboard-trophy">🏆</span>
+                <span>Top Referrers This Month</span>
+            </div>
+        </div>
+        
+        <div class="leaderboard-coming-soon">
+            <div class="icon">🚀</div>
+            <h4 style="color:#666;font-size:16px;margin-bottom:8px">Coming Soon!</h4>
+            <p style="font-size:13px;line-height:1.6">
+                Compete with other top referrers and see where you rank! <br>
+                Keep referring to unlock your position on the leaderboard.
+            </p>
+            <div style="margin-top:20px;padding:15px;background:#fff;border-radius:10px;display:inline-block">
+                <div style="font-size:12px;color:#888">Your Current Rank</div>
+                <div style="font-size:32px;font-weight:800;color:#667eea;margin:5px 0">-</div>
+                <div style="font-size:11px;color:#999">Keep referring to rank up!</div>
+            </div>
+        </div>
+        
+        <!-- Placeholder for when leaderboard is active -->
+        <div style="display:none">
+            <div class="leaderboard-item">
+                <div class="leaderboard-rank">1</div>
+                <div class="leaderboard-user">
+                    <div class="leaderboard-name">Top Referrer</div>
+                    <div class="leaderboard-count">🎯 150 referrals</div>
+                </div>
+                <div class="leaderboard-badge">₹15,000</div>
+            </div>
+            <div class="leaderboard-item">
+                <div class="leaderboard-rank">2</div>
+                <div class="leaderboard-user">
+                    <div class="leaderboard-name">Second Place</div>
+                    <div class="leaderboard-count">🎯 120 referrals</div>
+                </div>
+                <div class="leaderboard-badge">₹12,000</div>
+            </div>
+            <div class="leaderboard-item">
+                <div class="leaderboard-rank">3</div>
+                <div class="leaderboard-user">
+                    <div class="leaderboard-name">Third Place</div>
+                    <div class="leaderboard-count">🎯 95 referrals</div>
+                </div>
+                <div class="leaderboard-badge">₹9,500</div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Terms -->
     <div class="card" style="background:#f8f9fa">
         <div class="section-title">📋 Referral Terms & Conditions</div>
@@ -656,6 +902,56 @@ if (navigator.share) {
             }
         });
     });
+}
+
+// Earning Calculator
+const calcReferrals = document.getElementById('calcReferrals');
+const calcTasks = document.getElementById('calcTasks');
+const calcTaskValue = document.getElementById('calcTaskValue');
+const calcReferralsValue = document.getElementById('calcReferralsValue');
+const calcTasksValue = document.getElementById('calcTasksValue');
+const calcTaskValueDisplay = document.getElementById('calcTaskValueDisplay');
+const calcLevel1 = document.getElementById('calcLevel1');
+const calcLevel2 = document.getElementById('calcLevel2');
+const calcLevel3 = document.getElementById('calcLevel3');
+const calcTotal = document.getElementById('calcTotal');
+
+function updateCalculator() {
+    const referrals = parseInt(calcReferrals.value);
+    const tasks = parseInt(calcTasks.value);
+    const taskValue = parseInt(calcTaskValue.value);
+    
+    // Update display values
+    calcReferralsValue.textContent = referrals;
+    calcTasksValue.textContent = tasks;
+    calcTaskValueDisplay.textContent = '₹' + taskValue;
+    
+    // Calculate earnings
+    // Level 1: Direct referrals (10% commission)
+    const level1Earnings = referrals * tasks * taskValue * 0.10;
+    
+    // Level 2: Assume each L1 refers 2 people on average (5% commission)
+    const level2Referrals = referrals * 2;
+    const level2Earnings = level2Referrals * tasks * taskValue * 0.05;
+    
+    // Level 3: Assume each L2 refers 2 people on average (2% commission)
+    const level3Referrals = level2Referrals * 2;
+    const level3Earnings = level3Referrals * tasks * taskValue * 0.02;
+    
+    const total = level1Earnings + level2Earnings + level3Earnings;
+    
+    // Update display
+    calcLevel1.textContent = '₹' + Math.round(level1Earnings).toLocaleString('en-IN');
+    calcLevel2.textContent = '₹' + Math.round(level2Earnings).toLocaleString('en-IN');
+    calcLevel3.textContent = '₹' + Math.round(level3Earnings).toLocaleString('en-IN');
+    calcTotal.textContent = '₹' + Math.round(total).toLocaleString('en-IN');
+}
+
+if (calcReferrals) {
+    calcReferrals.addEventListener('input', updateCalculator);
+    calcTasks.addEventListener('input', updateCalculator);
+    calcTaskValue.addEventListener('input', updateCalculator);
+    updateCalculator(); // Initial calculation
 }
 </script>
 </body>
