@@ -165,7 +165,7 @@ function updateLoginStreak($db, $user_id) {
         "Daily login (Streak: {$new_streak} days)");
 
     if ($new_streak >= 30 && function_exists('awardBadge')) {
-        awardBadge($db, $user_id, 'Streak Master');
+        awardBadge($user_id, 'streak_30');
     }
 
     return true;
@@ -182,27 +182,27 @@ function checkBadgeAchievements($db, $user_id) {
     $stats = getUserAchievementStats($db, $user_id);
 
     if ($stats['completed_tasks'] >= 1) {
-        awardBadge($db, $user_id, 'First Task');
+        awardBadge($user_id, 'first_task');
     }
     if ($stats['completed_tasks'] >= 10) {
-        awardBadge($db, $user_id, 'Task Master 10');
+        awardBadge($user_id, 'ten_tasks');
     }
     if ($stats['completed_tasks'] >= 50) {
-        awardBadge($db, $user_id, 'Task Master 50');
+        awardBadge($user_id, 'fifty_tasks');
     }
     if ($stats['completed_tasks'] >= 100) {
-        awardBadge($db, $user_id, 'Task Master 100');
+        awardBadge($user_id, 'hundred_tasks');
     }
 
     if ($stats['total_referrals'] >= 1) {
-        awardBadge($db, $user_id, 'First Referral');
+        awardBadge($user_id, 'first_referral');
     }
     if ($stats['total_referrals'] >= 10) {
-        awardBadge($db, $user_id, 'Referral Pro');
+        awardBadge($user_id, 'referral_king');
     }
 
     if ($stats['kyc_verified']) {
-        awardBadge($db, $user_id, 'Verified User');
+        awardBadge($user_id, 'verified_user');
     }
 }
 
@@ -423,4 +423,42 @@ function getGamificationDashboard($db, $user_id) {
         'total_badges' => count(getAllBadges($db)),
         'earned_badges' => count($badges)
     ];
+}
+
+/**
+ * Add money to user wallet (for badge rewards and other credits)
+ */
+if (!function_exists('addMoneyToWallet')) {
+    function addMoneyToWallet(int $userId, float $amount, string $description = 'Wallet Credit'): bool {
+        global $pdo;
+        
+        try {
+            // Check if user_wallet exists, create if not
+            $checkStmt = $pdo->prepare("SELECT user_id FROM user_wallet WHERE user_id = ?");
+            $checkStmt->execute([$userId]);
+            
+            if (!$checkStmt->fetch()) {
+                // Create wallet entry if it doesn't exist
+                $createStmt = $pdo->prepare("INSERT INTO user_wallet (user_id, balance) VALUES (?, 0)");
+                $createStmt->execute([$userId]);
+            }
+            
+            // Update wallet balance
+            $updateStmt = $pdo->prepare("UPDATE user_wallet SET balance = balance + ? WHERE user_id = ?");
+            $updateStmt->execute([$amount, $userId]);
+            
+            // Insert transaction record
+            $transactionStmt = $pdo->prepare("
+                INSERT INTO wallet_transactions (user_id, type, amount, description, created_at) 
+                VALUES (?, 'credit', ?, ?, NOW())
+            ");
+            $transactionStmt->execute([$userId, $amount, $description]);
+            
+            return true;
+            
+        } catch (PDOException $e) {
+            error_log("Add Money to Wallet Error: " . $e->getMessage());
+            return false;
+        }
+    }
 }
