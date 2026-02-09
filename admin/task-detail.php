@@ -64,13 +64,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_refund'])) {
                 CURLOPT_SSL_VERIFYHOST => 2,
                 CURLOPT_TIMEOUT => 120
             ]);
+            
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curl_errno = curl_errno($ch);
             
-            // Check for cURL errors
-            if (curl_errno($ch)) {
+            // If SSL verification failed, retry without it and log a warning
+            if ($curl_errno === 60 || $curl_errno === 77) {
+                error_log("WARNING: SSL verification failed for image upload. Retrying without SSL verification. Error: " . curl_error($ch));
+                curl_close($ch);
+                
+                $ch = curl_init();
+                $cfile = new CURLFile($_FILES['payment_screenshot']['tmp_name'], $_FILES['payment_screenshot']['type'], $_FILES['payment_screenshot']['name']);
+                curl_setopt_array($ch, [
+                    CURLOPT_URL => 'https://palians.com/image-host/upload.php',
+                    CURLOPT_POST => true,
+                    CURLOPT_POSTFIELDS => ['image' => $cfile],
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_TIMEOUT => 120
+                ]);
+                
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $curl_errno = curl_errno($ch);
+            }
+            
+            // Check for any remaining cURL errors
+            if ($curl_errno) {
                 $curl_error = curl_error($ch);
-                error_log("cURL error during payment screenshot upload: " . $curl_error);
+                error_log("cURL error during payment screenshot upload: [{$curl_errno}] " . $curl_error);
                 $errors[] = 'Failed to upload payment screenshot. Please try again.';
                 curl_close($ch);
             } else {
