@@ -1,13 +1,11 @@
 <?php
 require_once '../includes/config.php';
+require_once '../includes/security.php';
 
 // Check if user is logged in and is admin
-if (!isLoggedIn()) {
-    redirect('../index.php');
-}
-
-if (!isAdmin()) {
-    die("Access denied. Admin only.");
+if (!isset($_SESSION['admin_name'])) {
+    header('Location: ' . ADMIN_URL);
+    exit;
 }
 
 // Handle user actions
@@ -17,88 +15,102 @@ $message_type = '';
 
 // Add new user
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_user'])) {
-    $name = trim($_POST['name']);
-    $email = trim($_POST['email']);
-    $mobile = trim($_POST['mobile']);
-    $password = $_POST['password'];
-    
-    // Validate
-    if (empty($name) || empty($email) || empty($mobile) || empty($password)) {
-        $message = 'All fields are required!';
-        $message_type = 'error';
-    } elseif (strlen($password) < 6) {
-        $message = 'Password must be at least 6 characters!';
+    // Verify CSRF token
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? null)) {
+        $message = 'Invalid security token. Please try again.';
         $message_type = 'error';
     } else {
-        try {
-            // Check if email exists
-            $checkQuery = "SELECT id FROM users WHERE email = :email OR mobile = :mobile";
-            $checkStmt = $db->prepare($checkQuery);
-            $checkStmt->execute([':email' => $email, ':mobile' => $mobile]);
-            
-            if ($checkStmt->rowCount() > 0) {
-                $message = 'User with this email or mobile already exists!';
-                $message_type = 'error';
-            } else {
-                // Insert user
-                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                $insertQuery = "INSERT INTO users (name, email, mobile, password, user_type, created_at) 
-                               VALUES (:name, :email, :mobile, :password, 'user', NOW())";
-                $insertStmt = $db->prepare($insertQuery);
-                $insertStmt->execute([
-                    ':name' => $name,
-                    ':email' => $email,
-                    ':mobile' => $mobile,
-                    ':password' => $hashed_password
-                ]);
-                
-                $message = 'User added successfully!';
-                $message_type = 'success';
-            }
-        } catch(PDOException $e) {
-            $message = 'Error: ' . $e->getMessage();
+        $name = trim($_POST['name']);
+        $email = trim($_POST['email']);
+        $mobile = trim($_POST['mobile']);
+        $password = $_POST['password'];
+        
+        // Validate
+        if (empty($name) || empty($email) || empty($mobile) || empty($password)) {
+            $message = 'All fields are required!';
             $message_type = 'error';
+        } elseif (strlen($password) < 6) {
+            $message = 'Password must be at least 6 characters!';
+            $message_type = 'error';
+        } else {
+            try {
+                // Check if email exists
+                $checkQuery = "SELECT id FROM users WHERE email = :email OR mobile = :mobile";
+                $checkStmt = $pdo->prepare($checkQuery);
+                $checkStmt->execute([':email' => $email, ':mobile' => $mobile]);
+                
+                if ($checkStmt->rowCount() > 0) {
+                    $message = 'User with this email or mobile already exists!';
+                    $message_type = 'error';
+                } else {
+                    // Insert user
+                    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                    $insertQuery = "INSERT INTO users (name, email, mobile, password, user_type, created_at) 
+                                   VALUES (:name, :email, :mobile, :password, 'user', NOW())";
+                    $insertStmt = $pdo->prepare($insertQuery);
+                    $insertStmt->execute([
+                        ':name' => $name,
+                        ':email' => $email,
+                        ':mobile' => $mobile,
+                        ':password' => $hashed_password
+                    ]);
+                    
+                    $message = 'User added successfully!';
+                    $message_type = 'success';
+                }
+            } catch(PDOException $e) {
+                error_log('User creation error: ' . $e->getMessage());
+                $message = 'A database error occurred. Please try again or contact support.';
+                $message_type = 'error';
+            }
         }
     }
 }
 
 // Delete user
 if ($action == 'delete' && isset($_GET['id'])) {
-    $user_id = intval($_GET['id']);
-    
-    try {
-        // Check if user has tasks
-        $checkTasks = "SELECT COUNT(*) FROM tasks WHERE user_id = :user_id";
-        $checkStmt = $db->prepare($checkTasks);
-        $checkStmt->execute([':user_id' => $user_id]);
-        $task_count = $checkStmt->fetchColumn();
-        
-        if ($task_count > 0) {
-            $message = 'Cannot delete user with assigned tasks!';
-            $message_type = 'error';
-        } else {
-            $deleteQuery = "DELETE FROM users WHERE id = :id AND user_type = 'user'";
-            $deleteStmt = $db->prepare($deleteQuery);
-            $deleteStmt->execute([':id' => $user_id]);
-            
-            if ($deleteStmt->rowCount() > 0) {
-                $message = 'User deleted successfully!';
-                $message_type = 'success';
-            } else {
-                $message = 'User not found or cannot be deleted!';
-                $message_type = 'error';
-            }
-        }
-    } catch(PDOException $e) {
-        $message = 'Error: ' . $e->getMessage();
+    // Verify CSRF token for delete action
+    if (!verifyCSRFToken($_GET['csrf_token'] ?? null)) {
+        $message = 'Invalid security token. Please try again.';
         $message_type = 'error';
+    } else {
+        $user_id = intval($_GET['id']);
+        
+        try {
+            // Check if user has tasks
+            $checkTasks = "SELECT COUNT(*) FROM tasks WHERE user_id = :user_id";
+            $checkStmt = $pdo->prepare($checkTasks);
+            $checkStmt->execute([':user_id' => $user_id]);
+            $task_count = $checkStmt->fetchColumn();
+            
+            if ($task_count > 0) {
+                $message = 'Cannot delete user with assigned tasks!';
+                $message_type = 'error';
+            } else {
+                $deleteQuery = "DELETE FROM users WHERE id = :id AND user_type = 'user'";
+                $deleteStmt = $pdo->prepare($deleteQuery);
+                $deleteStmt->execute([':id' => $user_id]);
+                
+                if ($deleteStmt->rowCount() > 0) {
+                    $message = 'User deleted successfully!';
+                    $message_type = 'success';
+                } else {
+                    $message = 'User not found or cannot be deleted!';
+                    $message_type = 'error';
+                }
+            }
+        } catch(PDOException $e) {
+            error_log('User deletion error: ' . $e->getMessage());
+            $message = 'A database error occurred. Please try again or contact support.';
+            $message_type = 'error';
+        }
     }
 }
 
 // Get all users
 try {
     $usersQuery = "SELECT * FROM users WHERE user_type = 'user' ORDER BY created_at DESC";
-    $usersStmt = $db->prepare($usersQuery);
+    $usersStmt = $pdo->prepare($usersQuery);
     $usersStmt->execute();
     $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
 } catch(PDOException $e) {
@@ -117,7 +129,7 @@ foreach ($users as $user) {
             LEFT JOIN orders o ON t.id = o.task_id
             WHERE t.user_id = :user_id";
         
-        $statsStmt = $db->prepare($statsQuery);
+        $statsStmt = $pdo->prepare($statsQuery);
         $statsStmt->execute([':user_id' => $user['id']]);
         $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
         
@@ -475,6 +487,7 @@ foreach ($users as $user) {
                     <h2><i class="fas fa-user-plus"></i> Add New Reviewer</h2>
                 </div>
                 <form method="POST" action="">
+                    <?php echo Security::csrfField(); ?>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="name"><i class="fas fa-user"></i> Full Name</label>
@@ -576,7 +589,7 @@ foreach ($users as $user) {
                                            class="action-btn orange" title="Reset Password">
                                             <i class="fas fa-key"></i>
                                         </a>
-                                        <a href="users.php?action=delete&id=<?php echo $user['id']; ?>" 
+                                        <a href="users.php?action=delete&id=<?php echo $user['id']; ?>&csrf_token=<?php echo generateCSRFToken(); ?>" 
                                            class="action-btn red" title="Delete User"
                                            onclick="return confirm('Are you sure you want to delete this user? This action cannot be undone!')">
                                             <i class="fas fa-trash"></i>

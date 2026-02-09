@@ -34,11 +34,18 @@ try {
     $step = [];
     foreach ($steps as $s) $step[$s['step_number']] = $s;
 } catch (PDOException $e) {
-    die('Database Error: ' . $e->getMessage());
+    error_log('Task detail DB error: ' . $e->getMessage());
+    header('Location: ' . ADMIN_URL . '/task-pending.php?error=db');
+    exit;
 }
 
 // Handle refund processing
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_refund'])) {
+    // Verify CSRF token
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? null)) {
+        $errors[] = 'Invalid security token. Please try again.';
+    }
+    
     $refund_amount = floatval($_POST['refund_amount'] ?? 0);
     $payment_ss = '';
     
@@ -54,20 +61,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_refund'])) {
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => ['image' => $cfile],
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_TIMEOUT => 120
         ]);
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
         
-        if ($httpCode === 200 && !empty($response)) {
-            $lines = explode("\n", trim($response));
-            if (!empty($lines[0]) && strpos($lines[0], 'http') === 0) {
-                $payment_ss = $lines[0];
+        // Check for cURL errors
+        if (curl_errno($ch)) {
+            $curl_error = curl_error($ch);
+            error_log("cURL error during payment screenshot upload: " . $curl_error);
+            $errors[] = 'Failed to upload payment screenshot. Please try again.';
+            curl_close($ch);
+        } else {
+            curl_close($ch);
+            
+            if ($httpCode === 200 && !empty($response)) {
+                $lines = explode("\n", trim($response));
+                if (!empty($lines[0]) && strpos($lines[0], 'http') === 0) {
+                    $payment_ss = $lines[0];
+                }
             }
+            if (empty($payment_ss)) $errors[] = 'Payment screenshot upload failed';
         }
-        if (empty($payment_ss)) $errors[] = 'Payment screenshot upload failed';
     } else {
         $errors[] = 'Payment screenshot required';
     }
@@ -180,13 +197,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_refund'])) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            $errors[] = 'Database error: ' . $e->getMessage();
+            error_log('Task detail refund error (task #' . $task_id . '): ' . $e->getMessage());
+            $errors[] = 'A database error occurred. Please try again or contact support.';
         }
     }
 }
 
 // Handle refund rejection
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_refund'])) {
+    // Verify CSRF token
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? null)) {
+        $errors[] = 'Invalid security token. Please try again.';
+    }
+    
     $reject_reason = $_POST['reject_reason'] ?? '';
     $custom_reason = trim($_POST['custom_reason'] ?? '');
     
@@ -245,7 +268,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_refund'])) {
             
         } catch (PDOException $e) {
             $pdo->rollBack();
-            $errors[] = 'Database error: ' . $e->getMessage();
+            error_log('Task detail refund error (task #' . $task_id . '): ' . $e->getMessage());
+            $errors[] = 'A database error occurred. Please try again or contact support.';
         }
     }
 }
@@ -435,6 +459,7 @@ $refund_rejected = $step4 && ($step4['step_status'] ?? '') === 'rejected';
                         <h4>✅ Approve & Process Refund</h4>
                         <p style="color:#666;margin-bottom:20px">Scan the QR code above, send the refund, then fill details below.</p>
                         <form method="POST" enctype="multipart/form-data">
+                            <?php echo Security::csrfField(); ?>
                             <div class="form-group">
                                 <label>Refund Amount (₹) *</label>
                                 <input type="number" name="refund_amount" step="0.01" min="1" required value="<?php echo $step[1]['order_amount'] ?? ''; ?>" placeholder="Enter amount">
@@ -449,6 +474,7 @@ $refund_rejected = $step4 && ($step4['step_status'] ?? '') === 'rejected';
                     <div class="reject-form">
                         <h4>❌ Reject Refund Request</h4>
                         <form method="POST">
+                            <?php echo Security::csrfField(); ?>
                             <div class="form-group">
                                 <label>Rejection Reason *</label>
                                 <select name="reject_reason" required onchange="document.getElementById('customReasonBox').style.display=this.value==='other'?'block':'none'">

@@ -8,7 +8,7 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/database.php';
 
 // JWT Configuration
-define('JWT_SECRET', 'your-secret-key-change-in-production-' . APP_NAME);
+define('JWT_SECRET', env('JWT_SECRET', bin2hex(random_bytes(32))));
 define('JWT_ALGORITHM', 'HS256');
 define('JWT_EXPIRY', 3600); // 1 hour
 define('JWT_REFRESH_EXPIRY', 2592000); // 30 days
