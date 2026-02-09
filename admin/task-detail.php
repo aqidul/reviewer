@@ -44,52 +44,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_refund'])) {
     // Verify CSRF token
     if (!verifyCSRFToken($_POST['csrf_token'] ?? null)) {
         $errors[] = 'Invalid security token. Please try again.';
-    }
-    
-    $refund_amount = floatval($_POST['refund_amount'] ?? 0);
-    $payment_ss = '';
-    
-    if ($refund_amount <= 0) {
-        $errors[] = 'Enter valid refund amount';
-    }
-    
-    if (isset($_FILES['payment_screenshot']) && $_FILES['payment_screenshot']['error'] === UPLOAD_ERR_OK) {
-        $cfile = new CURLFile($_FILES['payment_screenshot']['tmp_name'], $_FILES['payment_screenshot']['type'], $_FILES['payment_screenshot']['name']);
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => 'https://palians.com/image-host/upload.php',
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => ['image' => $cfile],
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_TIMEOUT => 120
-        ]);
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        
-        // Check for cURL errors
-        if (curl_errno($ch)) {
-            $curl_error = curl_error($ch);
-            error_log("cURL error during payment screenshot upload: " . $curl_error);
-            $errors[] = 'Failed to upload payment screenshot. Please try again.';
-            curl_close($ch);
-        } else {
-            curl_close($ch);
-            
-            if ($httpCode === 200 && !empty($response)) {
-                $lines = explode("\n", trim($response));
-                if (!empty($lines[0]) && strpos($lines[0], 'http') === 0) {
-                    $payment_ss = $lines[0];
-                }
-            }
-            if (empty($payment_ss)) $errors[] = 'Payment screenshot upload failed';
-        }
     } else {
-        $errors[] = 'Payment screenshot required';
-    }
-    
-    if (empty($errors)) {
+        $refund_amount = floatval($_POST['refund_amount'] ?? 0);
+        $payment_ss = '';
+        
+        if ($refund_amount <= 0) {
+            $errors[] = 'Enter valid refund amount';
+        }
+        
+        if (isset($_FILES['payment_screenshot']) && $_FILES['payment_screenshot']['error'] === UPLOAD_ERR_OK) {
+            $cfile = new CURLFile($_FILES['payment_screenshot']['tmp_name'], $_FILES['payment_screenshot']['type'], $_FILES['payment_screenshot']['name']);
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => 'https://palians.com/image-host/upload.php',
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => ['image' => $cfile],
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2,
+                CURLOPT_TIMEOUT => 120
+            ]);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            
+            // Check for cURL errors
+            if (curl_errno($ch)) {
+                $curl_error = curl_error($ch);
+                error_log("cURL error during payment screenshot upload: " . $curl_error);
+                $errors[] = 'Failed to upload payment screenshot. Please try again.';
+                curl_close($ch);
+            } else {
+                curl_close($ch);
+                
+                if ($httpCode === 200 && !empty($response)) {
+                    $lines = explode("\n", trim($response));
+                    if (!empty($lines[0]) && strpos($lines[0], 'http') === 0) {
+                        $payment_ss = $lines[0];
+                    }
+                }
+                if (empty($payment_ss)) $errors[] = 'Payment screenshot upload failed';
+            }
+        } else {
+            $errors[] = 'Payment screenshot required';
+        }
+        
+        if (empty($errors)) {
         try {
             $pdo->beginTransaction();
             
@@ -200,6 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_refund'])) {
             error_log('Task detail refund error (task #' . $task_id . '): ' . $e->getMessage());
             $errors[] = 'A database error occurred. Please try again or contact support.';
         }
+        }
     }
 }
 
@@ -208,17 +208,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_refund'])) {
     // Verify CSRF token
     if (!verifyCSRFToken($_POST['csrf_token'] ?? null)) {
         $errors[] = 'Invalid security token. Please try again.';
-    }
-    
-    $reject_reason = $_POST['reject_reason'] ?? '';
-    $custom_reason = trim($_POST['custom_reason'] ?? '');
-    
-    if (empty($reject_reason)) {
-        $errors[] = 'Please select rejection reason';
-    } elseif ($reject_reason === 'other' && empty($custom_reason)) {
-        $errors[] = 'Please enter custom rejection reason';
     } else {
-        $final_reason = ($reject_reason === 'other') ? $custom_reason : $reject_reason;
+        $reject_reason = $_POST['reject_reason'] ?? '';
+        $custom_reason = trim($_POST['custom_reason'] ?? '');
+        
+        if (empty($reject_reason)) {
+            $errors[] = 'Please select rejection reason';
+        } elseif ($reject_reason === 'other' && empty($custom_reason)) {
+            $errors[] = 'Please enter custom rejection reason';
+        } else {
+            $final_reason = ($reject_reason === 'other') ? $custom_reason : $reject_reason;
         
         try {
             $pdo->beginTransaction();
@@ -270,6 +269,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_refund'])) {
             $pdo->rollBack();
             error_log('Task detail refund error (task #' . $task_id . '): ' . $e->getMessage());
             $errors[] = 'A database error occurred. Please try again or contact support.';
+        }
         }
     }
 }
