@@ -112,7 +112,9 @@ if (!isset($current_page)) {
         <div class="sidebar-divider"></div>
         <li class="menu-section-label"><span>🎮 Gamification</span></li>
         <li><a href="<?php echo APP_URL; ?>/user/rewards.php" class="<?= $current_page === 'rewards' ? 'active' : '' ?>">🎮 Rewards & Points</a></li>
+        <li><a href="<?php echo APP_URL; ?>/user/spin-wheel.php" class="<?= $current_page === 'spin-wheel' ? 'active' : '' ?>">🎰 Daily Spin Wheel</a></li>
         <li><a href="<?php echo APP_URL; ?>/user/leaderboard.php" class="<?= $current_page === 'leaderboard' ? 'active' : '' ?>">🏆 Leaderboard</a></li>
+        <li><a href="<?php echo APP_URL; ?>/user/competitions.php" class="<?= $current_page === 'competitions' ? 'active' : '' ?>">🏅 Competitions</a></li>
         
         <!-- Submit Proof (Phase 2) -->
         <div class="sidebar-divider"></div>

@@ -287,6 +287,167 @@ function updateReferralSettings($db, $level, $commission_percent, $is_active = 1
 }
 
 /**
+ * Create referral milestones table
+ */
+function createReferralMilestonesTable($db) {
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS referral_milestones (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            milestone_count INT NOT NULL,
+            reward_amount DECIMAL(10,2) NOT NULL,
+            achieved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_ref_milestone (user_id, milestone_count),
+            KEY idx_user (user_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        return true;
+    } catch (PDOException $e) {
+        error_log("Error creating referral milestones table: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Check and award referral milestones
+ */
+function checkReferralMilestones($db, $user_id) {
+    createReferralMilestonesTable($db);
+    
+    // Count total referrals
+    $stmt = $db->prepare("SELECT COUNT(*) FROM referrals WHERE referrer_id = ? AND level = 1");
+    $stmt->execute([$user_id]);
+    $total_referrals = (int)$stmt->fetchColumn();
+    
+    $milestones = [
+        5 => 50,
+        10 => 100,
+        25 => 300,
+        50 => 750,
+        100 => 2000
+    ];
+    
+    foreach ($milestones as $count => $reward) {
+        if ($total_referrals >= $count) {
+            // Check if already awarded
+            $check = $db->prepare("
+                SELECT id FROM referral_milestones 
+                WHERE user_id = ? AND milestone_count = ?
+            ");
+            $check->execute([$user_id, $count]);
+            
+            if (!$check->fetch()) {
+                try {
+                    // Award milestone
+                    $insert = $db->prepare("
+                        INSERT INTO referral_milestones (user_id, milestone_count, reward_amount)
+                        VALUES (?, ?, ?)
+                    ");
+                    $insert->execute([$user_id, $count, $reward]);
+                    
+                    // Add to wallet
+                    if (function_exists('addMoneyToWallet')) {
+                        addMoneyToWallet($user_id, $reward, "Referral milestone: {$count} referrals");
+                    }
+                    
+                    // Send notification
+                    if (function_exists('createNotification')) {
+                        createNotification($user_id, 'referral_milestone', 'Referral Milestone Achieved!',
+                            "Congratulations! You've reached {$count} referrals! Earned ₹{$reward} bonus!");
+                    }
+                } catch (PDOException $e) {
+                    error_log("Error awarding referral milestone: " . $e->getMessage());
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Get referral milestone rewards for user
+ */
+function getReferralMilestoneRewards($db, $user_id) {
+    try {
+        createReferralMilestonesTable($db);
+        $stmt = $db->prepare("
+            SELECT * FROM referral_milestones
+            WHERE user_id = ?
+            ORDER BY milestone_count DESC
+        ");
+        $stmt->execute([$user_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Error fetching referral milestones: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Get total network size across all levels
+ */
+function getNetworkSize($db, $user_id) {
+    try {
+        $stmt = $db->prepare("
+            SELECT COUNT(DISTINCT referred_id) as total
+            FROM referrals
+            WHERE referrer_id = ?
+        ");
+        $stmt->execute([$user_id]);
+        return (int)$stmt->fetchColumn();
+    } catch (PDOException $e) {
+        error_log("Error fetching network size: " . $e->getMessage());
+        return 0;
+    }
+}
+
+/**
+ * Get level-wise referral stats
+ */
+function getLevelWiseReferralStats($db, $user_id) {
+    $stats = [];
+    
+    for ($level = 1; $level <= 3; $level++) {
+        try {
+            // Count referrals at this level
+            $count_stmt = $db->prepare("
+                SELECT COUNT(*) FROM referrals 
+                WHERE referrer_id = ? AND level = ?
+            ");
+            $count_stmt->execute([$user_id, $level]);
+            $count = (int)$count_stmt->fetchColumn();
+            
+            // Get earnings at this level
+            $earnings_stmt = $db->prepare("
+                SELECT COALESCE(SUM(amount), 0) 
+                FROM referral_earnings 
+                WHERE user_id = ? AND level = ? AND status = 'credited'
+            ");
+            $earnings_stmt->execute([$user_id, $level]);
+            $earnings = (float)$earnings_stmt->fetchColumn();
+            
+            // Get commission percentage for this level
+            $settings_stmt = $db->prepare("
+                SELECT commission_percent FROM referral_settings 
+                WHERE level = ? AND is_active = 1
+            ");
+            $settings_stmt->execute([$level]);
+            $commission = (float)$settings_stmt->fetchColumn();
+            
+            $stats[] = [
+                'level' => $level,
+                'count' => $count,
+                'earnings' => $earnings,
+                'commission_percent' => $commission
+            ];
+        } catch (PDOException $e) {
+            error_log("Error fetching level {$level} stats: " . $e->getMessage());
+            $stats[] = ['level' => $level, 'count' => 0, 'earnings' => 0, 'commission_percent' => 0];
+        }
+    }
+    
+    return $stats;
+}
+
+/**
  * Generate shareable referral link
  */
 function generateReferralLink($referral_code) {
@@ -319,3 +480,13 @@ function getTwitterShareLink($referral_code) {
     $message = "Join ReviewFlow and earn money! Use my code: {$referral_code}";
     return 'https://twitter.com/intent/tweet?text=' . urlencode($message) . '&url=' . urlencode($link);
 }
+
+// Auto-create tables on include
+try {
+    if (isset($pdo)) {
+        createReferralMilestonesTable($pdo);
+    }
+} catch (Exception $e) {
+    error_log("Referral milestones table auto-create error: " . $e->getMessage());
+}
+
