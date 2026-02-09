@@ -15,7 +15,7 @@ $user_name = $_SESSION['user_name'] ?? 'User';
 
 // Handle join competition with CSRF protection
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['join_competition'])) {
-    if (Security::validateCSRF($_POST['csrf_token'] ?? '')) {
+    if (verifyCSRFToken($_POST['csrf_token'] ?? '')) {
         $competition_id = intval($_POST['competition_id']);
         $result = joinCompetition($pdo, $competition_id, $user_id);
         $message = $result['message'];
@@ -165,12 +165,36 @@ $current_page = 'competitions';
             border-radius: 20px;
             font-size: 0.85rem;
             font-weight: 700;
-            animation: pulse 1.5s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
         }
         
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+        .hot-badge::before {
+            content: '🔥';
+            position: absolute;
+            left: -20px;
+            animation: flameMove 2s linear infinite;
+        }
+        
+        @keyframes flameMove {
+            0% { left: -20px; }
+            100% { left: 100%; }
+        }
+        
+        .hot-badge::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: hotShine 2s linear infinite;
+        }
+        
+        @keyframes hotShine {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
         
         .competition-title {
@@ -418,6 +442,167 @@ $current_page = 'competitions';
             color: #27ae60;
         }
         
+        /* Live Countdown Timer */
+        .countdown-timer {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .timer-icon {
+            font-size: 1.8rem;
+        }
+        
+        .timer-display {
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+        
+        .timer-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        
+        /* Position Progress Bar */
+        .position-progress {
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .position-progress h6 {
+            color: #333;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        
+        .position-bar {
+            height: 30px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .position-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            transition: width 1s ease;
+        }
+        
+        /* Prize Breakdown */
+        .prize-breakdown {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .prize-item {
+            flex: 1;
+            min-width: 150px;
+            background: linear-gradient(135deg, #fff9e6, #ffffff);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #f39c12;
+        }
+        
+        .prize-medal {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .prize-position {
+            font-weight: 700;
+            color: #333;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .prize-amount {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #f39c12;
+        }
+        
+        /* Competition ending soon pulse */
+        .competition-card.ending-soon {
+            animation: endingSoonPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes endingSoonPulse {
+            0%, 100% { 
+                box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+                transform: translateY(0);
+            }
+            50% { 
+                box-shadow: 0 15px 60px rgba(231, 76, 60, 0.4);
+                transform: translateY(-5px);
+            }
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            background: white;
+            border-radius: 20px;
+            margin: 30px 0;
+        }
+        
+        .empty-state-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .empty-state-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .empty-state-message {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+        
+        .empty-state-cta {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 50px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .empty-state-cta:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
         /* History Table */
         .history-card {
             background: white;
@@ -532,12 +717,15 @@ $current_page = 'competitions';
     <h4 style="color: white; margin-bottom: 20px; font-size: 1.5rem; font-weight: 800;">🔥 Active Competitions</h4>
     
     <?php if (empty($active_competitions)): ?>
-        <div class="competition-card">
-            <div style="text-align: center; padding: 40px 20px;">
-                <div style="font-size: 4rem; opacity: 0.3;">🏆</div>
-                <h4 style="color: #666; margin-top: 20px;">No Active Competitions</h4>
-                <p style="color: #999;">Check back later for new competitions!</p>
-            </div>
+        <div class="empty-state">
+            <div class="empty-state-icon">🏆</div>
+            <div class="empty-state-title">No Active Competitions</div>
+            <p class="empty-state-message">
+                New competitions are coming soon! Stay tuned for exciting challenges and amazing prizes.
+            </p>
+            <a href="dashboard.php" class="empty-state-cta">
+                <i class="bi bi-house-fill"></i> Go to Dashboard
+            </a>
         </div>
     <?php else: ?>
         <?php foreach ($active_competitions as $comp): ?>
@@ -553,6 +741,7 @@ $current_page = 'competitions';
         // Check if ending soon (within 24 hours)
         $end_time = strtotime($comp['end_date']);
         $is_hot = ($end_time - time()) < 86400 && $end_time > time();
+        $is_ending_very_soon = ($end_time - time()) < 21600; // 6 hours
         
         // Competition type icon
         $type_icons = [
@@ -563,9 +752,14 @@ $current_page = 'competitions';
             'referral' => '🤝'
         ];
         $type_icon = $type_icons[$comp['competition_type']] ?? '🏆';
+        
+        // Get participant count for position calculation
+        $count_stmt = $pdo->prepare("SELECT COUNT(*) FROM competition_participants WHERE competition_id = ?");
+        $count_stmt->execute([$comp['id']]);
+        $total_participants = (int)$count_stmt->fetchColumn();
         ?>
         
-        <div class="competition-card <?php echo $is_hot ? 'hot' : ''; ?>">
+        <div class="competition-card <?php echo $is_hot ? 'hot' : ''; ?> <?php echo $is_ending_very_soon ? 'ending-soon' : ''; ?>">
             <div class="competition-header">
                 <div>
                     <span class="competition-type-badge type-<?php echo $comp['competition_type']; ?>">
@@ -579,6 +773,30 @@ $current_page = 'competitions';
             
             <h3 class="competition-title"><?php echo htmlspecialchars($comp['name']); ?></h3>
             <p class="competition-description"><?php echo htmlspecialchars($comp['description']); ?></p>
+            
+            <!-- Prize Breakdown -->
+            <?php
+            $first_prize = $comp['prize_pool'] * 0.5; // 50%
+            $second_prize = $comp['prize_pool'] * 0.3; // 30%
+            $third_prize = $comp['prize_pool'] * 0.2; // 20%
+            ?>
+            <div class="prize-breakdown">
+                <div class="prize-item">
+                    <span class="prize-medal">🥇</span>
+                    <div class="prize-position">1st Place</div>
+                    <div class="prize-amount">₹<?php echo number_format($first_prize, 0); ?></div>
+                </div>
+                <div class="prize-item">
+                    <span class="prize-medal">🥈</span>
+                    <div class="prize-position">2nd Place</div>
+                    <div class="prize-amount">₹<?php echo number_format($second_prize, 0); ?></div>
+                </div>
+                <div class="prize-item">
+                    <span class="prize-medal">🥉</span>
+                    <div class="prize-position">3rd Place</div>
+                    <div class="prize-amount">₹<?php echo number_format($third_prize, 0); ?></div>
+                </div>
+            </div>
             
             <div class="info-grid">
                 <div class="info-item">
@@ -594,13 +812,7 @@ $current_page = 'competitions';
                 </div>
                 <div class="info-item">
                     <div class="info-label">👥 Participants</div>
-                    <div class="info-value">
-                        <?php
-                        $count_stmt = $pdo->prepare("SELECT COUNT(*) FROM competition_participants WHERE competition_id = ?");
-                        $count_stmt->execute([$comp['id']]);
-                        echo $count_stmt->fetchColumn();
-                        ?>
-                    </div>
+                    <div class="info-value"><?php echo $total_participants; ?></div>
                 </div>
                 <?php if ($has_joined && $has_joined['rank']): ?>
                 <div class="info-item">
@@ -613,25 +825,42 @@ $current_page = 'competitions';
             <!-- Countdown Timer -->
             <?php if ($comp['status'] === 'active'): ?>
             <div class="countdown-timer" data-end-time="<?php echo $end_time; ?>">
-                <div class="countdown-label">⏰ Time Remaining</div>
-                <div class="countdown-display">
-                    <div class="countdown-unit">
-                        <span class="countdown-number days">00</span>
-                        <span class="countdown-text">Days</span>
-                    </div>
-                    <div class="countdown-unit">
-                        <span class="countdown-number hours">00</span>
-                        <span class="countdown-text">Hours</span>
-                    </div>
-                    <div class="countdown-unit">
-                        <span class="countdown-number minutes">00</span>
-                        <span class="countdown-text">Minutes</span>
-                    </div>
-                    <div class="countdown-unit">
-                        <span class="countdown-number seconds">00</span>
-                        <span class="countdown-text">Seconds</span>
+                <div class="timer-icon">⏰</div>
+                <div style="flex: 1;">
+                    <div class="timer-label">Time Remaining</div>
+                    <div class="timer-display">
+                        <span class="days">0</span>d 
+                        <span class="hours">00</span>h 
+                        <span class="minutes">00</span>m 
+                        <span class="seconds">00</span>s
                     </div>
                 </div>
+            </div>
+            <?php endif; ?>
+            
+            <!-- Your Position Progress Bar -->
+            <?php if ($has_joined && $has_joined['rank'] && $total_participants > 0): ?>
+            <div class="position-progress">
+                <h6>Your Position in Competition</h6>
+                <?php 
+                $position_percentage = (($total_participants - $has_joined['rank'] + 1) / $total_participants) * 100;
+                ?>
+                <div class="position-bar">
+                    <div class="position-fill" style="width: <?php echo $position_percentage; ?>%">
+                        #<?php echo $has_joined['rank']; ?> out of <?php echo $total_participants; ?>
+                    </div>
+                </div>
+                <p style="text-align: center; margin-top: 10px; color: #666; font-size: 0.9rem;">
+                    <?php
+                    if ($has_joined['rank'] <= 3) {
+                        echo "🏆 You're in the prize zone! Keep it up!";
+                    } else if ($has_joined['rank'] <= 10) {
+                        echo "🎯 You're in the top 10! Push harder!";
+                    } else {
+                        echo "💪 Keep competing to climb the ranks!";
+                    }
+                    ?>
+                </p>
             </div>
             <?php endif; ?>
             
@@ -768,7 +997,7 @@ function updateCountdown(timerElement) {
     const distance = endTime - now;
     
     if (distance < 0) {
-        timerElement.querySelector('.countdown-display').innerHTML = '<div style="font-size: 1.5rem; font-weight: 800;">Competition Ended!</div>';
+        timerElement.innerHTML = '<div class="timer-icon">🏁</div><div style="flex: 1;"><div class="timer-display">Competition Ended!</div></div>';
         return;
     }
     
@@ -777,10 +1006,15 @@ function updateCountdown(timerElement) {
     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((distance % (1000 * 60)) / 1000);
     
-    timerElement.querySelector('.days').textContent = String(days).padStart(2, '0');
-    timerElement.querySelector('.hours').textContent = String(hours).padStart(2, '0');
-    timerElement.querySelector('.minutes').textContent = String(minutes).padStart(2, '0');
-    timerElement.querySelector('.seconds').textContent = String(seconds).padStart(2, '0');
+    const daysEl = timerElement.querySelector('.days');
+    const hoursEl = timerElement.querySelector('.hours');
+    const minutesEl = timerElement.querySelector('.minutes');
+    const secondsEl = timerElement.querySelector('.seconds');
+    
+    if (daysEl) daysEl.textContent = days;
+    if (hoursEl) hoursEl.textContent = String(hours).padStart(2, '0');
+    if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, '0');
+    if (secondsEl) secondsEl.textContent = String(seconds).padStart(2, '0');
     
     setTimeout(() => updateCountdown(timerElement), 1000);
 }
