@@ -842,10 +842,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (spinResult.success) {
         // Calculate rotation angle based on prize index
         const prizeIndex = spinResult.prize_index || 0;
+        const SPIN_ROTATIONS = 5; // Number of full rotations before stopping
+        const RANDOM_VARIATION_RANGE = 10; // Degrees of random variation for natural feel
         const segmentAngle = 360 / 8; // 8 segments = 45 degrees each
         const targetAngle = (prizeIndex * segmentAngle) + (segmentAngle / 2); // Center of segment
-        const spins = 5; // Number of full rotations
-        const finalRotation = (360 * spins) + (360 - targetAngle) + (Math.random() * 10 - 5); // Add small random variation
+        const randomVariation = Math.random() * RANDOM_VARIATION_RANGE - (RANDOM_VARIATION_RANGE / 2);
+        const finalRotation = (360 * SPIN_ROTATIONS) + (360 - targetAngle) + randomVariation;
         
         // Animate wheel with calculated rotation
         const wheel = document.getElementById('spinWheel');
@@ -893,8 +895,9 @@ function closeModal() {
 function createConfetti() {
     const colors = ['#f39c12', '#e74c3c', '#27ae60', '#3498db', '#9b59b6', '#e67e22', '#1abc9c'];
     const shapes = ['square', 'circle', 'triangle', 'star'];
+    const confettiCount = 60; // Optimized for performance
     
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < confettiCount; i++) {
         setTimeout(() => {
             const confetti = document.createElement('div');
             confetti.className = 'confetti';
